@@ -223,7 +223,7 @@ function Navbar({ query, setQuery, activeTab, setActiveTab }: {
               {query && <button onClick={() => setQuery("")} className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground"><X size={11} /></button>}
             </div>
 
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+            <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border/50 bg-secondary/20 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 hover:border-border/70 transition-all">
               <Github size={13} />
               <span className="hidden md:inline">GitHub</span>
@@ -268,7 +268,7 @@ function Navbar({ query, setQuery, activeTab, setActiveTab }: {
             })}
           </div>
           <div className="pt-2 border-t border-border/40">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+            <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
               <Github size={13} /> GitHub
             </a>
@@ -513,7 +513,7 @@ export default function Index() {
                 </button>
               ))}
               <span className="h-3 w-px bg-border/50" />
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+              <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1 hover:text-foreground transition-colors">
                 <Github size={12} /> GitHub
               </a>
