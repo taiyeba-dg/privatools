@@ -1,0 +1,63 @@
+import { useState } from "react";
+import { Upload, Trash2, Download, Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { uploadFile, downloadBlob } from "@/lib/api";
+
+const formats = ["jpeg", "png", "webp", "bmp", "tiff"];
+
+export function ImageConverterUI() {
+  const [file, setFile] = useState<File | null>(null);
+  const [target, setTarget] = useState("png");
+  const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState("");
+
+  const handleFile = (f: File) => { setFile(f); setPreview(URL.createObjectURL(f)); setError(null); };
+
+  const process = async () => {
+    if (!file) return;
+    setStatus("processing"); setError(null);
+    try {
+      const res = await uploadFile("/image-converter", file, { target_format: target });
+      const blob = await res.blob();
+      downloadBlob(blob, `converted.${target}`);
+      setStatus("done");
+    } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
+  };
+
+  return (
+    <div className="space-y-5">
+      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 hover:bg-secondary/50 transition-all">
+        <Upload size={22} className="text-muted-foreground" />
+        <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop image here"}</p>
+        <p className="text-xs text-muted-foreground">{file ? `${(file.size / 1024).toFixed(0)} KB` : "JPEG, PNG, WebP, BMP, TIFF"}</p>
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+      </label>
+      {preview && <div className="rounded-lg border border-border overflow-hidden max-h-40"><img src={preview} alt="Preview" className="w-full h-full object-contain" /></div>}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <label className="text-sm font-semibold text-foreground">Convert to</label>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {formats.map(f => (
+            <button key={f} onClick={() => setTarget(f)}
+              className={cn("rounded-lg border px-4 py-2 text-xs font-medium transition-all uppercase",
+                target === f ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-secondary/40")}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+      {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
+      {status === "done" ? (
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
+          <p className="text-sm font-semibold text-emerald-400 mb-3">Converted!</p>
+          <Button variant="outline" onClick={() => { setFile(null); setStatus("idle"); setPreview(""); }}>Convert another</Button>
+        </div>
+      ) : (
+        <Button className="w-full" disabled={!file || status === "processing"} onClick={process}>
+          {status === "processing" ? <><Loader2 size={14} className="animate-spin mr-2" />Converting…</> : `Convert to ${target.toUpperCase()}`}
+        </Button>
+      )}
+    </div>
+  );
+}

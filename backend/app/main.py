@@ -19,6 +19,8 @@ from .routes import (
     extract_images, organize_pages, alternate_mix, split_bookmarks, split_by_size,
     nup, overlay, fill_form, compare, deskew,
     sign, redact, html_to_pdf, edit_pdf, qr_code,
+    remove_blank_pages, auto_crop, invert_colors, pdf_security, pdf_extra,
+    non_pdf_tools,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -48,7 +50,7 @@ app = FastAPI(
     redoc_url=None if _is_prod else "/redoc",
 )
 
-_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
+_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:8080").split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -109,6 +111,16 @@ app.include_router(html_to_pdf.router, prefix="/api")
 app.include_router(edit_pdf.router, prefix="/api")
 app.include_router(qr_code.router, prefix="/api")
 
+# New PDF tool routes
+app.include_router(remove_blank_pages.router, prefix="/api")
+app.include_router(auto_crop.router, prefix="/api")
+app.include_router(invert_colors.router, prefix="/api")
+app.include_router(pdf_security.router, prefix="/api")
+app.include_router(pdf_extra.router, prefix="/api")
+
+# Non-PDF tool routes
+app.include_router(non_pdf_tools.router, prefix="/api")
+
 
 @app.get("/api/health")
 async def health():
@@ -116,10 +128,17 @@ async def health():
 
 
 # Mount frontend static files (only if the directory exists)
-# Try: 1) FRONTEND_PATH env var, 2) CWD-relative, 3) __file__-relative
 def _resolve_frontend_path() -> Path:
     if "FRONTEND_PATH" in os.environ:
         return Path(os.environ["FRONTEND_PATH"])
+    # Built frontend output
+    cwd_dist = Path.cwd() / "frontend" / "dist"
+    if cwd_dist.exists():
+        return cwd_dist
+    rel_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    if rel_dist.exists():
+        return rel_dist
+    # Fallback to frontend root
     cwd_path = Path.cwd() / "frontend"
     if cwd_path.exists():
         return cwd_path
@@ -128,3 +147,5 @@ def _resolve_frontend_path() -> Path:
 _frontend_path = _resolve_frontend_path()
 if _frontend_path.exists():
     app.mount("/", StaticFiles(directory=str(_frontend_path), html=True), name="frontend")
+
+

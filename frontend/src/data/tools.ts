@@ -1,0 +1,403 @@
+import {
+  FileText, Merge, Scissors, BookOpen, Layout, Trash2, Download,
+  PenTool, Stamp, AlignLeft, Hash, Tag, Bookmark,
+  Minimize2, Layers, ScanLine, Wrench, Maximize2, RotateCw, Palette, Crop,
+  Shield, Unlock, EyeOff, DatabaseZap, MessageSquareOff, Info,
+  Code, Image, FileBox,
+  Table, FileImage, Presentation, Type, FileOutput,
+  Shuffle, GitCompare, ImageDown, FormInput, Grid2x2, ScanText, Copy, QrCode, Archive,
+  FileX2, ScissorsSquare, BookMarked, Link2, ClipboardList, Eraser, Moon,
+  BadgeCheck, ShieldCheck, Sparkles, Code2, FileSpreadsheet,
+} from "lucide-react";
+import { LucideIcon } from "lucide-react";
+
+export type Category = "organize" | "edit" | "optimize" | "security" | "to-pdf" | "from-pdf" | "advanced";
+
+export interface Tool {
+  slug: string;
+  icon: LucideIcon;
+  name: string;
+  description: string;
+  longDescription: string;
+  category: Category;
+  accepts: string;
+  outputLabel: string;
+}
+
+export const tools: Tool[] = [
+  // ── Organize & Manage ──────────────────────────────────────────────────────
+  {
+    slug: "merge-pdf", icon: Merge, name: "Merge PDF",
+    description: "Combine multiple PDFs into one",
+    longDescription: "Drag and drop multiple PDF files to combine them into a single document. Reorder files before merging.",
+    category: "organize", accepts: ".pdf", outputLabel: "merged.pdf",
+  },
+  {
+    slug: "split-pdf", icon: Scissors, name: "Split PDF",
+    description: "Split by selecting specific page ranges",
+    longDescription: "Split a PDF into individual pages or custom page ranges. Each range becomes its own downloadable file.",
+    category: "organize", accepts: ".pdf", outputLabel: "split pages",
+  },
+  {
+    slug: "split-by-bookmarks", icon: BookOpen, name: "Split by Bookmarks",
+    description: "Split at pages where bookmarks point to",
+    longDescription: "Automatically detect chapters and bookmarks in your PDF and split the document at each bookmark.",
+    category: "organize", accepts: ".pdf", outputLabel: "split chapters",
+  },
+  {
+    slug: "split-by-size", icon: Maximize2, name: "Split by Size",
+    description: "Split into parts based on a max file size",
+    longDescription: "Specify a maximum file size and automatically split the PDF into chunks that fit within that limit.",
+    category: "organize", accepts: ".pdf", outputLabel: "split files",
+  },
+  {
+    slug: "organize-pages", icon: Layout, name: "Organize Pages",
+    description: "Reorder, delete, or rotate pages visually",
+    longDescription: "View thumbnails of all pages and drag them into any order. Delete, rotate, or duplicate pages.",
+    category: "organize", accepts: ".pdf", outputLabel: "organized.pdf",
+  },
+  {
+    slug: "delete-pages", icon: Trash2, name: "Delete Pages",
+    description: "Remove specific pages from a PDF",
+    longDescription: "Select individual pages or ranges to permanently remove from your PDF document.",
+    category: "organize", accepts: ".pdf", outputLabel: "trimmed.pdf",
+  },
+  {
+    slug: "extract-pages", icon: Download, name: "Extract Pages",
+    description: "Extract specified pages to a new document",
+    longDescription: "Pick specific pages to extract into a new standalone PDF file while keeping the original intact.",
+    category: "organize", accepts: ".pdf", outputLabel: "extracted.pdf",
+  },
+
+  // ── Edit PDF Content ────────────────────────────────────────────────────────
+  {
+    slug: "edit-pdf", icon: PenTool, name: "Edit PDF",
+    description: "Edit text and images directly inside the PDF",
+    longDescription: "Click any text or image in your PDF to edit it in-place. Add new text blocks, shapes, or replace images.",
+    category: "edit", accepts: ".pdf", outputLabel: "edited.pdf",
+  },
+  {
+    slug: "sign-pdf", icon: Stamp, name: "Sign PDF",
+    description: "Add a signature to a PDF document",
+    longDescription: "Draw, type, or upload your signature and place it anywhere on the document. Supports multiple signers.",
+    category: "edit", accepts: ".pdf", outputLabel: "signed.pdf",
+  },
+  {
+    slug: "watermark", icon: Layers, name: "Watermark",
+    description: "Add text or image watermark over PDF pages",
+    longDescription: "Add text or image watermarks to every page. Control opacity, position, rotation, and font size.",
+    category: "edit", accepts: ".pdf", outputLabel: "watermarked.pdf",
+  },
+  {
+    slug: "header-footer", icon: AlignLeft, name: "Header & Footer",
+    description: "Add headers and footers to specified pages",
+    longDescription: "Insert custom text, dates, or page numbers in the header and footer of your PDF pages.",
+    category: "edit", accepts: ".pdf", outputLabel: "headerfooter.pdf",
+  },
+  {
+    slug: "page-numbers", icon: Hash, name: "Page Numbers",
+    description: "Insert custom page numbers in your chosen format",
+    longDescription: "Choose format (1,2,3 / i,ii,iii / A,B,C), set the start page, position, and optional prefix.",
+    category: "edit", accepts: ".pdf", outputLabel: "numbered.pdf",
+  },
+  {
+    slug: "bates-numbering", icon: Tag, name: "Bates Numbering",
+    description: "Add Bates Numbers for legal document indexing",
+    longDescription: "Apply Bates numbering with custom prefix, suffix, and start number to single or batches of PDFs.",
+    category: "edit", accepts: ".pdf", outputLabel: "bates.pdf",
+  },
+  {
+    slug: "bookmarks", icon: Bookmark, name: "Bookmarks",
+    description: "Add or edit bookmarks to navigate large files",
+    longDescription: "Create, rename, reorder, and nest bookmarks for easier navigation in large PDF documents.",
+    category: "edit", accepts: ".pdf", outputLabel: "bookmarked.pdf",
+  },
+
+  // ── Optimize & Fix ──────────────────────────────────────────────────────────
+  {
+    slug: "compress-pdf", icon: Minimize2, name: "Compress PDF",
+    description: "Reduce the file size of your PDF",
+    longDescription: "Choose from light, recommended, or extreme compression. Preview estimated size savings before downloading.",
+    category: "optimize", accepts: ".pdf", outputLabel: "compressed.pdf",
+  },
+  {
+    slug: "flatten-pdf", icon: Layers, name: "Flatten PDF",
+    description: "Flatten forms and annotations into PDF content",
+    longDescription: "Permanently merge all interactive form fields and annotations into the static page content.",
+    category: "optimize", accepts: ".pdf", outputLabel: "flattened.pdf",
+  },
+  {
+    slug: "deskew-pdf", icon: ScanLine, name: "Deskew PDF",
+    description: "Straighten scanned pages that are slightly tilted",
+    longDescription: "Automatically detect and correct the angle of scanned pages so text appears straight and readable.",
+    category: "optimize", accepts: ".pdf", outputLabel: "deskewed.pdf",
+  },
+  {
+    slug: "repair-pdf", icon: Wrench, name: "Repair PDF",
+    description: "Attempt to fix corrupted PDF files",
+    longDescription: "Recover and rebuild damaged or corrupted PDF files that won't open in standard PDF readers.",
+    category: "optimize", accepts: ".pdf", outputLabel: "repaired.pdf",
+  },
+  {
+    slug: "resize-pdf", icon: Maximize2, name: "Resize PDF",
+    description: "Change the physical dimensions of the pages",
+    longDescription: "Scale or resize all pages to a standard size (A4, Letter, etc.) or set custom width and height.",
+    category: "optimize", accepts: ".pdf", outputLabel: "resized.pdf",
+  },
+  {
+    slug: "rotate-pdf", icon: RotateCw, name: "Rotate PDF",
+    description: "Rotate all or specific pages in the PDF",
+    longDescription: "Rotate individual pages or all pages by 90°, 180°, or 270°. Preview each page before saving.",
+    category: "optimize", accepts: ".pdf", outputLabel: "rotated.pdf",
+  },
+  {
+    slug: "grayscale-pdf", icon: Palette, name: "Grayscale PDF",
+    description: "Convert a colorful PDF to black and white",
+    longDescription: "Convert all color content in the PDF to grayscale or pure black and white. Useful for printing.",
+    category: "optimize", accepts: ".pdf", outputLabel: "grayscale.pdf",
+  },
+  {
+    slug: "crop-pdf", icon: Crop, name: "Crop PDF",
+    description: "Trim the margins or change the visible area",
+    longDescription: "Draw a crop box to remove unwanted white space or trim pages to a specific size and margin.",
+    category: "optimize", accepts: ".pdf", outputLabel: "cropped.pdf",
+  },
+
+  // ── Security & Privacy ──────────────────────────────────────────────────────
+  {
+    slug: "protect-pdf", icon: Shield, name: "Protect PDF",
+    description: "Encrypt a PDF with a password or set permissions",
+    longDescription: "Set open and permission passwords on your PDF. Control printing, copying, and editing permissions.",
+    category: "security", accepts: ".pdf", outputLabel: "protected.pdf",
+  },
+  {
+    slug: "unlock-pdf", icon: Unlock, name: "Unlock PDF",
+    description: "Remove password protection from a PDF",
+    longDescription: "Remove passwords and permission restrictions from PDFs you own, making them freely accessible.",
+    category: "security", accepts: ".pdf", outputLabel: "unlocked.pdf",
+  },
+  {
+    slug: "redact-pdf", icon: EyeOff, name: "Redact PDF",
+    description: "Permanently black out sensitive content",
+    longDescription: "Select and permanently remove sensitive text, images, or areas. Content is fully erased, not just hidden.",
+    category: "security", accepts: ".pdf", outputLabel: "redacted.pdf",
+  },
+  {
+    slug: "strip-metadata", icon: DatabaseZap, name: "Strip Metadata",
+    description: "Remove embedded metadata for privacy",
+    longDescription: "Remove author, creation date, GPS data, and other hidden metadata from your PDF file.",
+    category: "security", accepts: ".pdf", outputLabel: "stripped.pdf",
+  },
+  {
+    slug: "delete-annotations", icon: MessageSquareOff, name: "Delete Annotations",
+    description: "Remove all comments, highlights, and annotations",
+    longDescription: "Permanently delete all annotation layers — highlights, comments, sticky notes, and drawings.",
+    category: "security", accepts: ".pdf", outputLabel: "clean.pdf",
+  },
+  {
+    slug: "metadata", icon: Info, name: "Metadata",
+    description: "View and edit document metadata",
+    longDescription: "Read and modify the embedded metadata fields: Title, Author, Subject, Keywords, and more.",
+    category: "security", accepts: ".pdf", outputLabel: "metadata.pdf",
+  },
+
+  // ── Convert to PDF ──────────────────────────────────────────────────────────
+  {
+    slug: "html-to-pdf", icon: Code, name: "HTML to PDF",
+    description: "Convert web pages or HTML code into a PDF",
+    longDescription: "Paste a URL or upload an HTML file and render it as a pixel-perfect PDF document.",
+    category: "to-pdf", accepts: ".html,.htm", outputLabel: "webpage.pdf",
+  },
+  {
+    slug: "image-to-pdf", icon: Image, name: "Image to PDF",
+    description: "Convert JPG, PNG, or other images into a PDF",
+    longDescription: "Combine one or multiple images into a single PDF. Set page size, orientation, and margins.",
+    category: "to-pdf", accepts: ".jpg,.jpeg,.png,.tiff,.bmp,.webp", outputLabel: "images.pdf",
+  },
+  {
+    slug: "office-to-pdf", icon: FileBox, name: "Office to PDF",
+    description: "Convert Word, Excel, or PowerPoint to PDF",
+    longDescription: "Upload any Microsoft Office document and convert it to a perfectly formatted PDF with all styles preserved.",
+    category: "to-pdf", accepts: ".doc,.docx,.xls,.xlsx,.ppt,.pptx", outputLabel: "document.pdf",
+  },
+
+  // ── Convert from PDF ────────────────────────────────────────────────────────
+  {
+    slug: "pdf-to-excel", icon: Table, name: "PDF to Excel",
+    description: "Extract tables and data into a spreadsheet",
+    longDescription: "Detect and extract all tables from your PDF and output them as structured Excel spreadsheets.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "spreadsheet.xlsx",
+  },
+  {
+    slug: "pdf-to-image", icon: FileImage, name: "PDF to Image",
+    description: "Convert each PDF page into an image file",
+    longDescription: "Render each PDF page as a high-resolution image. Choose format (JPG/PNG), DPI, and color mode.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
+  },
+  {
+    slug: "pdf-to-pptx", icon: Presentation, name: "PDF to PowerPoint",
+    description: "Convert a PDF into a PowerPoint presentation",
+    longDescription: "Convert each PDF page into an editable PowerPoint slide, preserving layout and images.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "slides.pptx",
+  },
+  {
+    slug: "pdf-to-text", icon: Type, name: "PDF to Text",
+    description: "Extract all text from a PDF file",
+    longDescription: "Extract all readable text content from your PDF into a clean plain-text or formatted document.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "content.txt",
+  },
+  {
+    slug: "pdf-to-word", icon: FileOutput, name: "PDF to Word",
+    description: "Convert a PDF into an editable Word document",
+    longDescription: "Extract all text, tables, and formatting from your PDF into a fully editable Word document.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "document.docx",
+  },
+
+  // ── Miscellaneous & Advanced ────────────────────────────────────────────────
+  {
+    slug: "alternate-mix", icon: Shuffle, name: "Alternate Mix",
+    description: "Mix pages of two or more PDFs alternately",
+    longDescription: "Interleave pages from two or more PDFs — useful for merging front and back scans of duplex documents.",
+    category: "advanced", accepts: ".pdf", outputLabel: "mixed.pdf",
+  },
+  {
+    slug: "compare-pdf", icon: GitCompare, name: "Compare PDF",
+    description: "Visually compare two PDF documents",
+    longDescription: "Upload two versions of a PDF and get a highlighted diff showing exactly what text or content changed.",
+    category: "advanced", accepts: ".pdf", outputLabel: "comparison.pdf",
+  },
+  {
+    slug: "extract-images", icon: ImageDown, name: "Extract Images",
+    description: "Extract all embedded images from the PDF",
+    longDescription: "Detect and download all embedded image resources from your PDF as individual PNG or JPEG files.",
+    category: "advanced", accepts: ".pdf", outputLabel: "images.zip",
+  },
+  {
+    slug: "fill-form", icon: FormInput, name: "Fill Form",
+    description: "Fill out interactive PDF forms and save them",
+    longDescription: "Open a fillable PDF form, fill in all fields interactively, and export the completed document.",
+    category: "advanced", accepts: ".pdf", outputLabel: "filled.pdf",
+  },
+  {
+    slug: "nup", icon: Grid2x2, name: "N-Up PDF",
+    description: "Print multiple pages per sheet",
+    longDescription: "Arrange multiple PDF pages onto a single sheet (2-up, 4-up, 6-up, etc.) to save paper when printing.",
+    category: "advanced", accepts: ".pdf", outputLabel: "nup.pdf",
+  },
+  {
+    slug: "ocr-pdf", icon: ScanText, name: "OCR PDF",
+    description: "Make a scanned PDF searchable using OCR",
+    longDescription: "Use optical character recognition to detect text in scanned documents and make them fully searchable.",
+    category: "advanced", accepts: ".pdf", outputLabel: "searchable.pdf",
+  },
+  {
+    slug: "overlay", icon: Copy, name: "Overlay PDF",
+    description: "Overlay one PDF onto another (e.g., letterhead)",
+    longDescription: "Layer one PDF document on top of another — great for adding letterhead, backgrounds, or stamps.",
+    category: "advanced", accepts: ".pdf", outputLabel: "overlaid.pdf",
+  },
+  {
+    slug: "qr-code", icon: QrCode, name: "QR Code PDF",
+    description: "Generate QR codes and add them to PDF pages",
+    longDescription: "Create a QR code from any URL or text and stamp it onto the pages of your PDF at a chosen position.",
+    category: "advanced", accepts: ".pdf", outputLabel: "qrcode.pdf",
+  },
+  {
+    slug: "pdf-to-pdfa", icon: Archive, name: "PDF to PDF/A",
+    description: "Convert to PDF/A format for long-term archiving",
+    longDescription: "Convert your PDF to the ISO-standardised PDF/A format for reliable long-term digital preservation.",
+    category: "advanced", accepts: ".pdf", outputLabel: "archive.pdfa",
+  },
+
+  // ── Document Cleanup & Structure ────────────────────────────────────────────
+  {
+    slug: "remove-blank-pages", icon: FileX2, name: "Remove Blank Pages",
+    description: "Scan and delete entirely blank or near-blank pages",
+    longDescription: "Automatically detect and remove empty white pages or pages with only scan noise from your PDF.",
+    category: "organize", accepts: ".pdf", outputLabel: "cleaned.pdf",
+  },
+  {
+    slug: "auto-crop", icon: ScissorsSquare, name: "Remove Margins",
+    description: "Auto-trim white space/margins around text on all pages",
+    longDescription: "Automatically detect and crop the white borders and margins from each page — ideal for e-reader or tablet reading.",
+    category: "optimize", accepts: ".pdf", outputLabel: "cropped.pdf",
+  },
+
+  // ── New Conversions ─────────────────────────────────────────────────────────
+  {
+    slug: "pdf-to-epub", icon: BookMarked, name: "PDF to EPUB",
+    description: "Convert a PDF into the EPUB format for e-readers",
+    longDescription: "Transform your PDF into a reflowable EPUB file, compatible with Kindle, Kobo, Apple Books, and most e-reader devices.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "book.epub",
+  },
+  {
+    slug: "markdown-to-pdf", icon: Code2, name: "Markdown / Config to PDF",
+    description: "Convert .md, .json, .yaml, or .toml files to PDF",
+    longDescription: "Upload a Markdown, JSON, YAML, or TOML file and render it as a beautifully formatted, structured PDF — locally and instantly.",
+    category: "to-pdf", accepts: ".md,.markdown,.json,.yaml,.yml,.toml", outputLabel: "document.pdf",
+  },
+  {
+    slug: "csv-to-pdf", icon: FileSpreadsheet, name: "CSV to PDF",
+    description: "Generate table-style or invoice PDFs from CSV data",
+    longDescription: "Upload a CSV file and convert it into a cleanly formatted PDF with a table, invoice, or report layout.",
+    category: "to-pdf", accepts: ".csv", outputLabel: "table.pdf",
+  },
+
+  // ── Advanced Editing ────────────────────────────────────────────────────────
+  {
+    slug: "add-hyperlinks", icon: Link2, name: "Add Hyperlinks",
+    description: "Draw clickable hyperlink areas over text or images",
+    longDescription: "Define invisible, clickable link areas on any page and attach a URL. Perfect for adding navigation to static PDFs.",
+    category: "edit", accepts: ".pdf", outputLabel: "linked.pdf",
+  },
+  {
+    slug: "form-creator", icon: ClipboardList, name: "Form Creator",
+    description: "Drag-and-drop form builder to create fillable PDFs",
+    longDescription: "Add text fields, checkboxes, radio buttons, and dropdowns to any PDF canvas to generate a fully interactive fillable document.",
+    category: "advanced", accepts: ".pdf", outputLabel: "form.pdf",
+  },
+  {
+    slug: "transparent-background", icon: Eraser, name: "Transparent Background",
+    description: "Strip the solid white background from PDF pages",
+    longDescription: "Remove the white background from all pages, leaving only ink and line art with a transparent layer — ideal for design overlays.",
+    category: "edit", accepts: ".pdf", outputLabel: "transparent.pdf",
+  },
+  {
+    slug: "invert-colors", icon: Moon, name: "Invert Colors",
+    description: "Invert PDF colors for a dark mode reading experience",
+    longDescription: "Flip the color scheme of all pages (white → black, black → white). Multiple modes: full inversion, text-only, and night tint.",
+    category: "optimize", accepts: ".pdf", outputLabel: "inverted.pdf",
+  },
+
+  // ── Security & Forensics ────────────────────────────────────────────────────
+  {
+    slug: "pdfa-validator", icon: BadgeCheck, name: "PDF/A Validator",
+    description: "Check if a document is strictly PDF/A compliant",
+    longDescription: "Upload any PDF and get a detailed compliance report showing which PDF/A rules pass, warn, or fail — for legal and enterprise use.",
+    category: "security", accepts: ".pdf", outputLabel: "report",
+  },
+  {
+    slug: "verify-signature", icon: ShieldCheck, name: "Verify Digital Signature",
+    description: "Check if a PDF's cryptographic signature is valid",
+    longDescription: "Upload a digitally signed PDF and verify the cryptographic integrity, signer identity, and certificate trust chain — all locally.",
+    category: "security", accepts: ".pdf", outputLabel: "verification report",
+  },
+  {
+    slug: "sanitize-pdf", icon: Sparkles, name: "Sanitize Document",
+    description: "Aggressively clean hidden data, JS, and layers",
+    longDescription: "Permanently flatten layers, remove hidden OCR text, strip embedded JavaScript, and erase all metadata for maximum safety before sharing.",
+    category: "security", accepts: ".pdf", outputLabel: "sanitized.pdf",
+  },
+];
+
+export const toolBySlug = Object.fromEntries(tools.map(t => [t.slug, t]));
+
+export const categoryMeta: Record<Category, { label: string; accent: string; iconBg: string; iconColor: string }> = {
+  organize:  { label: "Organize",   accent: "text-blue-400",    iconBg: "bg-blue-500/10",    iconColor: "text-blue-400"    },
+  edit:      { label: "Edit",       accent: "text-violet-400",  iconBg: "bg-violet-500/10",  iconColor: "text-violet-400"  },
+  optimize:  { label: "Optimize",   accent: "text-teal-400",    iconBg: "bg-teal-500/10",    iconColor: "text-teal-400"    },
+  security:  { label: "Security",   accent: "text-rose-400",    iconBg: "bg-rose-500/10",    iconColor: "text-rose-400"    },
+  "to-pdf":  { label: "To PDF",     accent: "text-emerald-400", iconBg: "bg-emerald-500/10", iconColor: "text-emerald-400" },
+  "from-pdf":{ label: "From PDF",   accent: "text-amber-400",   iconBg: "bg-amber-500/10",   iconColor: "text-amber-400"   },
+  advanced:  { label: "Advanced",   accent: "text-indigo-400",  iconBg: "bg-indigo-500/10",  iconColor: "text-indigo-400"  },
+};
