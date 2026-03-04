@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import BatchPage from "./pages/BatchPage";
 import PipelinePage from "./pages/PipelinePage";
 import CommandPalette from "./components/CommandPalette";
+import { DynamicHead } from "./components/DynamicHead";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <DynamicHead />
         <CommandPalette />
         <Routes>
           <Route path="/" element={<Index />} />

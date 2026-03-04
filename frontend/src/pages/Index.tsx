@@ -529,6 +529,9 @@ export default function Index() {
                 </button>
               ))}
               <span className="h-3 w-px bg-border/50" />
+              <Link to="/batch" className="hover:text-foreground transition-colors">Batch Process</Link>
+              <Link to="/pipeline" className="hover:text-foreground transition-colors">Pipeline</Link>
+              <span className="h-3 w-px bg-border/50" />
               <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1 hover:text-foreground transition-colors">
                 <Github size={12} /> GitHub

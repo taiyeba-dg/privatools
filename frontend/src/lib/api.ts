@@ -103,6 +103,12 @@ export function downloadBlob(blob: Blob, filename: string) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 100);
+
+    // Show toast notification
+    try {
+        const { toast } = require("sonner");
+        toast.success("Downloaded!", { description: filename, duration: 3000 });
+    } catch { }
 }
 
 /** Helper: upload file → get blob → download. Returns response headers for metadata. */

@@ -26,6 +26,7 @@ from .routes import (
     phase2_tools,
     phase3_tools,
     phase4_tools,
+    sitemap,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -140,6 +141,9 @@ app.include_router(phase1_tools.router, prefix="/api")
 app.include_router(phase2_tools.router, prefix="/api")
 app.include_router(phase3_tools.router, prefix="/api")
 app.include_router(phase4_tools.router, prefix="/api")
+
+# Sitemap
+app.include_router(sitemap.router)
 
 
 @app.get("/api/health")
