@@ -342,6 +342,36 @@ export const tools: Tool[] = [
     longDescription: "Upload a CSV file and convert it into a cleanly formatted PDF with a table, invoice, or report layout.",
     category: "to-pdf", accepts: ".csv", outputLabel: "table.pdf",
   },
+  {
+    slug: "word-to-pdf", icon: FileText, name: "Word to PDF",
+    description: "Convert .docx Word documents to PDF",
+    longDescription: "Upload a Word document (.docx) and convert it to a high-quality PDF preserving headings, bold, italic text, and paragraph formatting.",
+    category: "to-pdf", accepts: ".docx,.doc", outputLabel: "converted.pdf",
+  },
+  {
+    slug: "excel-to-pdf", icon: Table, name: "Excel to PDF",
+    description: "Convert .xlsx spreadsheets to PDF",
+    longDescription: "Upload an Excel spreadsheet and convert all sheets into a formatted PDF with headers, grid lines, and automatic column sizing.",
+    category: "to-pdf", accepts: ".xlsx,.xls", outputLabel: "converted.pdf",
+  },
+  {
+    slug: "pptx-to-pdf-convert", icon: Presentation, name: "PowerPoint to PDF",
+    description: "Convert .pptx presentations to PDF",
+    longDescription: "Upload a PowerPoint presentation and convert it to a PDF preserving slide dimensions, text, headings, and formatting.",
+    category: "to-pdf", accepts: ".pptx,.ppt", outputLabel: "converted.pdf",
+  },
+  {
+    slug: "txt-to-pdf", icon: Type, name: "Text to PDF",
+    description: "Convert plain text .txt files to PDF",
+    longDescription: "Upload a plain text file and convert it into a cleanly formatted PDF with monospace font, word wrap, and proper pagination.",
+    category: "to-pdf", accepts: ".txt", outputLabel: "converted.pdf",
+  },
+  {
+    slug: "stamp-pdf", icon: Stamp, name: "PDF Stamp",
+    description: "Add CONFIDENTIAL, DRAFT, or custom stamps",
+    longDescription: "Apply pre-built stamps (Confidential, Draft, Approved, Final, Copy, Void, Sample) or custom text stamps to your PDF pages with adjustable opacity and position.",
+    category: "edit", accepts: ".pdf", outputLabel: "stamped.pdf",
+  },
 
   // ── Advanced Editing ────────────────────────────────────────────────────────
   {
@@ -393,11 +423,11 @@ export const tools: Tool[] = [
 export const toolBySlug = Object.fromEntries(tools.map(t => [t.slug, t]));
 
 export const categoryMeta: Record<Category, { label: string; accent: string; iconBg: string; iconColor: string }> = {
-  organize:  { label: "Organize",   accent: "text-blue-400",    iconBg: "bg-blue-500/10",    iconColor: "text-blue-400"    },
-  edit:      { label: "Edit",       accent: "text-violet-400",  iconBg: "bg-violet-500/10",  iconColor: "text-violet-400"  },
-  optimize:  { label: "Optimize",   accent: "text-teal-400",    iconBg: "bg-teal-500/10",    iconColor: "text-teal-400"    },
-  security:  { label: "Security",   accent: "text-rose-400",    iconBg: "bg-rose-500/10",    iconColor: "text-rose-400"    },
-  "to-pdf":  { label: "To PDF",     accent: "text-emerald-400", iconBg: "bg-emerald-500/10", iconColor: "text-emerald-400" },
-  "from-pdf":{ label: "From PDF",   accent: "text-amber-400",   iconBg: "bg-amber-500/10",   iconColor: "text-amber-400"   },
-  advanced:  { label: "Advanced",   accent: "text-indigo-400",  iconBg: "bg-indigo-500/10",  iconColor: "text-indigo-400"  },
+  organize: { label: "Organize", accent: "text-blue-400", iconBg: "bg-blue-500/10", iconColor: "text-blue-400" },
+  edit: { label: "Edit", accent: "text-violet-400", iconBg: "bg-violet-500/10", iconColor: "text-violet-400" },
+  optimize: { label: "Optimize", accent: "text-teal-400", iconBg: "bg-teal-500/10", iconColor: "text-teal-400" },
+  security: { label: "Security", accent: "text-rose-400", iconBg: "bg-rose-500/10", iconColor: "text-rose-400" },
+  "to-pdf": { label: "To PDF", accent: "text-emerald-400", iconBg: "bg-emerald-500/10", iconColor: "text-emerald-400" },
+  "from-pdf": { label: "From PDF", accent: "text-amber-400", iconBg: "bg-amber-500/10", iconColor: "text-amber-400" },
+  advanced: { label: "Advanced", accent: "text-indigo-400", iconBg: "bg-indigo-500/10", iconColor: "text-indigo-400" },
 };

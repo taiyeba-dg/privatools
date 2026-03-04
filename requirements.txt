@@ -14,3 +14,4 @@ weasyprint
 python-docx
 openpyxl
 python-pptx
+pillow-heif
