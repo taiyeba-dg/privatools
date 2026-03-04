@@ -12,6 +12,7 @@ import BatchPage from "./pages/BatchPage";
 import PipelinePage from "./pages/PipelinePage";
 import CommandPalette from "./components/CommandPalette";
 import { DynamicHead } from "./components/DynamicHead";
+import { OnboardingTour } from "./components/OnboardingTour";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <DynamicHead />
         <CommandPalette />
+        <OnboardingTour />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<LandingPage />} />

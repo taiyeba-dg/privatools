@@ -161,10 +161,9 @@ function Navbar({ query, setQuery, activeTab, setActiveTab }: {
         <div className="flex h-13 items-center gap-4" style={{ height: "52px" }}>
 
           {/* Logo */}
-          <Link to="/" onClick={() => { setActiveTab("pdf"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            className="flex items-center gap-2.5 shrink-0 mr-1">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 logo-animated">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary shadow-md shadow-primary/40">
-              <Shield size={13} strokeWidth={2.5} className="text-primary-foreground" />
+              <Shield size={13} strokeWidth={2.5} className="text-primary-foreground logo-shield" />
             </div>
             <span className="text-[15px] font-extrabold text-foreground tracking-tight">PrivaTools</span>
           </Link>
