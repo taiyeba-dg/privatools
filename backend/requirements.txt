@@ -10,3 +10,7 @@ aiofiles==23.2.1
 pytesseract==0.3.13
 weasyprint
 slowapi==0.1.9
+PyMuPDF==1.24.0
+python-docx
+openpyxl
+python-pptx
