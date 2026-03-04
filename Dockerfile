@@ -19,13 +19,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdk-pixbuf-2.0-0 \
     libcairo2 \
     libffi-dev \
+    build-essential \
+    swig \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -c "import fitz; print('PyMuPDF OK:', fitz.version)"
 
 # Copy backend
 COPY backend/ backend/
