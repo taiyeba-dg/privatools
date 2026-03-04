@@ -43,7 +43,7 @@ export function OrganizeUI() {
     try {
       const res = await uploadFile("/organize-pages", file.raw, { page_order: JSON.stringify(pageOrder) });
       const blob = await res.blob();
-      downloadBlob(blob, "organized.pdf");
+      downloadBlob(blob, file ? `${file.name.replace(/\.pdf$/i, "")}_organized.pdf` : "organized.pdf");
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("editing"); }
   };

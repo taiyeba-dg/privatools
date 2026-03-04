@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import {
   Search, X, Shield, Github, Menu, FileText, ImageIcon,
   Video, Code2, Archive, BookOpen, ChevronDown, ArrowRight,
+  Sun, Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
+import { useTheme } from "@/hooks/useTheme";
 
 // ── Types & config ─────────────────────────────────────────────────────────────
 type Suite = "pdf" | "image" | "video-audio" | "developer" | "archive" | "document-office";
@@ -144,6 +146,7 @@ function Navbar({ query, setQuery, activeTab, setActiveTab }: {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<Suite | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { theme, toggleTheme } = useTheme();
   const totalTools = tools.length + nonPdfTools.length;
 
   const open = (id: Suite) => { if (timer.current) clearTimeout(timer.current); setOpenDropdown(id); };
@@ -227,6 +230,14 @@ function Navbar({ query, setQuery, activeTab, setActiveTab }: {
                 </kbd>
               )}
             </div>
+
+            <button
+              onClick={toggleTheme}
+              className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-secondary/20 text-muted-foreground hover:text-foreground hover:bg-secondary/50 hover:border-border/70 transition-all"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+            </button>
 
             <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border/50 bg-secondary/20 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 hover:border-border/70 transition-all">

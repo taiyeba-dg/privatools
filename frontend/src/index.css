@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Dark theme (default) ─────────────────────────────────────────── */
   :root {
     --background: 224 20% 7%;
     --foreground: 210 20% 95%;
@@ -43,6 +44,46 @@
     --sidebar-border: 224 15% 16%;
     --sidebar-ring: 216 90% 60%;
   }
+
+  /* ── Light theme ──────────────────────────────────────────────────── */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 224 20% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 20% 10%;
+
+    --primary: 216 90% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 224 15% 30%;
+
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 216 90% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 216 90% 50%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 224 20% 10%;
+    --sidebar-primary: 216 90% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 93%;
+    --sidebar-accent-foreground: 224 20% 10%;
+    --sidebar-border: 220 13% 88%;
+    --sidebar-ring: 216 90% 50%;
+  }
 }
 
 @layer base {
@@ -52,6 +93,7 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
 
@@ -66,4 +108,17 @@
 
 .hero-glow {
   background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(216 90% 60% / 0.15), transparent);
+}
+
+/* Light mode: reduce glow intensity */
+.light .glow-primary {
+  box-shadow: 0 0 20px -4px hsl(216 90% 50% / 0.2);
+}
+
+.light .card-glow:hover {
+  box-shadow: 0 0 0 1px hsl(216 90% 50% / 0.15), 0 6px 24px -6px hsl(216 90% 50% / 0.12);
+}
+
+.light .hero-glow {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(216 90% 50% / 0.08), transparent);
 }

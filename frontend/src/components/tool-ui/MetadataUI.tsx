@@ -36,7 +36,7 @@ export function MetadataUI() {
     try {
       const res = await uploadFile("/metadata/update", file.raw, { title, author, subject, keywords });
       const blob = await res.blob();
-      downloadBlob(blob, "updated_metadata.pdf");
+      downloadBlob(blob, file ? `${file.name.replace(/\.pdf$/i, "")}_metadata.pdf` : "updated_metadata.pdf");
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

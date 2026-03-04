@@ -81,7 +81,7 @@ export function EditPdfUI() {
     };
 
     const handleDownload = () => {
-        if (resultBlob) downloadBlob(resultBlob, "edited.pdf");
+        if (resultBlob) downloadBlob(resultBlob, file ? `${file.name.replace(/\.pdf$/i, "")}_edited.pdf` : "edited.pdf");
     };
 
     // Done state

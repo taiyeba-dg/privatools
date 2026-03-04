@@ -67,7 +67,7 @@ export function SignUI() {
       const res = await fetch("/api/sign-pdf", { method: "POST", body: fd });
       if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
       const blob = await res.blob();
-      downloadBlob(blob, "signed.pdf");
+      downloadBlob(blob, file ? `${file.name.replace(/\.pdf$/i, "")}_signed.pdf` : "signed.pdf");
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };

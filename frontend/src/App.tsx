@@ -8,6 +8,8 @@ import ToolPage from "./pages/ToolPage";
 import NonPdfToolPage from "./pages/NonPdfToolPage";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import BatchPage from "./pages/BatchPage";
+import PipelinePage from "./pages/PipelinePage";
 import CommandPalette from "./components/CommandPalette";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/about" element={<LandingPage />} />
           <Route path="/tool/:slug" element={<ToolPage />} />
           <Route path="/tools/:slug" element={<NonPdfToolPage />} />
+          <Route path="/batch" element={<BatchPage />} />
+          <Route path="/pipeline" element={<PipelinePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
