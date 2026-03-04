@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
-import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
+import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 
 interface GenericUIProps {
   toolName: string;
@@ -23,10 +24,14 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
   const ref = useRef<HTMLInputElement>(null);
 
   const add = (fl: FileList) => {
-    setFiles(p => [...p, ...Array.from(fl).map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), file: f }))]);
+    const newFiles = Array.from(fl).map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), file: f, bytes: f.size }));
+    setFiles(p => [...p, ...newFiles]);
     setState("idle");
     setError(null);
   };
+
+  const sizeWarning = files.length > 0 ? getFileSizeWarning(files[0].file.size) : null;
+  const timeEstimate = files.length > 0 ? estimateTime(files[0].file.size) : null;
 
   const process = async () => {
     setState("processing");
@@ -102,6 +107,12 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
 
       {files.length > 0 && (
         <div className="space-y-2">
+          {sizeWarning && (
+            <div className="flex items-center gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/5 px-4 py-2.5 text-[12px] text-yellow-400">
+              <AlertCircle size={13} className="shrink-0" />
+              {sizeWarning}
+            </div>
+          )}
           {files.map(f => (
             <div key={f.id} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary"><FileText size={13} className="text-muted-foreground" /></div>
@@ -109,11 +120,16 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
               <button onClick={() => setFiles(p => p.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
             </div>
           ))}
-          <div className="flex gap-3 pt-1">
+          <div className="flex items-center gap-3 pt-1">
             <Button onClick={process} disabled={state === "processing"} className="glow-primary">
               {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Processing…</> : (actionLabel || toolName)}
             </Button>
             <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setFiles([])}>Clear</Button>
+            {timeEstimate && state === "idle" && (
+              <span className="flex items-center gap-1 text-[11px] text-muted-foreground/40 ml-auto">
+                <Clock size={10} /> {timeEstimate}
+              </span>
+            )}
           </div>
         </div>
       )}

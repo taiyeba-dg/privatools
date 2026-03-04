@@ -13,6 +13,7 @@ import PipelinePage from "./pages/PipelinePage";
 import CommandPalette from "./components/CommandPalette";
 import { DynamicHead } from "./components/DynamicHead";
 import { OnboardingTour } from "./components/OnboardingTour";
+import { MobileNav } from "./components/MobileNav";
 
 const queryClient = new QueryClient();
 
@@ -34,9 +35,11 @@ const App = () => (
           <Route path="/pipeline" element={<PipelinePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <MobileNav />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
+

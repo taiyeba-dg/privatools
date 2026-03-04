@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import {
   Search, X, Shield, Github, Menu, FileText, ImageIcon,
   Video, Code2, Archive, BookOpen, ChevronDown, ArrowRight,
-  Sun, Moon,
+  Sun, Moon, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
 import { useTheme } from "@/hooks/useTheme";
+import { useFavorites } from "@/hooks/useFavorites";
+import { SmartFileDetector } from "@/components/SmartFileDetector";
 
 // ── Types & config ─────────────────────────────────────────────────────────────
 type Suite = "pdf" | "image" | "video-audio" | "developer" | "archive" | "document-office";
@@ -409,6 +411,13 @@ export default function Index() {
                 <p className="text-xs text-muted-foreground">Try a different keyword</p>
               </div>
             )}
+          </section>
+        )}
+
+        {/* ── Smart File Detector ───────────────────────────────────────────── */}
+        {!filtered && (
+          <section className="py-4">
+            <SmartFileDetector />
           </section>
         )}
 
