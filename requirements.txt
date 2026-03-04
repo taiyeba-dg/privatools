@@ -19,3 +19,4 @@ rembg
 cairosvg
 python-barcode
 qrcode
+httpx
