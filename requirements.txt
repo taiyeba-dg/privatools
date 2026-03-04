@@ -8,3 +8,9 @@ Pillow==12.1.1
 reportlab==4.1.0
 aiofiles==23.2.1
 slowapi==0.1.9
+pymupdf
+pytesseract==0.3.13
+weasyprint
+python-docx
+openpyxl
+python-pptx
