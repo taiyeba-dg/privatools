@@ -154,7 +154,7 @@ export default function ToolPage() {
             <span className="text-muted-foreground text-sm">/</span>
             <span className="text-sm text-muted-foreground truncate max-w-[160px] sm:max-w-none">{tool.name}</span>
             <div className="flex-1" />
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+            <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <Github size={13} /><span className="hidden sm:inline">Open Source</span>
             </a>
@@ -234,7 +234,7 @@ export default function ToolPage() {
                 <span className="text-sm font-semibold text-foreground">Open Source</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no tracking. Forever.</p>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+              <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
                 View on GitHub <ExternalLink size={11} />
               </a>
             </div>

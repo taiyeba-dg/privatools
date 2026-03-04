@@ -87,7 +87,7 @@ export default function LandingPage() {
               ))}
             </nav>
             <a
-              href="https://github.com"
+              href="https://github.com/taiyeba-dg/privatools"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -129,7 +129,7 @@ export default function LandingPage() {
                 <Link to="/">Explore all tools <ArrowRight size={15} /></Link>
               </Button>
               <a
-                href="https://github.com"
+                href="https://github.com/taiyeba-dg/privatools"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-11 items-center gap-2 rounded-md border border-border px-6 text-sm text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors"
@@ -257,7 +257,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
-                href="https://github.com"
+                href="https://github.com/taiyeba-dg/privatools"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-8 text-sm font-semibold text-primary-foreground glow-primary transition-opacity hover:opacity-90"
@@ -296,7 +296,7 @@ export default function LandingPage() {
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Free, open source tools for privacy-conscious users.
               </p>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <Github size={12} /> GitHub
               </a>
             </div>
