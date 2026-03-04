@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 
 from .routes import (
     merge, split, compress, pdf_to_image, image_to_pdf, rotate, protect,
@@ -20,7 +21,7 @@ from .routes import (
     nup, overlay, fill_form, compare, deskew,
     sign, redact, html_to_pdf, edit_pdf, qr_code,
     remove_blank_pages, auto_crop, invert_colors, pdf_security, pdf_extra,
-    non_pdf_tools,
+    non_pdf_tools, image_ocr,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -63,6 +64,14 @@ app.add_middleware(
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded. Please wait a moment and try again."},
+    )
 
 # Include all routers
 app.include_router(merge.router, prefix="/api")
@@ -120,6 +129,7 @@ app.include_router(pdf_extra.router, prefix="/api")
 
 # Non-PDF tool routes
 app.include_router(non_pdf_tools.router, prefix="/api")
+app.include_router(image_ocr.router, prefix="/api")
 
 
 @app.get("/api/health")

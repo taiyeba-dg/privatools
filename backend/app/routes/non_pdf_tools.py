@@ -1,6 +1,7 @@
 """Non-PDF tool routes: image, video/audio, and archive processing."""
 from fastapi import APIRouter, UploadFile, File, Form
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 import tempfile, os, io
 
 router = APIRouter()
@@ -16,7 +17,8 @@ async def image_compressor(file: UploadFile = File(...), quality: int = Form(82)
         img = img.convert("RGB")
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
     img.save(tmp.name, "JPEG", quality=quality, optimize=True)
-    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"compressed_{file.filename}")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"compressed_{file.filename}", background=cleanup)
 
 @router.post("/image-converter")
 async def image_converter(file: UploadFile = File(...), target_format: str = Form("png")):
@@ -30,7 +32,8 @@ async def image_converter(file: UploadFile = File(...), target_format: str = For
         img = img.convert("RGB")
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f".{target_format}")
     img.save(tmp.name, pil_fmt)
-    return FileResponse(tmp.name, media_type=mime_map.get(target_format.lower(), "application/octet-stream"), filename=f"converted.{target_format}")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type=mime_map.get(target_format.lower(), "application/octet-stream"), filename=f"converted.{target_format}", background=cleanup)
 
 @router.post("/remove-exif")
 async def remove_exif(file: UploadFile = File(...)):
@@ -45,7 +48,8 @@ async def remove_exif(file: UploadFile = File(...)):
     if fmt == "JPEG" and clean.mode == "RGBA":
         clean = clean.convert("RGB")
     clean.save(tmp.name, fmt)
-    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"clean_{file.filename}")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"clean_{file.filename}", background=cleanup)
 
 @router.post("/resize-crop-image")
 async def resize_crop_image(file: UploadFile = File(...), width: int = Form(800), height: int = Form(600), mode: str = Form("resize")):
@@ -62,7 +66,8 @@ async def resize_crop_image(file: UploadFile = File(...), width: int = Form(800)
     if fmt == "JPEG" and img.mode == "RGBA":
         img = img.convert("RGB")
     img.save(tmp.name, fmt)
-    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"{mode}_{file.filename}")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"{mode}_{file.filename}", background=cleanup)
 
 # ─── Video/Audio Tools ─── (require ffmpeg)
 
@@ -82,7 +87,8 @@ async def video_to_gif(file: UploadFile = File(...), fps: int = Form(10), width:
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=500, content={"detail": "ffmpeg not installed"})
     os.unlink(input_tmp.name)
-    return FileResponse(output_tmp.name, media_type="image/gif", filename="output.gif")
+    cleanup = BackgroundTask(os.unlink, output_tmp.name)
+    return FileResponse(output_tmp.name, media_type="image/gif", filename="output.gif", background=cleanup)
 
 @router.post("/extract-audio")
 async def extract_audio(file: UploadFile = File(...), format: str = Form("mp3")):
@@ -101,7 +107,8 @@ async def extract_audio(file: UploadFile = File(...), format: str = Form("mp3"))
         return JSONResponse(status_code=500, content={"detail": "ffmpeg not installed"})
     os.unlink(input_tmp.name)
     mime_map = {"mp3": "audio/mpeg", "wav": "audio/wav", "aac": "audio/aac", "flac": "audio/flac", "ogg": "audio/ogg"}
-    return FileResponse(output_tmp.name, media_type=mime_map.get(format, "audio/mpeg"), filename=f"audio.{format}")
+    cleanup = BackgroundTask(os.unlink, output_tmp.name)
+    return FileResponse(output_tmp.name, media_type=mime_map.get(format, "audio/mpeg"), filename=f"audio.{format}", background=cleanup)
 
 @router.post("/trim-media")
 async def trim_media(file: UploadFile = File(...), start: str = Form("00:00:00"), end: str = Form("00:00:10")):
@@ -120,7 +127,8 @@ async def trim_media(file: UploadFile = File(...), start: str = Form("00:00:00")
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=500, content={"detail": "ffmpeg not installed"})
     os.unlink(input_tmp.name)
-    return FileResponse(output_tmp.name, media_type="application/octet-stream", filename=f"trimmed{ext}")
+    cleanup = BackgroundTask(os.unlink, output_tmp.name)
+    return FileResponse(output_tmp.name, media_type="application/octet-stream", filename=f"trimmed{ext}", background=cleanup)
 
 @router.post("/compress-video")
 async def compress_video(file: UploadFile = File(...), quality: int = Form(28)):
@@ -138,7 +146,8 @@ async def compress_video(file: UploadFile = File(...), quality: int = Form(28)):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=500, content={"detail": "ffmpeg not installed"})
     os.unlink(input_tmp.name)
-    return FileResponse(output_tmp.name, media_type="video/mp4", filename=f"compressed_{file.filename}")
+    cleanup = BackgroundTask(os.unlink, output_tmp.name)
+    return FileResponse(output_tmp.name, media_type="video/mp4", filename=f"compressed_{file.filename}", background=cleanup)
 
 # ─── Archive Tools ───
 
@@ -154,10 +163,8 @@ async def extract_archive(file: UploadFile = File(...)):
     try:
         shutil.unpack_archive(input_tmp.name, extract_dir)
     except Exception:
-        # Try as zip
         with zipfile.ZipFile(input_tmp.name, 'r') as z:
             z.extractall(extract_dir)
-    # Re-zip extracted contents
     with zipfile.ZipFile(output_tmp.name, 'w', zipfile.ZIP_DEFLATED) as zf:
         for root, dirs, files in os.walk(extract_dir):
             for f in files:
@@ -165,7 +172,8 @@ async def extract_archive(file: UploadFile = File(...)):
                 zf.write(fp, os.path.relpath(fp, extract_dir))
     os.unlink(input_tmp.name)
     shutil.rmtree(extract_dir, ignore_errors=True)
-    return FileResponse(output_tmp.name, media_type="application/zip", filename="extracted.zip")
+    cleanup = BackgroundTask(os.unlink, output_tmp.name)
+    return FileResponse(output_tmp.name, media_type="application/zip", filename="extracted.zip", background=cleanup)
 
 @router.post("/create-zip")
 async def create_zip(files: list[UploadFile] = File(...), password: str = Form("")):
@@ -175,4 +183,5 @@ async def create_zip(files: list[UploadFile] = File(...), password: str = Form("
         for f in files:
             data = await f.read()
             zf.writestr(f.filename or "file", data)
-    return FileResponse(output_tmp.name, media_type="application/zip", filename="archive.zip")
+    cleanup = BackgroundTask(os.unlink, output_tmp.name)
+    return FileResponse(output_tmp.name, media_type="application/zip", filename="archive.zip", background=cleanup)

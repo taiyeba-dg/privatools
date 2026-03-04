@@ -13,7 +13,7 @@ const features = [
   {
     icon: Lock,
     title: "100% Private",
-    description: "All processing happens directly in your browser. Your files never touch our servers.",
+    description: "All processing happens locally on your own server. Your files never leave your infrastructure.",
   },
   {
     icon: Zap,
