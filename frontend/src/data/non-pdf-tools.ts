@@ -137,6 +137,12 @@ export const nonPdfTools: NonPdfTool[] = [
     longDescription: "Paste or upload a Markdown file and get clean, semantic HTML output. Includes live preview and syntax highlighting.",
     category: "document-office", accepts: ".md,.markdown", outputLabel: "output.html",
   },
+  {
+    slug: "heic-to-jpg", icon: RefreshCw, name: "HEIC to JPG",
+    description: "Convert iPhone HEIC/HEIF photos to JPEG",
+    longDescription: "Upload HEIC or HEIF photos from your iPhone and convert them to universally compatible JPEG format — perfect for sharing and uploading.",
+    category: "image", accepts: ".heic,.heif", outputLabel: "converted.jpg",
+  },
 ];
 
 export const nonPdfToolBySlug = Object.fromEntries(nonPdfTools.map(t => [t.slug, t]));

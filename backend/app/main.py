@@ -22,6 +22,7 @@ from .routes import (
     sign, redact, html_to_pdf, edit_pdf, qr_code,
     remove_blank_pages, auto_crop, invert_colors, pdf_security, pdf_extra,
     non_pdf_tools, image_ocr,
+    phase1_tools,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -130,6 +131,9 @@ app.include_router(pdf_extra.router, prefix="/api")
 # Non-PDF tool routes
 app.include_router(non_pdf_tools.router, prefix="/api")
 app.include_router(image_ocr.router, prefix="/api")
+
+# Phase 1 new tools
+app.include_router(phase1_tools.router, prefix="/api")
 
 
 @app.get("/api/health")
