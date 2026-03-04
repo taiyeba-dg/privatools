@@ -45,7 +45,7 @@ export function RotateUI() {
     };
 
     const handleDownload = () => {
-        if (resultBlob) downloadBlob(resultBlob, "rotated.pdf");
+        if (resultBlob) downloadBlob(resultBlob, file ? `${file.name.replace(/\.pdf$/i, "")}_rotated.pdf` : "rotated.pdf");
     };
 
     if (state === "done") return (

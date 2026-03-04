@@ -70,7 +70,7 @@ export function FillFormUI() {
     };
 
     const handleDownload = () => {
-        if (resultBlob) downloadBlob(resultBlob, "filled_form.pdf");
+        if (resultBlob) downloadBlob(resultBlob, file ? `${file.name.replace(/\.pdf$/i, "")}_filled.pdf` : "filled_form.pdf");
     };
 
     const updateValue = (name: string, val: string) => {

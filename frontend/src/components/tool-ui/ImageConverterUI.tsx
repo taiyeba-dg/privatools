@@ -21,7 +21,7 @@ export function ImageConverterUI() {
     try {
       const res = await uploadFile("/image-converter", file, { target_format: target });
       const blob = await res.blob();
-      downloadBlob(blob, `converted.${target}`);
+      downloadBlob(blob, file ? `${file.name.replace(/\.[^.]+$/, "")}.${target}` : `converted.${target}`);
       setStatus("done");
     } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
   };

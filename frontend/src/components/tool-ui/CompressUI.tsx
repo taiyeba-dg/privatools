@@ -46,8 +46,14 @@ export function CompressUI() {
     }
   };
 
+  const getFilename = () => {
+    if (!file) return "compressed.pdf";
+    const base = file.name.replace(/\.pdf$/i, "");
+    return `${base}_compressed.pdf`;
+  };
+
   const handleDownload = () => {
-    if (resultBlob) downloadBlob(resultBlob, "compressed.pdf");
+    if (resultBlob) downloadBlob(resultBlob, getFilename());
   };
 
   if (state === "done") {
@@ -65,7 +71,7 @@ export function CompressUI() {
           </span>
         </div>
         <div className="flex justify-center gap-3 flex-wrap">
-          <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download compressed.pdf</Button>
+          <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download {getFilename()}</Button>
           <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFile(null); setState("idle"); setResultBlob(null); }}>Compress another</Button>
         </div>
       </div>
