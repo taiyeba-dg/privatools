@@ -1,17 +1,16 @@
 import uuid
+import math
 import fitz  # PyMuPDF
 from ..utils.cleanup import get_temp_path, ensure_temp_dir
 
 
 def _detect_skew_angle_fast(pix: fitz.Pixmap) -> float:
-    """Fast skew detection using row-sum variance at coarse then fine granularity."""
-    import math
-    
+    """Ultra-fast skew detection using row-sum variance."""
     w, h = pix.width, pix.height
     samples = pix.samples
     
-    # Use every 3rd row and every 3rd column for speed
-    step = 3
+    # Use every 4th pixel for maximum speed
+    step = 4
     
     def compute_variance(angle: float) -> float:
         rad = math.radians(angle)
@@ -33,18 +32,18 @@ def _detect_skew_angle_fast(pix: fitz.Pixmap) -> float:
         mean = sum(row_sums) / len(row_sums)
         return sum((s - mean) ** 2 for s in row_sums) / len(row_sums)
     
-    # Coarse search: -5 to +5 in 1° steps (11 checks)
+    # Coarse: -5 to +5 in 2° steps (6 checks)
     best_angle = 0.0
     best_var = -1.0
-    for angle_int in range(-5, 6):
-        v = compute_variance(float(angle_int))
+    for a in range(-4, 6, 2):
+        v = compute_variance(float(a))
         if v > best_var:
             best_var = v
-            best_angle = float(angle_int)
+            best_angle = float(a)
     
-    # Fine search: ±1° around best in 0.2° steps (10 checks)
-    for angle_tenth in range(int((best_angle - 1) * 5), int((best_angle + 1) * 5) + 1):
-        angle = angle_tenth * 0.2
+    # Fine: ±2° around best in 0.5° steps (8 checks)
+    for a5 in range(int((best_angle - 2) * 2), int((best_angle + 2) * 2) + 1):
+        angle = a5 * 0.5
         v = compute_variance(angle)
         if v > best_var:
             best_var = v
@@ -62,32 +61,25 @@ def deskew(input_path: str) -> str:
     dst = fitz.open()
 
     for page in src:
-        # Render at low DPI for fast skew detection
-        detect_mat = fitz.Matrix(0.5, 0.5)  # 36 DPI — very fast
-        detect_pix = page.get_pixmap(matrix=detect_mat, colorspace=fitz.csGRAY)
-        
+        # Ultra-low DPI for skew detection only
+        detect_pix = page.get_pixmap(matrix=fitz.Matrix(0.4, 0.4), colorspace=fitz.csGRAY)
         angle = _detect_skew_angle_fast(detect_pix)
         
-        if abs(angle) > 0.1:
-            # Render at full quality and rotate
-            mat = fitz.Matrix(150 / 72, 150 / 72)
-            pix = page.get_pixmap(matrix=mat)
-            
+        if abs(angle) > 0.3:
+            # Render at 100 DPI and rotate
+            pix = page.get_pixmap(matrix=fitz.Matrix(100/72, 100/72))
             from PIL import Image
+            import io
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
             rotated = img.rotate(-angle, expand=True, fillcolor=(255, 255, 255),
                                 resample=Image.Resampling.BICUBIC)
-            
-            # Save rotated PIL image to bytes for fitz
-            import io
             img_buf = io.BytesIO()
             rotated.save(img_buf, format="PNG")
-            img_buf.seek(0)
             
             new_page = dst.new_page(width=page.rect.width, height=page.rect.height)
             new_page.insert_image(new_page.rect, stream=img_buf.getvalue())
         else:
-            # No rotation needed — just copy the page directly (super fast)
+            # No rotation — copy page directly (instant)
             dst.insert_pdf(src, from_page=page.number, to_page=page.number)
 
     if len(dst) == 0:
