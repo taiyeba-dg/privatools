@@ -8,6 +8,7 @@ import ToolPage from "./pages/ToolPage";
 import NonPdfToolPage from "./pages/NonPdfToolPage";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import CommandPalette from "./components/CommandPalette";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <CommandPalette />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<LandingPage />} />

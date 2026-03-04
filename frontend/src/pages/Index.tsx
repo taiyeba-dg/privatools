@@ -12,22 +12,22 @@ import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-
 type Suite = "pdf" | "image" | "video-audio" | "developer" | "archive" | "document-office";
 
 const suites: { id: Suite; label: string; icon: typeof FileText; desc: string; count: () => number }[] = [
-  { id: "pdf",             label: "PDF",       icon: FileText,  desc: "60+ tools for every PDF task",    count: () => tools.length },
-  { id: "image",           label: "Image",     icon: ImageIcon, desc: "Compress, convert & crop",        count: () => nonPdfTools.filter(t => t.category === "image").length },
-  { id: "video-audio",     label: "Video",     icon: Video,     desc: "Trim, compress, extract audio",   count: () => nonPdfTools.filter(t => t.category === "video-audio").length },
-  { id: "developer",       label: "Dev",       icon: Code2,     desc: "JSON, diff, Base64, hashes",      count: () => nonPdfTools.filter(t => t.category === "developer").length },
-  { id: "archive",         label: "Archive",   icon: Archive,   desc: "ZIP, extract, encrypt",           count: () => nonPdfTools.filter(t => t.category === "archive").length },
-  { id: "document-office", label: "Docs",      icon: BookOpen,  desc: "CSV, Markdown, JSON convert",     count: () => nonPdfTools.filter(t => t.category === "document-office").length },
+  { id: "pdf", label: "PDF", icon: FileText, desc: "60+ tools for every PDF task", count: () => tools.length },
+  { id: "image", label: "Image", icon: ImageIcon, desc: "Compress, convert & crop", count: () => nonPdfTools.filter(t => t.category === "image").length },
+  { id: "video-audio", label: "Video", icon: Video, desc: "Trim, compress, extract audio", count: () => nonPdfTools.filter(t => t.category === "video-audio").length },
+  { id: "developer", label: "Dev", icon: Code2, desc: "JSON, diff, Base64, hashes", count: () => nonPdfTools.filter(t => t.category === "developer").length },
+  { id: "archive", label: "Archive", icon: Archive, desc: "ZIP, extract, encrypt", count: () => nonPdfTools.filter(t => t.category === "archive").length },
+  { id: "document-office", label: "Docs", icon: BookOpen, desc: "CSV, Markdown, JSON convert", count: () => nonPdfTools.filter(t => t.category === "document-office").length },
 ];
 
 const pdfCategories: { id: Category; title: string }[] = [
-  { id: "organize",  title: "Organize & Manage" },
-  { id: "edit",      title: "Edit Content" },
-  { id: "optimize",  title: "Optimize & Fix" },
-  { id: "security",  title: "Security & Privacy" },
-  { id: "to-pdf",    title: "Convert to PDF" },
-  { id: "from-pdf",  title: "Convert from PDF" },
-  { id: "advanced",  title: "Advanced" },
+  { id: "organize", title: "Organize & Manage" },
+  { id: "edit", title: "Edit Content" },
+  { id: "optimize", title: "Optimize & Fix" },
+  { id: "security", title: "Security & Privacy" },
+  { id: "to-pdf", title: "Convert to PDF" },
+  { id: "from-pdf", title: "Convert from PDF" },
+  { id: "advanced", title: "Advanced" },
 ];
 
 const nonPdfSuiteCategories: Partial<Record<Suite, NonPdfCategory>> = {
@@ -221,6 +221,11 @@ function Navbar({ query, setQuery, activeTab, setActiveTab }: {
                 onChange={e => setQuery(e.target.value)}
               />
               {query && <button onClick={() => setQuery("")} className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground"><X size={11} /></button>}
+              {!query && (
+                <kbd className="hidden md:flex items-center gap-0.5 shrink-0 text-[10px] text-muted-foreground/30 font-mono bg-secondary/30 rounded px-1.5 py-0.5">
+                  ⌘K
+                </kbd>
+              )}
             </div>
 
             <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
@@ -443,7 +448,7 @@ export default function Index() {
                       {/* category header */}
                       <div className="flex items-center gap-3 mb-4">
                         <div className={cn("flex h-6 w-6 items-center justify-center rounded-md", meta.iconBg)}>
-                          <span className={cn("block h-2 w-2 rounded-sm", meta.iconBg.replace("/10",""), meta.iconColor)} />
+                          <span className={cn("block h-2 w-2 rounded-sm", meta.iconBg.replace("/10", ""), meta.iconColor)} />
                         </div>
                         <h2 className={cn("text-[11px] font-bold uppercase tracking-[0.12em]", meta.accent)}>
                           {cat.title}

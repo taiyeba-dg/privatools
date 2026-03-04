@@ -1,8 +1,10 @@
 import { useParams, Link } from "react-router-dom";
+import { useEffect } from "react";
 import { toolBySlug, tools, categoryMeta } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, ArrowLeft, Github, ExternalLink } from "lucide-react";
+import { useHistory } from "@/hooks/useHistory";
 
 import { MergeUI } from "@/components/tool-ui/MergeUI";
 import { SplitUI } from "@/components/tool-ui/SplitUI";
@@ -120,6 +122,14 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
 export default function ToolPage() {
   const { slug } = useParams<{ slug: string }>();
   const tool = slug ? toolBySlug[slug] : null;
+  const { addEntry } = useHistory();
+
+  // Track tool usage in history
+  useEffect(() => {
+    if (tool && slug) {
+      addEntry({ slug, name: tool.name, href: `/tool/${slug}` });
+    }
+  }, [slug, tool, addEntry]);
 
   const relatedTools = tools
     .filter(t => t.category === tool?.category && t.slug !== slug)
