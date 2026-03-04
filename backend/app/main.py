@@ -1,0 +1,130 @@
+import asyncio
+import os
+from contextlib import asynccontextmanager
+from pathlib import Path
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+
+from .routes import (
+    merge, split, compress, pdf_to_image, image_to_pdf, rotate, protect,
+    unlock, watermark, pdf_to_word, page_numbers, ocr, office_to_pdf, metadata,
+    extract_pages, delete_pages, pdf_to_text, pdf_to_excel, pdf_to_pptx,
+    strip_metadata, delete_annotations, repair, crop, resize, flatten,
+    header_footer, bates_numbering, grayscale, bookmarks, pdf_to_pdfa,
+    extract_images, organize_pages, alternate_mix, split_bookmarks, split_by_size,
+    nup, overlay, fill_form, compare, deskew,
+    sign, redact, html_to_pdf, edit_pdf, qr_code,
+)
+from .utils.cleanup import cleanup_old_files, ensure_temp_dir
+
+
+async def _cleanup_task():
+    """Remove temp files older than 10 minutes, runs every 5 minutes."""
+    while True:
+        await asyncio.sleep(300)
+        cleanup_old_files(600)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ensure_temp_dir()
+    task = asyncio.create_task(_cleanup_task())
+    yield
+    task.cancel()
+
+
+_is_prod = os.environ.get("ENVIRONMENT", "").lower() == "production"
+
+app = FastAPI(
+    title="PDF Studio API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+)
+
+_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in _origins],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+# Include all routers
+app.include_router(merge.router, prefix="/api")
+app.include_router(split.router, prefix="/api")
+app.include_router(compress.router, prefix="/api")
+app.include_router(pdf_to_image.router, prefix="/api")
+app.include_router(image_to_pdf.router, prefix="/api")
+app.include_router(rotate.router, prefix="/api")
+app.include_router(protect.router, prefix="/api")
+app.include_router(unlock.router, prefix="/api")
+app.include_router(watermark.router, prefix="/api")
+app.include_router(pdf_to_word.router, prefix="/api")
+app.include_router(page_numbers.router, prefix="/api")
+app.include_router(ocr.router, prefix="/api")
+app.include_router(office_to_pdf.router, prefix="/api")
+app.include_router(metadata.router, prefix="/api")
+app.include_router(extract_pages.router, prefix="/api")
+app.include_router(delete_pages.router, prefix="/api")
+app.include_router(pdf_to_text.router, prefix="/api")
+app.include_router(pdf_to_excel.router, prefix="/api")
+app.include_router(pdf_to_pptx.router, prefix="/api")
+app.include_router(strip_metadata.router, prefix="/api")
+app.include_router(delete_annotations.router, prefix="/api")
+app.include_router(repair.router, prefix="/api")
+app.include_router(crop.router, prefix="/api")
+app.include_router(resize.router, prefix="/api")
+app.include_router(flatten.router, prefix="/api")
+app.include_router(header_footer.router, prefix="/api")
+app.include_router(bates_numbering.router, prefix="/api")
+app.include_router(grayscale.router, prefix="/api")
+app.include_router(bookmarks.router, prefix="/api")
+app.include_router(pdf_to_pdfa.router, prefix="/api")
+app.include_router(extract_images.router, prefix="/api")
+app.include_router(organize_pages.router, prefix="/api")
+app.include_router(alternate_mix.router, prefix="/api")
+app.include_router(split_bookmarks.router, prefix="/api")
+app.include_router(split_by_size.router, prefix="/api")
+app.include_router(nup.router, prefix="/api")
+app.include_router(overlay.router, prefix="/api")
+app.include_router(fill_form.router, prefix="/api")
+app.include_router(compare.router, prefix="/api")
+app.include_router(deskew.router, prefix="/api")
+app.include_router(sign.router, prefix="/api")
+app.include_router(redact.router, prefix="/api")
+app.include_router(html_to_pdf.router, prefix="/api")
+app.include_router(edit_pdf.router, prefix="/api")
+app.include_router(qr_code.router, prefix="/api")
+
+
+@app.get("/api/health")
+async def health():
+    return JSONResponse({"status": "ok"})
+
+
+# Mount frontend static files (only if the directory exists)
+# Try: 1) FRONTEND_PATH env var, 2) CWD-relative, 3) __file__-relative
+def _resolve_frontend_path() -> Path:
+    if "FRONTEND_PATH" in os.environ:
+        return Path(os.environ["FRONTEND_PATH"])
+    cwd_path = Path.cwd() / "frontend"
+    if cwd_path.exists():
+        return cwd_path
+    return Path(__file__).parent.parent.parent / "frontend"
+
+_frontend_path = _resolve_frontend_path()
+if _frontend_path.exists():
+    app.mount("/", StaticFiles(directory=str(_frontend_path), html=True), name="frontend")

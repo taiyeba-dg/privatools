@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e63946' stroke-width='2.5'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PDF Studio – Privacy-first PDF tools. Merge, split, compress, convert and more. All processing on your server, zero data ever leaves.">
+  <title>PDF Studio – Privacy-First PDF Tools</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header>
+    <div class="container">
+      <a href="/" class="logo" aria-label="PDF Studio – home">
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <span class="logo-text">PDF<span class="logo-dot">.</span>Studio</span>
+      </a>
+      <nav class="header-nav" id="header-nav" aria-label="Main navigation">
+        <a href="#tools">Tools</a>
+        <a href="#features">Why Us</a>
+        <a href="pages/getting-started.html">Docs</a>
+      </nav>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark/light mode" title="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false" aria-controls="header-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Hero ────────────────────────────────────────────────── -->
+  <section class="hero" aria-label="Introduction">
+    <div class="hero-inner">
+      <div class="hero-eyebrow" aria-hidden="true">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+        Open Source &amp; Self-Hosted
+      </div>
+      <h1>PDF Tools That<br><em>Respect Your Privacy</em></h1>
+      <p>Merge, split, compress, convert and more — all processing happens on your own server. Zero files leave your control, ever.</p>
+      <div class="hero-cta">
+        <a href="#tools" class="btn btn-primary btn-lg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="13" y2="17"/>
+          </svg>
+          Explore All Tools
+        </a>
+        <a href="https://github.com/taiyeba-dg/lakshya-pdf" class="btn btn-ghost btn-lg" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+      <div class="hero-badges">
+        <span class="badge">🔒 100% Private</span>
+        <span class="badge">⚡ Server-Side Processing</span>
+        <span class="badge">🖥️ Self-Hosted</span>
+        <span class="badge">🆓 MIT License</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Trust bar ───────────────────────────────────────────── -->
+  <div class="trust-bar" role="list" aria-label="Privacy guarantees">
+    <div class="trust-item" role="listitem">
+      <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Files never leave your server
+    </div>
+    <div class="trust-item" role="listitem">
+      <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Auto-deleted after 10 minutes
+    </div>
+    <div class="trust-item" role="listitem">
+      <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <line x1="1" y1="1" x2="23" y2="23"/>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 19H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"/>
+        <path d="M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0"/>
+      </svg>
+      Zero external API calls
+    </div>
+    <div class="trust-item" role="listitem">
+      <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      No analytics or tracking
+    </div>
+  </div>
+
+  <!-- ── Tools Grid ──────────────────────────────────────────── -->
+  <section class="section" id="tools">
+    <div class="container">
+      <div class="section-header fade-in">
+        <h2 class="section-title">All 45 PDF Tools</h2>
+        <p class="section-subtitle">Everything you need — beautifully simple, completely private.</p>
+      </div>
+
+      <div class="tools-grid" role="list">
+
+        <!-- Skeleton placeholders (hidden once page loads via JS) -->
+        <div class="tool-card-skeleton" id="sk1" aria-hidden="true">
+          <div class="skeleton skeleton-icon"></div>
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-desc"></div>
+          <div class="skeleton skeleton-desc-2"></div>
+        </div>
+        <div class="tool-card-skeleton" id="sk2" aria-hidden="true">
+          <div class="skeleton skeleton-icon"></div>
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-desc"></div>
+          <div class="skeleton skeleton-desc-2"></div>
+        </div>
+        <div class="tool-card-skeleton" id="sk3" aria-hidden="true">
+          <div class="skeleton skeleton-icon"></div>
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-desc"></div>
+          <div class="skeleton skeleton-desc-2"></div>
+        </div>
+        <!-- Merge -->
+        <a href="pages/merge.html" class="tool-card fade-in" data-accent="blue" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M8 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z"/>
+              <polyline points="13 2 13 8 19 8"/>
+              <path d="M16 14H8M12 10v8"/>
+            </svg>
+          </div>
+          <h3>Merge PDF</h3>
+          <p>Combine multiple PDFs into one document</p>
+        </a>
+
+        <!-- Split -->
+        <a href="pages/split.html" class="tool-card fade-in fade-in-delay-1" data-accent="purple" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="11" x2="12" y2="19"/>
+              <line x1="8"  y1="15" x2="16" y2="15"/>
+            </svg>
+          </div>
+          <h3>Split PDF</h3>
+          <p>Extract pages or split into multiple parts</p>
+        </a>
+
+        <!-- Compress -->
+        <a href="pages/compress.html" class="tool-card fade-in fade-in-delay-2" data-accent="green" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="7 8 3 12 7 16"/>
+              <polyline points="17 8 21 12 17 16"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+            </svg>
+          </div>
+          <h3>Compress PDF</h3>
+          <p>Reduce file size without losing quality</p>
+        </a>
+
+        <!-- PDF to Image -->
+        <a href="pages/pdf-to-image.html" class="tool-card fade-in" data-accent="amber" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <h3>PDF to Image</h3>
+          <p>Convert PDF pages to JPG or PNG images</p>
+        </a>
+
+        <!-- Image to PDF -->
+        <a href="pages/image-to-pdf.html" class="tool-card fade-in fade-in-delay-1" data-accent="cyan" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <rect x="7" y="11" width="5" height="4" rx="1"/>
+              <path d="M16 15l-2-2-2 2"/>
+            </svg>
+          </div>
+          <h3>Image to PDF</h3>
+          <p>Turn JPG, PNG and other images into a PDF</p>
+        </a>
+
+        <!-- Rotate -->
+        <a href="pages/rotate.html" class="tool-card fade-in fade-in-delay-2" data-accent="orange" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </div>
+          <h3>Rotate PDF</h3>
+          <p>Rotate pages to any orientation</p>
+        </a>
+
+        <!-- Protect -->
+        <a href="pages/protect.html" class="tool-card fade-in" data-accent="red" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h3>Protect PDF</h3>
+          <p>Add password protection to your PDF</p>
+        </a>
+
+        <!-- Unlock -->
+        <a href="pages/unlock.html" class="tool-card fade-in fade-in-delay-1" data-accent="indigo" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+            </svg>
+          </div>
+          <h3>Unlock PDF</h3>
+          <p>Remove password from a protected PDF</p>
+        </a>
+
+        <!-- Watermark -->
+        <a href="pages/watermark.html" class="tool-card fade-in fade-in-delay-2" data-accent="pink" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="12" y2="17"/>
+            </svg>
+          </div>
+          <h3>Add Watermark</h3>
+          <p>Stamp text watermarks on your PDF pages</p>
+        </a>
+
+        <!-- PDF to Word -->
+        <a href="pages/pdf-to-word.html" class="tool-card fade-in" data-accent="teal" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M8 13h8M8 17h5"/>
+            </svg>
+          </div>
+          <h3>PDF to Word</h3>
+          <p>Convert PDF documents to editable DOCX</p>
+        </a>
+
+        <!-- Page Numbers -->
+        <a href="pages/page-numbers.html" class="tool-card fade-in fade-in-delay-1" data-accent="rose" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="10" y1="17" x2="14" y2="17"/>
+              <circle cx="9" cy="17" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+          </div>
+          <h3>Add Page Numbers</h3>
+          <p>Number your PDF pages automatically</p>
+        </a>
+
+        <!-- OCR -->
+        <a href="pages/ocr.html" class="tool-card fade-in" data-accent="purple" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+              <line x1="10" y1="9" x2="14" y2="9"/>
+            </svg>
+          </div>
+          <h3>OCR / Extract Text</h3>
+          <p>Extract text from scanned PDF pages</p>
+        </a>
+
+        <!-- Office to PDF -->
+        <a href="pages/office-to-pdf.html" class="tool-card fade-in fade-in-delay-1" data-accent="cyan" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+          <h3>Office to PDF</h3>
+          <p>Convert Word, Excel, PPT to PDF</p>
+        </a>
+
+        <!-- Metadata -->
+        <a href="pages/metadata.html" class="tool-card fade-in fade-in-delay-2" data-accent="amber" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <h3>PDF Metadata</h3>
+          <p>View and edit PDF metadata fields</p>
+        </a>
+
+        <!-- Extract Pages -->
+        <a href="pages/extract-pages.html" class="tool-card fade-in fade-in-delay-2" data-accent="blue" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="11" y2="17"/>
+            </svg>
+          </div>
+          <h3>Extract Pages</h3>
+          <p>Pull specific pages into a new PDF</p>
+        </a>
+
+        <!-- Delete Pages -->
+        <a href="pages/delete-pages.html" class="tool-card fade-in" data-accent="red" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+            </svg>
+          </div>
+          <h3>Delete Pages</h3>
+          <p>Remove unwanted pages from a PDF</p>
+        </a>
+
+        <!-- PDF to Text -->
+        <a href="pages/pdf-to-text.html" class="tool-card fade-in fade-in-delay-1" data-accent="amber" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+          </div>
+          <h3>PDF to Text</h3>
+          <p>Extract all text content from a PDF</p>
+        </a>
+
+        <!-- PDF to Excel -->
+        <a href="pages/pdf-to-excel.html" class="tool-card fade-in fade-in-delay-2" data-accent="green" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="3" y1="15" x2="21" y2="15"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+              <line x1="15" y1="3" x2="15" y2="21"/>
+            </svg>
+          </div>
+          <h3>PDF to Excel</h3>
+          <p>Convert PDF documents to .xlsx spreadsheets</p>
+        </a>
+
+        <!-- PDF to PowerPoint -->
+        <a href="pages/pdf-to-pptx.html" class="tool-card fade-in" data-accent="orange" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </div>
+          <h3>PDF to PowerPoint</h3>
+          <p>Convert PDF documents to .pptx presentations</p>
+        </a>
+
+        <!-- Strip Metadata -->
+        <a href="pages/strip-metadata.html" class="tool-card fade-in fade-in-delay-1" data-accent="indigo" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+            </svg>
+          </div>
+          <h3>Strip Metadata</h3>
+          <p>Remove author, title and other metadata</p>
+        </a>
+
+        <!-- Delete Annotations -->
+        <a href="pages/delete-annotations.html" class="tool-card fade-in fade-in-delay-2" data-accent="pink" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+            </svg>
+          </div>
+          <h3>Delete Annotations</h3>
+          <p>Remove all comments and highlights from a PDF</p>
+        </a>
+
+        <!-- Repair PDF -->
+        <a href="pages/repair.html" class="tool-card fade-in" data-accent="teal" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </div>
+          <h3>Repair PDF</h3>
+          <p>Fix corrupted or broken PDF files</p>
+        </a>
+
+        <!-- Crop PDF -->
+        <a href="pages/crop.html" class="tool-card fade-in fade-in-delay-1" data-accent="cyan" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="6 3 3 3 3 6"/>
+              <polyline points="18 3 21 3 21 6"/>
+              <polyline points="3 18 3 21 6 21"/>
+              <polyline points="21 18 21 21 18 21"/>
+              <rect x="6" y="6" width="12" height="12"/>
+            </svg>
+          </div>
+          <h3>Crop PDF</h3>
+          <p>Trim margins from PDF pages</p>
+        </a>
+
+        <!-- Resize PDF -->
+        <a href="pages/resize.html" class="tool-card fade-in fade-in-delay-2" data-accent="purple" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 3v18"/>
+            </svg>
+          </div>
+          <h3>Resize PDF</h3>
+          <p>Change page size to A4, Letter, A3 or custom</p>
+        </a>
+
+        <!-- Flatten PDF -->
+        <a href="pages/flatten.html" class="tool-card fade-in" data-accent="rose" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </div>
+          <h3>Flatten PDF</h3>
+          <p>Remove forms and interactive elements</p>
+        </a>
+
+        <!-- Header & Footer -->
+        <a href="pages/header-footer.html" class="tool-card fade-in fade-in-delay-1" data-accent="amber" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="6" x2="16" y2="6"/>
+              <line x1="8" y1="18" x2="16" y2="18"/>
+            </svg>
+          </div>
+          <h3>Header &amp; Footer</h3>
+          <p>Add custom header and footer text to every page</p>
+        </a>
+
+        <!-- Bates Numbering -->
+        <a href="pages/bates-numbering.html" class="tool-card fade-in fade-in-delay-2" data-accent="indigo" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+          </div>
+          <h3>Bates Numbering</h3>
+          <p>Add sequential Bates numbers for legal workflows</p>
+        </a>
+
+        <!-- Grayscale -->
+        <a href="pages/grayscale.html" class="tool-card fade-in" data-accent="teal" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 2a10 10 0 0 1 0 20V2z" fill="currentColor" stroke="none"/>
+            </svg>
+          </div>
+          <h3>Grayscale PDF</h3>
+          <p>Convert color PDF pages to black and white</p>
+        </a>
+
+        <!-- Bookmarks -->
+        <a href="pages/bookmarks.html" class="tool-card fade-in fade-in-delay-1" data-accent="green" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <h3>Add Bookmarks</h3>
+          <p>Create a bookmark outline for easy navigation</p>
+        </a>
+
+        <!-- PDF to PDF/A -->
+        <a href="pages/pdf-to-pdfa.html" class="tool-card fade-in fade-in-delay-2" data-accent="blue" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <h3>PDF to PDF/A</h3>
+          <p>Convert PDF to archival PDF/A-2b format</p>
+        </a>
+
+        <!-- Extract Images -->
+        <a href="pages/extract-images.html" class="tool-card fade-in fade-in-delay-2" data-accent="blue" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <h3>Extract Images</h3>
+          <p>Extract all images from a PDF as a ZIP</p>
+        </a>
+
+        <!-- Organize Pages -->
+        <a href="pages/organize-pages.html" class="tool-card fade-in" data-accent="purple" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="2" y="3" width="7" height="9" rx="1"/>
+              <rect x="15" y="3" width="7" height="9" rx="1"/>
+              <rect x="2" y="15" width="7" height="6" rx="1"/>
+              <rect x="15" y="15" width="7" height="6" rx="1"/>
+            </svg>
+          </div>
+          <h3>Organize Pages</h3>
+          <p>Drag and drop to reorder PDF pages visually</p>
+        </a>
+
+        <!-- Alternate & Mix -->
+        <a href="pages/alternate-mix.html" class="tool-card fade-in fade-in-delay-1" data-accent="green" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="16 3 21 3 21 8"/>
+              <line x1="4" y1="20" x2="21" y2="3"/>
+              <polyline points="21 16 21 21 16 21"/>
+              <line x1="15" y1="15" x2="21" y2="21"/>
+            </svg>
+          </div>
+          <h3>Alternate &amp; Mix</h3>
+          <p>Interleave pages from two PDFs alternately</p>
+        </a>
+
+        <!-- Split by Bookmarks -->
+        <a href="pages/split-by-bookmarks.html" class="tool-card fade-in fade-in-delay-2" data-accent="amber" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </div>
+          <h3>Split by Bookmarks</h3>
+          <p>Split PDF chapters at bookmark boundaries</p>
+        </a>
+
+        <!-- Split by Size -->
+        <a href="pages/split-by-size.html" class="tool-card fade-in" data-accent="cyan" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+          </div>
+          <h3>Split by File Size</h3>
+          <p>Split a PDF into size-limited chunks</p>
+        </a>
+
+        <!-- N-up -->
+        <a href="pages/nup.html" class="tool-card fade-in fade-in-delay-1" data-accent="orange" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="2" y="2" width="9" height="9" rx="1"/>
+              <rect x="13" y="2" width="9" height="9" rx="1"/>
+              <rect x="2" y="13" width="9" height="9" rx="1"/>
+              <rect x="13" y="13" width="9" height="9" rx="1"/>
+            </svg>
+          </div>
+          <h3>N-up / Pages Per Sheet</h3>
+          <p>Fit multiple pages onto one sheet for printing</p>
+        </a>
+
+        <!-- Overlay / Stamp -->
+        <a href="pages/overlay.html" class="tool-card fade-in fade-in-delay-2" data-accent="red" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="7" width="14" height="14" rx="2"/>
+              <path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/>
+            </svg>
+          </div>
+          <h3>PDF Overlay / Stamp</h3>
+          <p>Overlay or stamp one PDF on top of another</p>
+        </a>
+
+        <!-- Fill Form -->
+        <a href="pages/fill-form.html" class="tool-card fade-in" data-accent="indigo" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+          </div>
+          <h3>Fill PDF Forms</h3>
+          <p>Fill in PDF form fields and download</p>
+        </a>
+
+        <!-- Compare -->
+        <a href="pages/compare.html" class="tool-card fade-in fade-in-delay-1" data-accent="teal" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
+          <h3>Compare PDFs</h3>
+          <p>Find text or visual differences between PDFs</p>
+        </a>
+
+        <!-- Deskew -->
+        <a href="pages/deskew.html" class="tool-card fade-in fade-in-delay-2" data-accent="pink" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </div>
+          <h3>Deskew PDF</h3>
+          <p>Auto-correct skewed scanned PDF pages</p>
+        </a>
+
+        <!-- Sign PDF -->
+        <a href="pages/sign.html" class="tool-card fade-in fade-in-delay-2" data-accent="blue" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </div>
+          <h3>Sign PDF</h3>
+          <p>Add an e-signature to your PDF document</p>
+        </a>
+
+        <!-- Redact PDF -->
+        <a href="pages/redact.html" class="tool-card fade-in" data-accent="red" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="9" y1="9" x2="15" y2="9"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="12" y2="17"/>
+            </svg>
+          </div>
+          <h3>Redact PDF</h3>
+          <p>Permanently black out sensitive information</p>
+        </a>
+
+        <!-- HTML to PDF -->
+        <a href="pages/html-to-pdf.html" class="tool-card fade-in fade-in-delay-1" data-accent="orange" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </div>
+          <h3>HTML to PDF</h3>
+          <p>Convert web pages or HTML code to PDF</p>
+        </a>
+
+        <!-- PDF Editor -->
+        <a href="pages/edit-pdf.html" class="tool-card fade-in fade-in-delay-2" data-accent="purple" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </div>
+          <h3>PDF Editor</h3>
+          <p>Add text, shapes, highlights and images</p>
+        </a>
+
+        <!-- QR Code -->
+        <a href="pages/qr-code.html" class="tool-card fade-in" data-accent="teal" role="listitem">
+          <div class="tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+              <rect x="14" y="14" width="3" height="3"/>
+              <line x1="19" y1="14" x2="21" y2="14"/>
+              <line x1="19" y1="18" x2="21" y2="18"/>
+              <line x1="19" y1="21" x2="21" y2="21"/>
+            </svg>
+          </div>
+          <h3>QR Code Generator</h3>
+          <p>Generate QR codes or embed them in PDFs</p>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ────────────────────────────────────────────── -->
+  <section class="section" id="features" style="background:var(--surface);border-top:1px solid var(--border);">
+    <div class="container">
+      <div class="section-header fade-in">
+        <h2 class="section-title">Why PDF Studio?</h2>
+        <p class="section-subtitle">Built for privacy, performance, and people who care about their data.</p>
+      </div>
+
+      <div class="features-grid">
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon" style="background:var(--a-red-bg);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--a-red)" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h4>100% Private</h4>
+          <p>Files stay on your server. No third-party storage, no tracking, no analytics — ever.</p>
+        </div>
+
+        <div class="feature-card fade-in fade-in-delay-1">
+          <div class="feature-icon" style="background:var(--a-amber-bg);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--a-amber)" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h4>Auto-Deleted</h4>
+          <p>Processed files are automatically removed after 10 minutes. Nothing lingers on disk.</p>
+        </div>
+
+        <div class="feature-card fade-in fade-in-delay-2">
+          <div class="feature-icon" style="background:var(--a-blue-bg);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--a-blue)" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </div>
+          <h4>Works Everywhere</h4>
+          <p>Fully responsive design — works beautifully on desktop, tablet, and mobile.</p>
+        </div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon" style="background:var(--a-green-bg);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--a-green)" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <h4>Open Source</h4>
+          <p>Fully transparent codebase. Audit every line, self-host for free, or contribute.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <div class="footer-brand">
+        <strong>PDF Studio</strong>
+        <span>Privacy-First PDF Tools — MIT License</span>
+      </div>
+      <div class="footer-badges">
+        <span class="footer-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          100% Private
+        </span>
+        <span class="footer-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+          Open Source
+        </span>
+        <span class="footer-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Self-Hosted
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      ['sk1','sk2','sk3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      });
+    });
+  </script>
+</body>
+</html>

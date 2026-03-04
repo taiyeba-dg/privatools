@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Permanently redact sensitive information from your PDF. Blackout text and areas securely.">
+  <title>Redact PDF – PDF Studio</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .redact-canvas-wrap { position:relative; display:inline-block; max-width:100%; }
+    .redact-canvas-wrap canvas { display:block; max-width:100%; border:1px solid var(--border); border-radius:8px; cursor:crosshair; }
+    .redact-list { margin-top:12px; }
+    .redact-item { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin-bottom:6px; font-size:.85rem; }
+    .redact-item .remove-btn { background:none; border:none; cursor:pointer; color:var(--a-red); font-size:1rem; padding:0 4px; }
+    .page-nav { display:flex; align-items:center; gap:12px; margin:12px 0; }
+    .page-nav button { padding:6px 14px; }
+    .warning-box { background:rgba(var(--a-red-rgb,220,38,38),.08); border:1px solid var(--a-red,#dc2626); border-radius:8px; padding:12px 16px; margin-bottom:16px; color:var(--a-red,#dc2626); font-size:.9rem; }
+  </style>
+</head>
+<body data-tool="redact">
+
+  <header>
+    <div class="container">
+      <a href="/" class="logo" aria-label="PDF Studio – home">
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <span class="logo-text">PDF<span class="logo-dot">.</span>Studio</span>
+      </a>
+      <a href="/" class="back-link">← All Tools</a>
+      <a href="getting-started.html" class="back-link docs-link">📖 Docs</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="tool-page">
+
+      <div class="steps-bar" aria-label="Progress" role="list">
+        <div class="step active" role="listitem"><div class="step-num">1</div><span>Upload</span></div>
+        <div class="step-connector"></div>
+        <div class="step" role="listitem"><div class="step-num">2</div><span>Mark</span></div>
+        <div class="step-connector"></div>
+        <div class="step" role="listitem"><div class="step-num">3</div><span>Download</span></div>
+      </div>
+
+      <div class="tool-header fade-in">
+        <div class="tool-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="9" x2="15" y2="9"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="12" y2="17"/>
+          </svg>
+        </div>
+        <h1>Redact PDF</h1>
+        <p class="tool-desc">Draw rectangles over sensitive areas to permanently black them out. This action is irreversible.</p>
+      </div>
+
+      <div class="card fade-in">
+
+        <!-- Step 1: Upload -->
+        <div id="upload-step">
+          <div class="upload-area" id="upload-area" role="button" tabindex="0" aria-label="Upload a PDF file">
+            <div class="upload-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <polyline points="16 16 12 12 8 16"/>
+                <line x1="12" y1="12" x2="12" y2="21"/>
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+              </svg>
+            </div>
+            <p>Drag &amp; Drop your PDF here</p>
+            <p class="upload-hint">or <span class="browse-link">click to browse</span></p>
+            <input type="file" id="file-input" accept=".pdf">
+          </div>
+          <div id="file-info" class="file-info hidden" aria-live="polite"></div>
+        </div>
+
+        <!-- Step 2: Mark redactions -->
+        <div id="redact-step" class="hidden">
+
+          <div class="form-row" style="margin-bottom:12px;align-items:center;gap:12px;">
+            <div class="form-group" style="flex:0 0 auto;">
+              <label for="redact-color">Redaction color</label>
+              <input type="color" id="redact-color" value="#000000" style="height:36px;width:60px;padding:2px;border-radius:6px;border:1px solid var(--border);">
+            </div>
+          </div>
+
+          <div class="page-nav">
+            <button class="btn btn-secondary" id="prev-page-btn" disabled>← Prev</button>
+            <span id="page-label" style="font-size:.9rem;">Page 1 / 1</span>
+            <button class="btn btn-secondary" id="next-page-btn" disabled>Next →</button>
+          </div>
+
+          <div class="redact-canvas-wrap">
+            <canvas id="pdf-canvas"></canvas>
+            <canvas id="overlay-canvas" style="position:absolute;top:0;left:0;"></canvas>
+          </div>
+
+          <div style="margin-top:12px;">
+            <p style="font-size:.85rem;color:var(--text-muted);">Drag to draw a redaction rectangle on the page above.</p>
+          </div>
+
+          <div id="redact-list" class="redact-list"></div>
+
+          <div class="divider"></div>
+
+          <div class="warning-box">
+            ⚠️ <strong>This is permanent and irreversible.</strong> The redacted content cannot be recovered after applying.
+          </div>
+
+          <button class="btn btn-primary btn-lg btn-block" id="apply-btn">
+            Apply Redactions &amp; Download
+          </button>
+        </div>
+
+        <div id="progress-section" class="progress-section hidden">
+          <div class="progress-dots" aria-hidden="true">
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+          <p>Applying redactions — this may take a moment…</p>
+        </div>
+
+        <div id="result-section" class="result-section hidden">
+          <div class="result-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h3>Redactions applied!</h3>
+          <div class="result-actions">
+            <a id="download-btn" href="#" class="btn btn-success btn-lg" download="redacted.pdf">⬇️ Download Redacted PDF</a>
+            <button class="btn btn-secondary" onclick="location.reload()">Redact Another</button>
+          </div>
+        </div>
+
+        <div id="error-section" class="error-section hidden">
+          <div class="error-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span id="error-message">An error occurred.</span>
+          </div>
+          <button class="btn btn-secondary" onclick="location.reload()">Try Again</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-brand">
+        <strong>PDF Studio</strong>
+        <span>Privacy-First PDF Tools</span>
+      </div>
+      <div class="footer-badges">
+        <span class="footer-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          100% Private
+        </span>
+        <span class="footer-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+          Self-Hosted
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- PDF.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let pdfDoc = null;
+    let currentPage = 1;
+    let totalPages = 0;
+    let pdfFile = null;
+    // redactions[pageNum] = [{x, y, width, height, color}]
+    let redactions = {};
+    let isDrawing = false;
+    let startX = 0, startY = 0;
+    let scale = 1;
+
+    const pdfCanvas = document.getElementById('pdf-canvas');
+    const pdfCtx = pdfCanvas.getContext('2d');
+    const overlayCanvas = document.getElementById('overlay-canvas');
+    const overlayCtx = overlayCanvas.getContext('2d');
+
+    // ── File upload ──────────────────────────────────────────────
+    document.getElementById('file-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      pdfFile = file;
+      document.getElementById('file-info').textContent = `📄 ${file.name} (${formatSize(file.size)})`;
+      document.getElementById('file-info').classList.remove('hidden');
+
+      const arrayBuffer = await file.arrayBuffer();
+      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      totalPages = pdfDoc.numPages;
+      currentPage = 1;
+      document.getElementById('upload-step').classList.add('hidden');
+      document.getElementById('redact-step').classList.remove('hidden');
+      setStep(2);
+      await renderPage(currentPage);
+    });
+
+    async function renderPage(pageNum) {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 1.5 });
+      scale = 1.5;
+      pdfCanvas.width = viewport.width;
+      pdfCanvas.height = viewport.height;
+      overlayCanvas.width = viewport.width;
+      overlayCanvas.height = viewport.height;
+      await page.render({ canvasContext: pdfCtx, viewport }).promise;
+      document.getElementById('page-label').textContent = `Page ${pageNum} / ${totalPages}`;
+      document.getElementById('prev-page-btn').disabled = pageNum <= 1;
+      document.getElementById('next-page-btn').disabled = pageNum >= totalPages;
+      redrawOverlay();
+    }
+
+    function redrawOverlay() {
+      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+      const pageRects = redactions[currentPage] || [];
+      pageRects.forEach(r => {
+        overlayCtx.fillStyle = r.color || '#000';
+        overlayCtx.fillRect(r.x * scale, r.y * scale, r.width * scale, r.height * scale);
+      });
+    }
+
+    document.getElementById('prev-page-btn').addEventListener('click', async () => {
+      if (currentPage > 1) { currentPage--; await renderPage(currentPage); }
+    });
+    document.getElementById('next-page-btn').addEventListener('click', async () => {
+      if (currentPage < totalPages) { currentPage++; await renderPage(currentPage); }
+    });
+
+    // ── Drawing rectangles on overlay ──────────────────────────────
+    function getCanvasPos(e) {
+      const rect = overlayCanvas.getBoundingClientRect();
+      const scaleX = overlayCanvas.width / rect.width;
+      const scaleY = overlayCanvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY,
+      };
+    }
+
+    overlayCanvas.addEventListener('mousedown', e => {
+      isDrawing = true;
+      const pos = getCanvasPos(e);
+      startX = pos.x;
+      startY = pos.y;
+    });
+
+    overlayCanvas.addEventListener('mousemove', e => {
+      if (!isDrawing) return;
+      const pos = getCanvasPos(e);
+      redrawOverlay();
+      const color = document.getElementById('redact-color').value;
+      overlayCtx.fillStyle = color;
+      overlayCtx.fillRect(startX, startY, pos.x - startX, pos.y - startY);
+    });
+
+    overlayCanvas.addEventListener('mouseup', e => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      const pos = getCanvasPos(e);
+      const color = document.getElementById('redact-color').value;
+      const rx = Math.min(startX, pos.x) / scale;
+      const ry = Math.min(startY, pos.y) / scale;
+      const rw = Math.abs(pos.x - startX) / scale;
+      const rh = Math.abs(pos.y - startY) / scale;
+      if (rw < 2 || rh < 2) return;
+      if (!redactions[currentPage]) redactions[currentPage] = [];
+      redactions[currentPage].push({ x: rx, y: ry, width: rw, height: rh, color });
+      redrawOverlay();
+      updateRedactList();
+    });
+
+    overlayCanvas.addEventListener('mouseleave', () => { if (isDrawing) isDrawing = false; });
+
+    function updateRedactList() {
+      const list = document.getElementById('redact-list');
+      list.innerHTML = '';
+      let total = 0;
+      Object.keys(redactions).forEach(pg => {
+        redactions[pg].forEach((r, idx) => {
+          total++;
+          const item = document.createElement('div');
+          item.className = 'redact-item';
+          item.innerHTML = `
+            <span>Page ${pg} &nbsp; x:${Math.round(r.x)} y:${Math.round(r.y)} w:${Math.round(r.width)} h:${Math.round(r.height)}</span>
+            <button class="remove-btn" title="Remove" data-page="${pg}" data-idx="${idx}">✕</button>
+          `;
+          list.appendChild(item);
+        });
+      });
+      list.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const pg = parseInt(btn.dataset.page);
+          const idx = parseInt(btn.dataset.idx);
+          redactions[pg].splice(idx, 1);
+          if (!redactions[pg].length) delete redactions[pg];
+          redrawOverlay();
+          updateRedactList();
+        });
+      });
+      if (total === 0) list.innerHTML = '<p style="color:var(--text-muted);font-size:.85rem;">No redaction areas yet. Draw rectangles on the PDF above.</p>';
+    }
+    updateRedactList();
+
+    // ── Apply ────────────────────────────────────────────────────
+    document.getElementById('apply-btn').addEventListener('click', async () => {
+      if (!pdfFile) { showError('No PDF loaded.'); return; }
+      const allRects = [];
+      Object.keys(redactions).forEach(pg => {
+        redactions[pg].forEach(r => {
+          // PDF coordinates: y from bottom, we need to convert from top-based
+          // We stored PDF-space coords already (divided by scale which accounts for viewport)
+          allRects.push({ page: parseInt(pg), x: r.x, y: r.y, width: r.width, height: r.height });
+        });
+      });
+      if (!allRects.length) { showError('Please draw at least one redaction area.'); return; }
+
+      const color = document.getElementById('redact-color').value;
+      const formData = new FormData();
+      formData.append('file', pdfFile);
+      formData.append('redactions', JSON.stringify(allRects));
+      formData.append('color', color);
+
+      document.getElementById('redact-step').classList.add('hidden');
+      showProgress();
+
+      try {
+        const response = await fetch('/api/redact', { method: 'POST', body: formData });
+        if (!response.ok) {
+          let msg = `Server error (${response.status})`;
+          try { const j = await response.json(); msg = j.detail || msg; } catch(_){}
+          throw new Error(msg);
+        }
+        const blob = await response.blob();
+        showResult(blob, 'redacted.pdf');
+      } catch (err) {
+        showError(err.message || 'Unexpected error. Please try again.');
+      }
+    });
+  </script>
+</body>
+</html>
