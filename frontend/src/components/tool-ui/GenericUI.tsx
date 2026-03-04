@@ -43,17 +43,30 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
     }
   };
 
+  const getOutputFilename = () => {
+    if (!files.length) return outputLabel;
+    const original = files[0].name;
+    const lastDot = original.lastIndexOf(".");
+    const baseName = lastDot > 0 ? original.substring(0, lastDot) : original;
+    // Get extension from outputLabel (e.g. "compressed.pdf" → ".pdf")
+    const outDot = outputLabel.lastIndexOf(".");
+    const ext = outDot > 0 ? outputLabel.substring(outDot) : ".pdf";
+    // Get suffix from outputLabel (e.g. "compressed.pdf" → "_compressed")
+    const suffix = outDot > 0 ? "_" + outputLabel.substring(0, outDot) : "";
+    return `${baseName}${suffix}${ext}`;
+  };
+
   const handleDownload = () => {
-    if (resultBlob) downloadBlob(resultBlob, outputLabel);
+    if (resultBlob) downloadBlob(resultBlob, getOutputFilename());
   };
 
   if (state === "done") return (
     <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
       <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
       <h2 className="text-lg font-bold text-foreground mb-1">Done!</h2>
-      <p className="text-sm text-muted-foreground mb-6">Your file is ready — <span className="text-foreground font-medium">{outputLabel}</span></p>
+      <p className="text-sm text-muted-foreground mb-6">Your file is ready — <span className="text-foreground font-medium">{getOutputFilename()}</span></p>
       <div className="flex justify-center gap-3 flex-wrap">
-        <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download {outputLabel}</Button>
+        <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download</Button>
         <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}>Process another</Button>
       </div>
     </div>
