@@ -143,6 +143,12 @@ export const nonPdfTools: NonPdfTool[] = [
     longDescription: "Upload HEIC or HEIF photos from your iPhone and convert them to universally compatible JPEG format — perfect for sharing and uploading.",
     category: "image", accepts: ".heic,.heif", outputLabel: "converted.jpg",
   },
+  {
+    slug: "remove-background", icon: UserX, name: "Background Remover",
+    description: "Remove backgrounds from images using local AI",
+    longDescription: "Upload any photo and instantly remove the background using an AI model that runs entirely on your server — no data leaves your device. Perfect for product photos, profile pictures, and design work.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "no_background.png",
+  },
 ];
 
 export const nonPdfToolBySlug = Object.fromEntries(nonPdfTools.map(t => [t.slug, t]));
