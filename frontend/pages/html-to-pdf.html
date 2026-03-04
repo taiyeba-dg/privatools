@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Convert a URL or raw HTML content to a PDF document with WeasyPrint.">
+  <title>HTML to PDF – PDF Studio</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .mode-tabs { display:flex; gap:8px; margin-bottom:16px; }
+    .mode-tab { padding:8px 18px; border:1px solid var(--border); border-radius:8px; cursor:pointer; background:var(--surface); color:var(--text-muted); font-size:.9rem; transition:all .18s; }
+    .mode-tab.active { background:var(--a-blue); color:#fff; border-color:var(--a-blue); }
+    .mode-panel { display:none; }
+    .mode-panel.active { display:block; }
+    #html-input { width:100%; min-height:220px; font-family:monospace; font-size:.85rem; resize:vertical; }
+  </style>
+</head>
+<body data-tool="html-to-pdf">
+
+  <header>
+    <div class="container">
+      <a href="/" class="logo" aria-label="PDF Studio – home">
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <span class="logo-text">PDF<span class="logo-dot">.</span>Studio</span>
+      </a>
+      <a href="/" class="back-link">← All Tools</a>
+      <a href="getting-started.html" class="back-link docs-link">📖 Docs</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="tool-page">
+
+      <div class="steps-bar" aria-label="Progress" role="list">
+        <div class="step active" role="listitem"><div class="step-num">1</div><span>Input</span></div>
+        <div class="step-connector"></div>
+        <div class="step" role="listitem"><div class="step-num">2</div><span>Convert</span></div>
+        <div class="step-connector"></div>
+        <div class="step" role="listitem"><div class="step-num">3</div><span>Download</span></div>
+      </div>
+
+      <div class="tool-header fade-in">
+        <div class="tool-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </div>
+        <h1>HTML to PDF</h1>
+        <p class="tool-desc">Convert a web page URL or raw HTML/CSS code into a PDF document.</p>
+      </div>
+
+      <div class="card fade-in">
+        <form id="tool-form">
+
+          <div class="mode-tabs">
+            <button type="button" class="mode-tab active" data-panel="url">🌐 URL</button>
+            <button type="button" class="mode-tab" data-panel="html">📝 HTML</button>
+          </div>
+
+          <!-- URL panel -->
+          <div class="mode-panel active" id="panel-url">
+            <div class="form-group">
+              <label for="url-input">Web page URL</label>
+              <input type="url" id="url-input" name="url" class="form-control" placeholder="https://example.com">
+            </div>
+          </div>
+
+          <!-- HTML panel -->
+          <div class="mode-panel" id="panel-html">
+            <div class="form-group">
+              <label for="html-input">Paste HTML / CSS</label>
+              <textarea id="html-input" name="html_content" class="form-control"
+                placeholder="&lt;!DOCTYPE html&gt;&#10;&lt;html&gt;&#10;  &lt;body&gt;&#10;    &lt;h1&gt;Hello World&lt;/h1&gt;&#10;  &lt;/body&gt;&#10;&lt;/html&gt;"></textarea>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="submit-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+            Convert to PDF
+          </button>
+        </form>
+
+        <div id="progress-section" class="progress-section hidden">
+          <div class="progress-dots" aria-hidden="true">
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+          <p>Converting to PDF…</p>
+        </div>
+
+        <div id="result-section" class="result-section hidden">
+          <div class="result-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h3>Conversion complete!</h3>
+          <div class="result-actions">
+            <a id="download-btn" href="#" class="btn btn-success btn-lg" download="converted.pdf">⬇️ Download PDF</a>
+            <button class="btn btn-secondary" onclick="location.reload()">Convert Another</button>
+          </div>
+        </div>
+
+        <div id="error-section" class="error-section hidden">
+          <div class="error-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span id="error-message">An error occurred.</span>
+          </div>
+          <button class="btn btn-secondary" onclick="location.reload()">Try Again</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-brand">
+        <strong>PDF Studio</strong>
+        <span>Privacy-First PDF Tools</span>
+      </div>
+      <div class="footer-badges">
+        <span class="footer-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          100% Private
+        </span>
+        <span class="footer-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+          Self-Hosted
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/app.js"></script>
+  <script>
+    let activeMode = 'url';
+
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        activeMode = tab.dataset.panel;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('panel-' + activeMode).classList.add('active');
+      });
+    });
+
+    document.getElementById('tool-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+
+      if (activeMode === 'url') {
+        const url = document.getElementById('url-input').value.trim();
+        if (!url) { showError('Please enter a URL.'); return; }
+        formData.append('url', url);
+      } else {
+        const html = document.getElementById('html-input').value.trim();
+        if (!html) { showError('Please enter HTML content.'); return; }
+        formData.append('html_content', html);
+      }
+
+      showProgress();
+      try {
+        const response = await fetch('/api/html-to-pdf', { method: 'POST', body: formData });
+        if (!response.ok) {
+          let msg = `Server error (${response.status})`;
+          try { const j = await response.json(); msg = j.detail || msg; } catch(_){}
+          throw new Error(msg);
+        }
+        const blob = await response.blob();
+        showResult(blob, 'converted.pdf');
+      } catch (err) {
+        showError(err.message || 'Unexpected error. Please try again.');
+      }
+    });
+  </script>
+</body>
+</html>

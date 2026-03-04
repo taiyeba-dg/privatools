@@ -1,0 +1,48 @@
+import uuid
+from pathlib import Path
+import logging
+from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
+from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files
+from ..services import office_to_pdf_service
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
+
+ALLOWED_EXTENSIONS = office_to_pdf_service.ALLOWED_EXTENSIONS
+
+
+@router.post("/office-to-pdf")
+async def office_to_pdf(file: UploadFile = File(...)):
+    suffix = Path(file.filename).suffix.lower() if file.filename else ""
+    if suffix not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
+        )
+
+    ensure_temp_dir()
+
+    try:
+        content = await file.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
+        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
+        temp_path.write_bytes(content)
+
+        output_path = await office_to_pdf_service.office_to_pdf(str(temp_path))
+        cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
+        return FileResponse(
+            path=output_path,
+            filename="converted.pdf",
+            media_type="application/pdf",
+            background=cleanup,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Unexpected error")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
