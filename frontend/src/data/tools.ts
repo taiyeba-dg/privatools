@@ -372,6 +372,18 @@ export const tools: Tool[] = [
     longDescription: "Apply pre-built stamps (Confidential, Draft, Approved, Final, Copy, Void, Sample) or custom text stamps to your PDF pages with adjustable opacity and position.",
     category: "edit", accepts: ".pdf", outputLabel: "stamped.pdf",
   },
+  {
+    slug: "esign-pdf", icon: PenTool, name: "E-Sign PDF",
+    description: "Add your signature to any PDF document",
+    longDescription: "Draw or upload your signature and place it on any page of your PDF. Position and resize freely — all processed locally with zero data leaving your device.",
+    category: "edit", accepts: ".pdf", outputLabel: "signed.pdf",
+  },
+  {
+    slug: "extract-tables", icon: Table, name: "PDF Table Extractor",
+    description: "Extract tables from PDF pages to CSV",
+    longDescription: "Automatically detect and extract tables from PDF documents into clean CSV format. Perfect for pulling data from invoices, reports, and financial statements.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "tables.csv",
+  },
 
   // ── Advanced Editing ────────────────────────────────────────────────────────
   {
