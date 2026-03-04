@@ -56,6 +56,10 @@ app = FastAPI(
     redoc_url=None if _is_prod else "/redoc",
 )
 
+# Rate limiting — 30 req/min per IP
+from .middleware.rate_limit import RateLimitMiddleware
+app.add_middleware(RateLimitMiddleware, requests_per_minute=30)
+
 _origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:8080").split(",")
 
 app.add_middleware(
