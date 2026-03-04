@@ -24,6 +24,7 @@ from .routes import (
     non_pdf_tools, image_ocr,
     phase1_tools,
     phase2_tools,
+    phase3_tools,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -136,6 +137,7 @@ app.include_router(image_ocr.router, prefix="/api")
 # Phase 1 new tools
 app.include_router(phase1_tools.router, prefix="/api")
 app.include_router(phase2_tools.router, prefix="/api")
+app.include_router(phase3_tools.router, prefix="/api")
 
 
 @app.get("/api/health")
