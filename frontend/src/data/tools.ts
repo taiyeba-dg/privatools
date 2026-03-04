@@ -390,6 +390,60 @@ export const tools: Tool[] = [
     longDescription: "Convert PDF documents into Markdown format with automatic heading detection, bold text preservation, and clean formatting — great for docs, wikis, and web content.",
     category: "from-pdf", accepts: ".pdf", outputLabel: "document.md",
   },
+  {
+    slug: "whiteout-pdf", icon: Eraser, name: "White-Out / Eraser",
+    description: "Cover content on PDF with white boxes",
+    longDescription: "Place white rectangles over any content on your PDF to permanently hide or erase text, images, and other elements — like a digital correction tape.",
+    category: "edit", accepts: ".pdf", outputLabel: "whiteout.pdf",
+  },
+  {
+    slug: "annotate-pdf", icon: PenTool, name: "Annotate PDF",
+    description: "Add highlights, underlines, and sticky notes",
+    longDescription: "Add highlight, underline, strikethrough, and sticky note annotations to your PDF pages with customizable colors — perfect for reviewing documents.",
+    category: "edit", accepts: ".pdf", outputLabel: "annotated.pdf",
+  },
+  {
+    slug: "add-shapes", icon: Crop, name: "Add Shapes to PDF",
+    description: "Draw rectangles, circles, lines, and arrows",
+    longDescription: "Add geometric shapes to your PDF pages — rectangles, circles, lines, and arrows with customizable colors, fill, and stroke width.",
+    category: "edit", accepts: ".pdf", outputLabel: "shapes.pdf",
+  },
+  {
+    slug: "set-permissions", icon: Shield, name: "PDF Permissions",
+    description: "Control print, copy, and edit permissions",
+    longDescription: "Set granular permissions on your PDF — allow or deny printing, copying text, modifying content, and adding annotations. Protect with an owner password.",
+    category: "security", accepts: ".pdf", outputLabel: "permissions.pdf",
+  },
+  {
+    slug: "add-attachment", icon: FileBox, name: "Add Attachment",
+    description: "Embed any file inside a PDF document",
+    longDescription: "Attach any file (images, documents, spreadsheets, etc.) inside a PDF as an embedded attachment — recipients can extract it from the PDF.",
+    category: "edit", accepts: ".pdf", outputLabel: "with_attachment.pdf",
+  },
+  {
+    slug: "json-to-pdf", icon: Code, name: "JSON to PDF",
+    description: "Format JSON data as a styled PDF document",
+    longDescription: "Upload a JSON file and convert it to a beautifully formatted PDF with syntax highlighting, key-value coloring, and proper indentation.",
+    category: "to-pdf", accepts: ".json", outputLabel: "document.pdf",
+  },
+  {
+    slug: "xml-to-pdf", icon: Code, name: "XML to PDF",
+    description: "Convert XML data to a formatted PDF document",
+    longDescription: "Upload an XML file and render it as a clean, indented PDF with tag colorizing and proper formatting.",
+    category: "to-pdf", accepts: ".xml", outputLabel: "document.pdf",
+  },
+  {
+    slug: "epub-to-pdf", icon: BookOpen, name: "EPUB to PDF",
+    description: "Convert e-books from EPUB to PDF format",
+    longDescription: "Upload an EPUB e-book and convert it to a paginated PDF document preserving text content — compatible with all PDF readers.",
+    category: "to-pdf", accepts: ".epub", outputLabel: "book.pdf",
+  },
+  {
+    slug: "rtf-to-pdf", icon: FileText, name: "RTF to PDF",
+    description: "Convert Rich Text Format files to PDF",
+    longDescription: "Upload an RTF file and convert it to a clean PDF with proper formatting, word wrap, and pagination.",
+    category: "to-pdf", accepts: ".rtf", outputLabel: "document.pdf",
+  },
 
   // ── Advanced Editing ────────────────────────────────────────────────────────
   {
