@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, ArrowLeft, Github, ExternalLink } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
+import { Breadcrumb } from "@/components/Breadcrumb";
 
 import { MergeUI } from "@/components/tool-ui/MergeUI";
 import { SplitUI } from "@/components/tool-ui/SplitUI";
@@ -173,9 +174,10 @@ export default function ToolPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-6">
-          <ArrowLeft size={12} /> All tools
-        </Link>
+        <Breadcrumb items={[
+          { label: meta.label, href: `/?tab=${tool.category}` },
+          { label: tool.name },
+        ]} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8">
           {/* Main */}

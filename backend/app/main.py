@@ -149,6 +149,10 @@ app.include_router(phase4_tools.router, prefix="/api")
 # Sitemap
 app.include_router(sitemap.router)
 
+# URL fetch proxy
+from .routes.url_fetch import router as url_fetch_router
+app.include_router(url_fetch_router, prefix="/api")
+
 
 @app.get("/api/health")
 async def health():
