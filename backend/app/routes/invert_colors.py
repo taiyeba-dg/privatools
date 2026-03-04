@@ -19,7 +19,7 @@ def _invert(input_path: str, dpi: int) -> str:
     src = fitz.open(input_path)
     doc = fitz.open()
     for page in src:
-        pix = page.get_pixmap(dpi=dpi)
+        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
         pix.invert_irect(pix.irect)
         new_page = doc.new_page(width=page.rect.width, height=page.rect.height)
         new_page.insert_image(new_page.rect, pixmap=pix)

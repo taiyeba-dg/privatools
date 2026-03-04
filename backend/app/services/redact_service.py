@@ -1,9 +1,8 @@
 import io
 import json
 import uuid
+import fitz  # PyMuPDF
 import pikepdf
-from PIL import Image
-from pdf2image import convert_from_path
 from reportlab.pdfgen import canvas
 from reportlab.lib.colors import HexColor
 from ..utils.cleanup import get_temp_path, ensure_temp_dir
@@ -58,27 +57,32 @@ def redact_pdf(input_path: str, redactions: list, color: str = "#000000") -> str
 
         pdf.save(str(output_path))
 
-    # Flatten: render to images at 300 DPI and rebuild PDF
+    # Flatten using PyMuPDF (fast, no pdf2image/poppler)
     flat_path = _flatten_pdf(str(output_path))
     return flat_path
 
 
 def _flatten_pdf(input_path: str) -> str:
-    """Render each page as an image and reconstruct to make redactions permanent."""
+    """Flatten redacted PDF using PyMuPDF — much faster than pdf2image at 300 DPI."""
     ensure_temp_dir()
     output_path = get_temp_path(f"flat_{uuid.uuid4().hex}.pdf")
 
-    images = convert_from_path(input_path, dpi=300)
-    if not images:
+    src = fitz.open(input_path)
+    dst = fitz.open()
+
+    for page in src:
+        # Render at 150 DPI (sufficient for redaction flattening)
+        mat = fitz.Matrix(150 / 72, 150 / 72)
+        pix = page.get_pixmap(matrix=mat)
+        new_page = dst.new_page(width=page.rect.width, height=page.rect.height)
+        new_page.insert_image(new_page.rect, pixmap=pix)
+
+    if len(dst) == 0:
+        src.close()
         return input_path
 
-    first = images[0]
-    rest = images[1:] if len(images) > 1 else []
-    first.save(
-        str(output_path),
-        "PDF",
-        resolution=300,
-        save_all=True,
-        append_images=rest,
-    )
+    dst.save(str(output_path), garbage=4, deflate=True)
+    dst.close()
+    src.close()
+
     return str(output_path)
