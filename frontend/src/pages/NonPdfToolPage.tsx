@@ -21,6 +21,7 @@ import { ExtractArchiveUI } from "@/components/tool-ui/ExtractArchiveUI";
 import { CreateZipUI } from "@/components/tool-ui/CreateZipUI";
 import { CsvJsonUI } from "@/components/tool-ui/CsvJsonUI";
 import { MarkdownHtmlUI } from "@/components/tool-ui/MarkdownHtmlUI";
+import { ImageOcrUI } from "@/components/tool-ui/ImageOcrUI";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
 
 function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
@@ -41,6 +42,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "create-zip": return <CreateZipUI />;
     case "csv-json": return <CsvJsonUI />;
     case "markdown-html": return <MarkdownHtmlUI />;
+    case "image-ocr": return <ImageOcrUI />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }
@@ -172,7 +174,7 @@ export default function NonPdfToolPage() {
 
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                🔒 <span className="text-foreground font-medium">Your files stay private.</span> All processing happens in your browser. Files are never uploaded to any server.
+                🔒 <span className="text-foreground font-medium">Your files stay private.</span> All processing happens locally on your self-hosted server — files are never sent to third parties.
               </p>
             </div>
           </div>

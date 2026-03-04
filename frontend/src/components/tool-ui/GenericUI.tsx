@@ -77,7 +77,7 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
           <p className="text-sm font-semibold text-foreground">{drag ? "Drop files here" : "Click to select or drag & drop"}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Accepts: {accepts.split(",").join(", ")}</p>
         </div>
-        <p className="text-[11px] text-muted-foreground/60">Free · No sign-up · Processed on your server</p>
+        <p className="text-[11px] text-muted-foreground/60">Free · No sign-up · Processed locally on your server</p>
       </div>
 
       {error && (

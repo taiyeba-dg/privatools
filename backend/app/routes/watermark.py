@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 
-VALID_POSITIONS = {"center", "top", "bottom"}
+VALID_POSITIONS = {"center", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right", "diagonal", "tile"}
 
 
 @router.post("/watermark")

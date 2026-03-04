@@ -1,8 +1,11 @@
+import os
 from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 import tempfile, fitz
 
 router = APIRouter()
+
 
 @router.post("/pdf-to-epub")
 async def pdf_to_epub(file: UploadFile = File(...)):
@@ -14,27 +17,28 @@ async def pdf_to_epub(file: UploadFile = File(...)):
         text = page.get_text("html")
         pages_html.append(f'<div id="page{i+1}">{text}</div>')
     doc.close()
-    # Build a minimal EPUB (which is just a ZIP with specific structure)
-    import zipfile, os
+    import zipfile
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".epub")
     with zipfile.ZipFile(tmp.name, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("mimetype", "application/epub+zip", compress_type=zipfile.ZIP_STORED)
         zf.writestr("META-INF/container.xml", '<?xml version="1.0"?><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>')
         content_html = f'<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Converted PDF</title></head><body>{"".join(pages_html)}</body></html>'
         zf.writestr("content.xhtml", content_html)
-        zf.writestr("content.opf", f'''<?xml version="1.0"?>
+        zf.writestr("content.opf", '''<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
 <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:12345</dc:identifier><dc:title>Converted PDF</dc:title><dc:language>en</dc:language></metadata>
 <manifest><item id="content" href="content.xhtml" media-type="application/xhtml+xml"/></manifest>
-<spine><itemref idref="content"/></spine></package>''')
-    return FileResponse(tmp.name, media_type="application/epub+zip", filename="converted.epub")
+<spine><itemref idref="content"/></spine>
+</package>''')
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="application/epub+zip", filename="converted.epub", background=cleanup)
+
 
 @router.post("/markdown-to-pdf")
 async def markdown_to_pdf(file: UploadFile = File(...)):
     """Convert Markdown to PDF."""
-    text = (await file.read()).decode("utf-8", errors="replace")
-    # Simple markdown to HTML conversion
     import re
+    text = (await file.read()).decode("utf-8", errors="replace")
     html = text
     html = re.sub(r'^### (.+)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
     html = re.sub(r'^## (.+)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
@@ -47,16 +51,17 @@ async def markdown_to_pdf(file: UploadFile = File(...)):
     full_html = f'<html><head><style>body{{font-family:sans-serif;padding:40px;max-width:800px;margin:auto}}code{{background:#f0f0f0;padding:2px 6px;border-radius:3px}}h1,h2,h3{{color:#333}}</style></head><body>{html}</body></html>'
     doc = fitz.open()
     page = doc.new_page()
-    # Use story for HTML rendering if available
     try:
         rect = page.rect + fitz.Rect(40, 40, -40, -40)
         page.insert_htmlbox(rect, full_html)
-    except:
+    except Exception:
         page.insert_text((40, 60), text, fontsize=11)
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     doc.save(tmp.name)
     doc.close()
-    return FileResponse(tmp.name, media_type="application/pdf", filename="document.pdf")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="application/pdf", filename="document.pdf", background=cleanup)
+
 
 @router.post("/csv-to-pdf")
 async def csv_to_pdf(file: UploadFile = File(...)):
@@ -78,7 +83,9 @@ async def csv_to_pdf(file: UploadFile = File(...)):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     doc.save(tmp.name)
     doc.close()
-    return FileResponse(tmp.name, media_type="application/pdf", filename="table.pdf")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="application/pdf", filename="table.pdf", background=cleanup)
+
 
 @router.post("/add-hyperlinks")
 async def add_hyperlinks(file: UploadFile = File(...)):
@@ -100,7 +107,9 @@ async def add_hyperlinks(file: UploadFile = File(...)):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     doc.save(tmp.name)
     doc.close()
-    return FileResponse(tmp.name, media_type="application/pdf", filename="linked.pdf")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="application/pdf", filename="linked.pdf", background=cleanup)
+
 
 @router.post("/form-creator")
 async def form_creator(file: UploadFile = File(...)):
@@ -110,7 +119,9 @@ async def form_creator(file: UploadFile = File(...)):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     doc.save(tmp.name)
     doc.close()
-    return FileResponse(tmp.name, media_type="application/pdf", filename="form.pdf")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="application/pdf", filename="form.pdf", background=cleanup)
+
 
 @router.post("/transparent-background")
 async def transparent_background(file: UploadFile = File(...)):
@@ -120,4 +131,5 @@ async def transparent_background(file: UploadFile = File(...)):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     doc.save(tmp.name, clean=True)
     doc.close()
-    return FileResponse(tmp.name, media_type="application/pdf", filename="transparent.pdf")
+    cleanup = BackgroundTask(os.unlink, tmp.name)
+    return FileResponse(tmp.name, media_type="application/pdf", filename="transparent.pdf", background=cleanup)

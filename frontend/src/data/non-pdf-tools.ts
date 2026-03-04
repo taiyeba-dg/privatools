@@ -3,7 +3,7 @@ import {
   Music, Scissors, Video,
   Braces, GitCompare, KeyRound, Hash,
   Archive, Lock,
-  ArrowLeftRight, Code2,
+  ArrowLeftRight, Code2, ScanText,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -56,6 +56,12 @@ export const nonPdfTools: NonPdfTool[] = [
     description: "Convert short video clips into animated GIFs",
     longDescription: "Upload an MP4 or MOV file, select the clip range, and export a looping GIF. Adjust FPS and resolution for the perfect size.",
     category: "image", accepts: ".mp4,.mov,.webm,.avi", outputLabel: "animation.gif",
+  },
+  {
+    slug: "image-ocr", icon: ScanText, name: "Image OCR",
+    description: "Extract text from images using optical character recognition",
+    longDescription: "Upload any image — a photo of a document, screenshot, or handwritten note — and extract all readable text using Tesseract OCR. Supports 40+ languages.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif", outputLabel: "extracted text",
   },
 
   // ── Audio & Video ───────────────────────────────────────────────────────────
@@ -136,9 +142,9 @@ export const nonPdfTools: NonPdfTool[] = [
 export const nonPdfToolBySlug = Object.fromEntries(nonPdfTools.map(t => [t.slug, t]));
 
 export const nonPdfCategoryMeta: Record<NonPdfCategory, { label: string; accent: string; iconBg: string; iconColor: string }> = {
-  "image":           { label: "Image & Media",        accent: "text-pink-400",    iconBg: "bg-pink-500/10",    iconColor: "text-pink-400"    },
-  "video-audio":     { label: "Video & Audio",         accent: "text-orange-400",  iconBg: "bg-orange-500/10",  iconColor: "text-orange-400"  },
-  "developer":       { label: "Developer & Text",      accent: "text-cyan-400",    iconBg: "bg-cyan-500/10",    iconColor: "text-cyan-400"    },
-  "archive":         { label: "Archive & Files",       accent: "text-yellow-400",  iconBg: "bg-yellow-500/10",  iconColor: "text-yellow-400"  },
-  "document-office": { label: "Documents & Office",    accent: "text-lime-400",    iconBg: "bg-lime-500/10",    iconColor: "text-lime-400"    },
+  "image": { label: "Image & Media", accent: "text-pink-400", iconBg: "bg-pink-500/10", iconColor: "text-pink-400" },
+  "video-audio": { label: "Video & Audio", accent: "text-orange-400", iconBg: "bg-orange-500/10", iconColor: "text-orange-400" },
+  "developer": { label: "Developer & Text", accent: "text-cyan-400", iconBg: "bg-cyan-500/10", iconColor: "text-cyan-400" },
+  "archive": { label: "Archive & Files", accent: "text-yellow-400", iconBg: "bg-yellow-500/10", iconColor: "text-yellow-400" },
+  "document-office": { label: "Documents & Office", accent: "text-lime-400", iconBg: "bg-lime-500/10", iconColor: "text-lime-400" },
 };

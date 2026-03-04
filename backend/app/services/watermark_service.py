@@ -37,6 +37,30 @@ def add_watermark(
                 c.drawCentredString(width / 2, height - font_size - 10, text)
             elif position == "bottom":
                 c.drawCentredString(width / 2, 10, text)
+            elif position == "top-left":
+                c.drawString(10, height - font_size - 10, text)
+            elif position == "top-right":
+                c.drawRightString(width - 10, height - font_size - 10, text)
+            elif position == "bottom-left":
+                c.drawString(10, 10, text)
+            elif position == "bottom-right":
+                c.drawRightString(width - 10, 10, text)
+            elif position == "diagonal":
+                c.saveState()
+                c.translate(width / 2, height / 2)
+                c.rotate(45)
+                c.drawCentredString(0, 0, text)
+                c.restoreState()
+            elif position == "tile":
+                c.saveState()
+                for tx in range(0, int(width), int(font_size * len(text) * 0.7)):
+                    for ty in range(0, int(height), int(font_size * 3)):
+                        c.saveState()
+                        c.translate(tx, ty)
+                        c.rotate(45)
+                        c.drawString(0, 0, text)
+                        c.restoreState()
+                c.restoreState()
 
             c.save()
             packet.seek(0)

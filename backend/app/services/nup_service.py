@@ -1,14 +1,11 @@
 import uuid
 import math
-import io
-import pikepdf
-from pdf2image import convert_from_path
-from PIL import Image
+import fitz  # PyMuPDF
 from ..utils.cleanup import get_temp_path, ensure_temp_dir
 
-# A4 landscape at 150 DPI
-A4_W = int(297 * 150 / 25.4)
-A4_H = int(210 * 150 / 25.4)
+# A4 landscape dimensions in points (72 dpi)
+A4_W = 842  # 297mm
+A4_H = 595  # 210mm
 
 
 def nup(input_path: str, pages_per_sheet: int = 2) -> str:
@@ -19,30 +16,36 @@ def nup(input_path: str, pages_per_sheet: int = 2) -> str:
     cols = math.ceil(math.sqrt(pages_per_sheet))
     rows = math.ceil(pages_per_sheet / cols)
 
-    images = convert_from_path(input_path, dpi=150)
+    src = fitz.open(input_path)
+    dst = fitz.open()
 
-    cell_w = A4_W // cols
-    cell_h = A4_H // rows
+    cell_w = A4_W / cols
+    cell_h = A4_H / rows
 
-    sheet_images = []
-    for sheet_start in range(0, len(images), pages_per_sheet):
-        sheet = Image.new("RGB", (A4_W, A4_H), "white")
-        batch = images[sheet_start:sheet_start + pages_per_sheet]
-        for i, img in enumerate(batch):
+    for sheet_start in range(0, len(src), pages_per_sheet):
+        # Create a new landscape A4 page
+        page = dst.new_page(width=A4_W, height=A4_H)
+        batch = list(range(sheet_start, min(sheet_start + pages_per_sheet, len(src))))
+
+        for i, pg_idx in enumerate(batch):
             col = i % cols
             row = i // cols
-            img_copy = img.copy()
-            img_copy.thumbnail((cell_w, cell_h), Image.Resampling.LANCZOS)
-            x = col * cell_w + (cell_w - img_copy.width) // 2
-            y = row * cell_h + (cell_h - img_copy.height) // 2
-            sheet.paste(img_copy, (x, y))
-        sheet_images.append(sheet)
 
-    if not sheet_images:
+            # Target rectangle for this cell
+            x0 = col * cell_w
+            y0 = row * cell_h
+            x1 = x0 + cell_w
+            y1 = y0 + cell_h
+            target_rect = fitz.Rect(x0, y0, x1, y1)
+
+            # Show the source page in the target rectangle (scales automatically)
+            page.show_pdf_page(target_rect, src, pg_idx)
+
+    if len(dst) == 0:
         raise ValueError("No pages found in PDF")
 
-    first = sheet_images[0]
-    rest = sheet_images[1:]
-    first.save(str(output_path), format="PDF", save_all=True, append_images=rest)
+    dst.save(str(output_path))
+    dst.close()
+    src.close()
 
     return str(output_path)

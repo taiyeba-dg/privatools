@@ -35,6 +35,15 @@ import { InvertColorsUI } from "@/components/tool-ui/InvertColorsUI";
 import { PdfaValidatorUI } from "@/components/tool-ui/PdfaValidatorUI";
 import { VerifySignatureUI } from "@/components/tool-ui/VerifySignatureUI";
 import { SanitizeUI } from "@/components/tool-ui/SanitizeUI";
+import { UnlockUI } from "@/components/tool-ui/UnlockUI";
+import { PdfToImageUI } from "@/components/tool-ui/PdfToImageUI";
+import { ImageToPdfUI } from "@/components/tool-ui/ImageToPdfUI";
+import { HtmlToPdfUI } from "@/components/tool-ui/HtmlToPdfUI";
+import { CropUI } from "@/components/tool-ui/CropUI";
+import { PdfToTextUI } from "@/components/tool-ui/PdfToTextUI";
+import { RotateUI } from "@/components/tool-ui/RotateUI";
+import { FillFormUI } from "@/components/tool-ui/FillFormUI";
+import { EditPdfUI } from "@/components/tool-ui/EditPdfUI";
 
 function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
@@ -48,6 +57,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "extract-pages": return <OrganizeUI />;
 
     // Edit
+    case "edit-pdf": return <EditPdfUI />;
     case "sign-pdf": return <SignUI />;
     case "watermark": return <WatermarkUI />;
     case "header-footer": return <HeaderFooterUI />;
@@ -58,10 +68,11 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     // Optimize
     case "compress-pdf": return <CompressUI />;
     case "resize-pdf": return <ResizeUI />;
-    case "rotate-pdf": return <OrganizeUI />;
+    case "rotate-pdf": return <RotateUI />;
 
     // Security
     case "protect-pdf": return <ProtectUI />;
+    case "unlock-pdf": return <UnlockUI />;
     case "redact-pdf": return <RedactUI />;
     case "metadata": return <MetadataUI />;
 
@@ -70,6 +81,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "ocr-pdf": return <OcrUI />;
     case "nup": return <NupUI />;
     case "qr-code": return <QrCodeUI />;
+    case "fill-form": return <FillFormUI />;
     case "alternate-mix": return <MergeUI />;
     case "overlay": return <CompareUI />;
     case "form-creator": return <FormCreatorUI />;
@@ -82,9 +94,14 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     // New optimize
     case "auto-crop": return <AutoCropUI />;
     case "invert-colors": return <InvertColorsUI />;
+    case "crop-pdf": return <CropUI />;
 
     // New conversions
     case "pdf-to-epub": return <PdfToEpubUI />;
+    case "pdf-to-image": return <PdfToImageUI />;
+    case "pdf-to-text": return <PdfToTextUI />;
+    case "image-to-pdf": return <ImageToPdfUI />;
+    case "html-to-pdf": return <HtmlToPdfUI />;
     case "markdown-to-pdf": return <MarkdownToPdfUI />;
     case "csv-to-pdf": return <CsvToPdfUI />;
 
@@ -224,7 +241,7 @@ export default function ToolPage() {
 
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                🔒 <span className="text-foreground font-medium">Your files stay private.</span> All processing happens in your browser. Files are never uploaded to any server.
+                🔒 <span className="text-foreground font-medium">Your files stay private.</span> All processing happens locally on your self-hosted server — files are never sent to third parties.
               </p>
             </div>
           </div>

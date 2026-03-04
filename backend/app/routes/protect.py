@@ -1,5 +1,6 @@
 import uuid
 import logging
+from typing import Optional
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
@@ -16,6 +17,7 @@ MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 async def protect_pdf(
     file: UploadFile = File(...),
     password: str = Form(...),
+    owner_password: Optional[str] = Form(None),
 ):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
@@ -33,7 +35,7 @@ async def protect_pdf(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = protect_service.protect_pdf(str(temp_path), password=password)
+        output_path = protect_service.protect_pdf(str(temp_path), password=password, owner_pw=owner_password)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,
