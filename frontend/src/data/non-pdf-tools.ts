@@ -149,6 +149,42 @@ export const nonPdfTools: NonPdfTool[] = [
     longDescription: "Upload any photo and instantly remove the background using an AI model that runs entirely on your server — no data leaves your device. Perfect for product photos, profile pictures, and design work.",
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "no_background.png",
   },
+  {
+    slug: "svg-to-png", icon: ImageIcon, name: "SVG to PNG",
+    description: "Convert vector SVG files to crisp PNG images",
+    longDescription: "Upload an SVG file and render it as a high-resolution PNG image with 2x scaling for Retina displays. Perfect for design assets and icons.",
+    category: "image", accepts: ".svg", outputLabel: "converted.png",
+  },
+  {
+    slug: "image-watermark", icon: ImageIcon, name: "Image Watermark",
+    description: "Add text watermarks to photos and images",
+    longDescription: "Protect your images with customizable text watermarks. Choose position (center, corners, or tile), opacity, and font size — all processed locally.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "watermarked.png",
+  },
+  {
+    slug: "generate-favicon", icon: ImageIcon, name: "Favicon Generator",
+    description: "Create .ico favicons from any image",
+    longDescription: "Upload any image and generate a multi-size ICO file (16x16, 32x32, 48x48) ready to use as your website's favicon.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "favicon.ico",
+  },
+  {
+    slug: "make-collage", icon: ImageIcon, name: "Photo Collage",
+    description: "Combine multiple images into a beautiful grid",
+    longDescription: "Upload multiple photos and arrange them into a clean grid collage. Customize columns, spacing, and background color.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "collage.jpg",
+  },
+  {
+    slug: "generate-barcode", icon: Hash, name: "Barcode Generator",
+    description: "Generate Code128, EAN-13, QR codes from any text",
+    longDescription: "Create barcodes in various formats: Code128, Code39, EAN-13, EAN-8, UPC-A, ISBN-13, and QR codes. Download as PNG images.",
+    category: "developer", accepts: "", outputLabel: "barcode.png",
+  },
+  {
+    slug: "url-to-pdf", icon: Code2, name: "URL to PDF",
+    description: "Save any webpage as a PDF document",
+    longDescription: "Enter a URL and convert any webpage to a high-quality PDF — rendered locally on your server using WeasyPrint. No external services used.",
+    category: "developer", accepts: "", outputLabel: "webpage.pdf",
+  },
 ];
 
 export const nonPdfToolBySlug = Object.fromEntries(nonPdfTools.map(t => [t.slug, t]));

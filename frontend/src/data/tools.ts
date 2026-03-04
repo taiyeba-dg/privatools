@@ -384,6 +384,12 @@ export const tools: Tool[] = [
     longDescription: "Automatically detect and extract tables from PDF documents into clean CSV format. Perfect for pulling data from invoices, reports, and financial statements.",
     category: "from-pdf", accepts: ".pdf", outputLabel: "tables.csv",
   },
+  {
+    slug: "pdf-to-markdown", icon: Code2, name: "PDF to Markdown",
+    description: "Extract PDF content as clean Markdown format",
+    longDescription: "Convert PDF documents into Markdown format with automatic heading detection, bold text preservation, and clean formatting — great for docs, wikis, and web content.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "document.md",
+  },
 
   // ── Advanced Editing ────────────────────────────────────────────────────────
   {

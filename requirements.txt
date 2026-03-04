@@ -16,3 +16,6 @@ openpyxl
 python-pptx
 pillow-heif
 rembg
+cairosvg
+python-barcode
+qrcode
