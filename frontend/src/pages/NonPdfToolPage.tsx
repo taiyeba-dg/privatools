@@ -1,8 +1,10 @@
 import { useParams, Link } from "react-router-dom";
+import { useEffect } from "react";
 import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta } from "@/data/non-pdf-tools";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, ArrowLeft, Github, ExternalLink } from "lucide-react";
+import { useHistory } from "@/hooks/useHistory";
 
 // UIs
 import { ImageCompressorUI } from "@/components/tool-ui/ImageCompressorUI";
@@ -51,6 +53,14 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
 export default function NonPdfToolPage() {
   const { slug } = useParams<{ slug: string }>();
   const tool = slug ? nonPdfToolBySlug[slug] : null;
+  const { addEntry } = useHistory();
+
+  // Track tool usage in history
+  useEffect(() => {
+    if (tool && slug) {
+      addEntry({ slug, name: tool.name, href: `/tools/${slug}` });
+    }
+  }, [slug, tool, addEntry]);
 
   const relatedTools = nonPdfTools
     .filter(t => t.category === tool?.category && t.slug !== slug)
