@@ -1,7 +1,7 @@
 """
 Rate limiting middleware for PrivaTools.
 Uses in-memory tracking — no external dependencies.
-Limits: 200 requests/minute per IP for API endpoints (configurable via RATE_LIMIT_RPM env var).
+Limits: 1000 requests/minute per IP (configurable via RATE_LIMIT_RPM env var).
 """
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -11,7 +11,7 @@ import time
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, requests_per_minute: int = 200):
+    def __init__(self, app, requests_per_minute: int = 1000):
         super().__init__(app)
         self.rpm = int(os.environ.get("RATE_LIMIT_RPM", str(requests_per_minute)))
         self.window = 60  # seconds
