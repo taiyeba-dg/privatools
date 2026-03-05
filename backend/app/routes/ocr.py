@@ -10,6 +10,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
+VALID_OUTPUTS = {"json", "txt", "searchable_pdf"}
 
 VALID_LANGS = {
     "eng", "fra", "deu", "spa", "ita", "por", "chi_sim", "chi_tra", "jpn", "kor",
@@ -26,16 +27,22 @@ async def ocr_pdf(
     lang: str = Form("eng"),
     output: str = Form("json"),
 ):
-    if not file.filename.lower().endswith(".pdf"):
+    if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
     if lang not in VALID_LANGS:
         raise HTTPException(status_code=400, detail=f"Invalid language code: {lang}")
+    if output not in VALID_OUTPUTS:
+        raise HTTPException(status_code=400, detail=f"output must be one of: {', '.join(sorted(VALID_OUTPUTS))}")
 
     ensure_temp_dir()
+    temp_path = None
+    out_path = None
 
     try:
         content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
         if len(content) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
@@ -51,12 +58,25 @@ async def ocr_pdf(
                 media_type="text/plain; charset=utf-8",
                 background=cleanup,
             )
+        if output == "searchable_pdf":
+            out_path = ocr_service.extract_searchable_pdf_to_file(str(temp_path), lang=lang)
+            cleanup = BackgroundTask(remove_files, str(temp_path), out_path)
+            return FileResponse(
+                path=out_path,
+                filename="searchable.pdf",
+                media_type="application/pdf",
+                background=cleanup,
+            )
         else:
             text = ocr_service.extract_text(str(temp_path), lang=lang)
             remove_files(str(temp_path))
             return JSONResponse({"text": text})
     except HTTPException:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([out_path] if out_path else [])
+        remove_files(*to_remove)
         raise
     except Exception:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([out_path] if out_path else [])
+        remove_files(*to_remove)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

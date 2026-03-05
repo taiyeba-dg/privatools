@@ -43,8 +43,10 @@ async def invert_colors(
 
     content = await file.read()
     if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
 
+    temp_pdf = None
+    output_path = None
     try:
         validate_pdf_content(content)
         temp_pdf = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
@@ -62,7 +64,11 @@ async def invert_colors(
             background=cleanup,
         )
     except HTTPException:
+        to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         raise
     except Exception:
+        to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

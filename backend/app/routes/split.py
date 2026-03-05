@@ -28,6 +28,8 @@ async def split_pdf(
         raise HTTPException(status_code=400, detail=f"Mode must be one of: {', '.join(sorted(VALID_MODES))}")
 
     ensure_temp_dir()
+    temp_path = None
+    output_path = None
 
     try:
         content = await file.read()
@@ -54,9 +56,15 @@ async def split_pdf(
             background=cleanup,
         )
     except HTTPException:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         raise
     except ValueError as e:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         raise HTTPException(status_code=400, detail=str(e))
     except Exception:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

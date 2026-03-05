@@ -11,6 +11,11 @@ interface FormField {
     options?: string[];
 }
 
+const isTruthyValue = (value: string | undefined) => {
+    if (!value) return false;
+    return ["yes", "true", "1", "on", "checked"].includes(value.toLowerCase());
+};
+
 export function FillFormUI() {
     const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
     const [state, setState] = useState<"idle" | "loading-fields" | "editing" | "submitting" | "done">("idle");
@@ -117,12 +122,21 @@ export function FillFormUI() {
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        checked={values[field.name] === "Yes" || values[field.name] === "true"}
-                                        onChange={e => updateValue(field.name, e.target.checked ? "Yes" : "")}
+                                        checked={isTruthyValue(values[field.name])}
+                                        onChange={e => updateValue(field.name, e.target.checked ? (field.options?.[0] || "Yes") : "Off")}
                                         className="rounded border-border"
                                     />
-                                    <span className="text-sm text-foreground">{values[field.name] === "Yes" || values[field.name] === "true" ? "Checked" : "Unchecked"}</span>
+                                    <span className="text-sm text-foreground">{isTruthyValue(values[field.name]) ? "Checked" : "Unchecked"}</span>
                                 </label>
+                            ) : field.type === "radio" && field.options ? (
+                                <select
+                                    value={values[field.name] || ""}
+                                    onChange={e => updateValue(field.name, e.target.value)}
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                >
+                                    <option value="">Select…</option>
+                                    {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
                             ) : field.type === "choice" && field.options ? (
                                 <select
                                     value={values[field.name] || ""}
@@ -132,6 +146,10 @@ export function FillFormUI() {
                                     <option value="">Select…</option>
                                     {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
+                            ) : field.type === "signature" || field.type === "button" ? (
+                                <div className="rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-muted-foreground">
+                                    This field type is not editable in this UI yet.
+                                </div>
                             ) : (
                                 <input
                                     type="text"
@@ -169,6 +187,10 @@ export function FillFormUI() {
                 <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
                     onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
                     onClick={() => ref.current?.click()}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload file"
                     className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
                         drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
                     <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />

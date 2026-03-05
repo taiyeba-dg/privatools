@@ -59,6 +59,10 @@ export function MergeUI() {
         onDragLeave={() => setDrag(false)}
         onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
         onClick={() => ref.current?.click()}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload file"
         className={cn(
           "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
           drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20"
@@ -85,7 +89,7 @@ export function MergeUI() {
         <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30">
             <span className="text-xs font-medium text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""} · use arrows to reorder</span>
-            <button onClick={() => ref.current?.click()} className="flex items-center gap-1 text-xs text-primary hover:underline">
+            <button type="button" onClick={() => ref.current?.click()} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <Plus size={12} /> Add more
             </button>
           </div>

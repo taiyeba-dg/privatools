@@ -45,7 +45,6 @@ def edit_pdf(input_path: str, edits: list) -> str:
             packet = io.BytesIO()
             c = canvas.Canvas(packet, pagesize=(pg_width, pg_height))
 
-            temp_images = []
             for edit in page_edits:
                 edit_type = edit.get("type", "")
 
@@ -129,20 +128,20 @@ def edit_pdf(input_path: str, edits: list) -> str:
                     img_h = float(edit.get("height", 100))
                     image_data = edit.get("image_data", "")
                     if image_data:
-                        if image_data.startswith("data:"):
-                            _, encoded = image_data.split(",", 1)
-                        else:
-                            encoded = image_data
-                        img_bytes = base64.b64decode(encoded)
-                        img_path = get_temp_path(f"img_{uuid.uuid4().hex}.png")
-                        img_path.write_bytes(img_bytes)
-                        temp_images.append(img_path)
-                        c.drawImage(
-                            ImageReader(str(img_path)),
-                            img_x, img_y,
-                            width=img_w, height=img_h,
-                            mask="auto",
-                        )
+                        try:
+                            if image_data.startswith("data:"):
+                                _, encoded = image_data.split(",", 1)
+                            else:
+                                encoded = image_data
+                            img_bytes = base64.b64decode(encoded)
+                            c.drawImage(
+                                ImageReader(io.BytesIO(img_bytes)),
+                                img_x, img_y,
+                                width=img_w, height=img_h,
+                                mask="auto",
+                            )
+                        except Exception:
+                            continue
 
             c.save()
             packet.seek(0)

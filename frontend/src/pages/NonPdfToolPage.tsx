@@ -171,6 +171,11 @@ export default function NonPdfToolPage() {
                   <span className={cn("text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary", meta.accent)}>
                     {meta.label}
                   </span>
+                  {tool.clientOnly && (
+                    <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
+                      Client-Side
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground max-w-lg">{tool.longDescription}</p>
               </div>
@@ -184,8 +189,20 @@ export default function NonPdfToolPage() {
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">How it works</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
-                  { step: "1", title: "Upload your file", desc: "Drag & drop or click to select. Files are processed on your self-hosted server." },
-                  { step: "2", title: "Configure & process", desc: "Adjust any settings, then process instantly on your server." },
+                  {
+                    step: "1",
+                    title: "Upload your file",
+                    desc: tool.clientOnly
+                      ? "Drag & drop or click to select. Processing happens locally in your browser."
+                      : "Drag & drop or click to select. Files are processed on your self-hosted server.",
+                  },
+                  {
+                    step: "2",
+                    title: "Configure & process",
+                    desc: tool.clientOnly
+                      ? "Adjust settings and process instantly without uploading file contents."
+                      : "Adjust any settings, then process instantly on your server.",
+                  },
                   { step: "3", title: "Download result", desc: "Your processed file is ready immediately. No email, no waiting." },
                 ].map((s) => (
                   <div key={s.step} className="rounded-xl border border-border bg-card p-4">

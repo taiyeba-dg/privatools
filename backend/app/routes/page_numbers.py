@@ -25,10 +25,10 @@ VALID_POSITIONS = {
 async def add_page_numbers(
     file: UploadFile = File(...),
     position: str = Form("bottom-center"),
-    start_number: int = Form(1),
-    font_size: int = Form(12),
+    start_number: int = Form(1, ge=1, le=1_000_000),
+    font_size: int = Form(12, ge=6, le=144),
 ):
-    if not file.filename.lower().endswith(".pdf"):
+    if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
     if position not in VALID_POSITIONS:
@@ -38,9 +38,13 @@ async def add_page_numbers(
         )
 
     ensure_temp_dir()
+    temp_path = None
+    output_path = None
 
     try:
         content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
         if len(content) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
@@ -61,7 +65,11 @@ async def add_page_numbers(
             background=cleanup,
         )
     except HTTPException:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         raise
     except Exception:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

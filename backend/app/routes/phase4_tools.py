@@ -1,53 +1,116 @@
-"""Final phase routes: White-Out, Attachment, Permissions, JSON/XML→PDF, Annotate, Shapes, EPUB→PDF, RTF→PDF."""
-import uuid
+"""Phase 4 routes: white-out, attachments, permissions, JSON/XML conversion, annotate, shapes, EPUB/RTF."""
+
 import json
 import logging
+import re
+import uuid
+from json import JSONDecodeError
 from pathlib import Path
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException
+from typing import Any
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
-from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files
+
 from ..services import (
-    whiteout_service,
-    attachment_service,
-    permissions_service,
-    json_to_pdf_service,
-    xml_to_pdf_service,
     annotate_service,
-    shapes_service,
+    attachment_service,
     epub_to_pdf_service,
+    json_to_pdf_service,
+    permissions_service,
     rtf_to_pdf_service,
+    shapes_service,
+    whiteout_service,
+    xml_to_pdf_service,
 )
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
 MAX_SIZE = 50 * 1024 * 1024
+MAX_JSON_ITEMS = 1000
+SAFE_FILENAME_RE = re.compile(r"[^A-Za-z0-9._ -]+")
+
+
+async def _read_upload(file: UploadFile, *, label: str, max_bytes: int = MAX_SIZE) -> bytes:
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail=f"{label} is empty")
+    if len(data) > max_bytes:
+        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+    return data
+
+
+def _cleanup_on_error(*paths: str | Path | None) -> None:
+    remove_files(*[p for p in paths if p is not None])
+
+
+def _safe_attachment_name(name: str | None) -> str:
+    base = Path(name or "").name.strip()
+    if not base:
+        base = "attachment.bin"
+    base = SAFE_FILENAME_RE.sub("_", base).strip("._ ")
+    if not base:
+        base = "attachment.bin"
+    if len(base) > 120:
+        stem, ext = Path(base).stem, Path(base).suffix
+        base = f"{stem[:100]}{ext[:20]}"
+    return base
+
+
+def _safe_suffix(filename: str, fallback: str = ".bin") -> str:
+    suffix = Path(filename).suffix.lower()
+    if re.fullmatch(r"\.[a-z0-9]{1,12}", suffix):
+        return suffix
+    return fallback
+
+
+def _parse_json_list(raw: str, *, field_name: str) -> list[dict[str, Any]]:
+    if not (raw or "").strip():
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    try:
+        parsed = json.loads(raw)
+    except JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail=f"{field_name} must be valid JSON") from exc
+    if not isinstance(parsed, list):
+        raise HTTPException(status_code=400, detail=f"{field_name} must be a JSON array")
+    if not parsed:
+        raise HTTPException(status_code=400, detail=f"{field_name} must contain at least one item")
+    if len(parsed) > MAX_JSON_ITEMS:
+        raise HTTPException(status_code=400, detail=f"{field_name} cannot contain more than {MAX_JSON_ITEMS} items")
+    if not all(isinstance(item, dict) for item in parsed):
+        raise HTTPException(status_code=400, detail=f"Each item in {field_name} must be an object")
+    return parsed
 
 
 # ─── White-Out / Eraser ──────────────────────────────────
 @router.post("/whiteout-pdf")
 async def whiteout_pdf(
     file: UploadFile = File(...),
-    regions: str = Form('[]'),
+    regions: str = Form("[]"),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
+
+    region_list = _parse_json_list(regions, field_name="regions")
+
     ensure_temp_dir()
+    temp = None
+    out = None
     try:
-        content = await file.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+        content = await _read_upload(file, label="PDF file")
+        validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
-        region_list = json.loads(regions) if regions else []
-        if not region_list:
-            region_list = [{"page": 1, "x": 100, "y": 100, "width": 200, "height": 30}]
         out = whiteout_service.whiteout_pdf(str(temp), region_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="whiteout.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
+        _cleanup_on_error(temp, out)
         raise
     except Exception:
+        _cleanup_on_error(temp, out)
         logger.exception("whiteout error")
         raise HTTPException(status_code=500, detail="White-out failed")
 
@@ -60,23 +123,34 @@ async def add_attachment(
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
+
+    safe_attachment_name = _safe_attachment_name(attachment.filename)
     ensure_temp_dir()
+    temp_pdf = None
+    temp_att = None
+    out = None
     try:
-        pdf_content = await file.read()
-        att_content = await attachment.read()
+        pdf_content = await _read_upload(file, label="PDF file")
+        validate_pdf_content(pdf_content)
+        att_content = await _read_upload(attachment, label="Attachment file")
         if len(pdf_content) + len(att_content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="Files exceed 50 MB limit")
+            raise HTTPException(status_code=413, detail="Combined file size exceeds 50 MB limit")
+
         temp_pdf = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_pdf.write_bytes(pdf_content)
-        att_name = attachment.filename or "attachment"
-        temp_att = get_temp_path(f"att_{uuid.uuid4().hex}_{att_name}")
+
+        att_suffix = _safe_suffix(safe_attachment_name)
+        temp_att = get_temp_path(f"att_{uuid.uuid4().hex}{att_suffix}")
         temp_att.write_bytes(att_content)
-        out = attachment_service.add_attachment(str(temp_pdf), str(temp_att), att_name)
+
+        out = attachment_service.add_attachment(str(temp_pdf), str(temp_att), safe_attachment_name)
         cleanup = BackgroundTask(remove_files, str(temp_pdf), str(temp_att), out)
         return FileResponse(out, filename="with_attachment.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
+        _cleanup_on_error(temp_pdf, temp_att, out)
         raise
     except Exception:
+        _cleanup_on_error(temp_pdf, temp_att, out)
         logger.exception("attachment error")
         raise HTTPException(status_code=500, detail="Attachment failed")
 
@@ -93,20 +167,34 @@ async def set_permissions(
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
+    if len((owner_password or "")) > 128:
+        raise HTTPException(status_code=400, detail="owner_password must be 128 characters or fewer")
+
     ensure_temp_dir()
+    temp = None
+    out = None
     try:
-        content = await file.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+        content = await _read_upload(file, label="PDF file")
+        validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
-        out = permissions_service.set_permissions(str(temp), owner_password,
-            allow_print, allow_copy, allow_modify, allow_annotate)
+        # Avoid a predictable static owner password in the service default.
+        safe_owner_password = (owner_password or "").strip() or uuid.uuid4().hex
+        out = permissions_service.set_permissions(
+            str(temp),
+            safe_owner_password,
+            allow_print,
+            allow_copy,
+            allow_modify,
+            allow_annotate,
+        )
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="permissions.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
+        _cleanup_on_error(temp, out)
         raise
     except Exception:
+        _cleanup_on_error(temp, out)
         logger.exception("permissions error")
         raise HTTPException(status_code=500, detail="Permission setting failed")
 
@@ -116,19 +204,28 @@ async def set_permissions(
 async def json_to_pdf(file: UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith(".json"):
         raise HTTPException(status_code=400, detail="Please upload a .json file")
+
     ensure_temp_dir()
+    temp = None
+    out = None
     try:
-        content = await file.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+        content = await _read_upload(file, label="JSON file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.json")
         temp.write_bytes(content)
         out = json_to_pdf_service.json_to_pdf(str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.pdf", media_type="application/pdf", background=cleanup)
+    except JSONDecodeError:
+        _cleanup_on_error(temp, out)
+        raise HTTPException(status_code=400, detail="Invalid JSON file")
     except HTTPException:
+        _cleanup_on_error(temp, out)
         raise
+    except ValueError as exc:
+        _cleanup_on_error(temp, out)
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception:
+        _cleanup_on_error(temp, out)
         logger.exception("json-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
 
@@ -138,19 +235,22 @@ async def json_to_pdf(file: UploadFile = File(...)):
 async def xml_to_pdf(file: UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith(".xml"):
         raise HTTPException(status_code=400, detail="Please upload an .xml file")
+
     ensure_temp_dir()
+    temp = None
+    out = None
     try:
-        content = await file.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+        content = await _read_upload(file, label="XML file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.xml")
         temp.write_bytes(content)
         out = xml_to_pdf_service.xml_to_pdf(str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
+        _cleanup_on_error(temp, out)
         raise
     except Exception:
+        _cleanup_on_error(temp, out)
         logger.exception("xml-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
 
@@ -159,26 +259,29 @@ async def xml_to_pdf(file: UploadFile = File(...)):
 @router.post("/annotate-pdf")
 async def annotate_pdf(
     file: UploadFile = File(...),
-    annotations: str = Form('[]'),
+    annotations: str = Form("[]"),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
+
+    ann_list = _parse_json_list(annotations, field_name="annotations")
+
     ensure_temp_dir()
+    temp = None
+    out = None
     try:
-        content = await file.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+        content = await _read_upload(file, label="PDF file")
+        validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
-        ann_list = json.loads(annotations) if annotations else []
-        if not ann_list:
-            ann_list = [{"type": "highlight", "page": 1, "x": 72, "y": 72, "width": 200, "height": 14}]
         out = annotate_service.annotate_pdf(str(temp), ann_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="annotated.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
+        _cleanup_on_error(temp, out)
         raise
     except Exception:
+        _cleanup_on_error(temp, out)
         logger.exception("annotate error")
         raise HTTPException(status_code=500, detail="Annotation failed")
 
@@ -187,26 +290,29 @@ async def annotate_pdf(
 @router.post("/add-shapes")
 async def add_shapes(
     file: UploadFile = File(...),
-    shapes: str = Form('[]'),
+    shapes: str = Form("[]"),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
+
+    shape_list = _parse_json_list(shapes, field_name="shapes")
+
     ensure_temp_dir()
+    temp = None
+    out = None
     try:
-        content = await file.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+        content = await _read_upload(file, label="PDF file")
+        validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
-        shape_list = json.loads(shapes) if shapes else []
-        if not shape_list:
-            shape_list = [{"type": "rectangle", "page": 1, "x": 100, "y": 100, "width": 200, "height": 100, "color": "#ff0000"}]
         out = shapes_service.add_shapes(str(temp), shape_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="shapes.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
+        _cleanup_on_error(temp, out)
         raise
     except Exception:
+        _cleanup_on_error(temp, out)
         logger.exception("shapes error")
         raise HTTPException(status_code=500, detail="Shape addition failed")
 
@@ -216,19 +322,22 @@ async def add_shapes(
 async def epub_to_pdf(file: UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith(".epub"):
         raise HTTPException(status_code=400, detail="Please upload an .epub file")
+
     ensure_temp_dir()
+    temp = None
+    out = None
     try:
-        content = await file.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+        content = await _read_upload(file, label="EPUB file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.epub")
         temp.write_bytes(content)
         out = epub_to_pdf_service.epub_to_pdf(str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="book.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
+        _cleanup_on_error(temp, out)
         raise
     except Exception:
+        _cleanup_on_error(temp, out)
         logger.exception("epub-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
 
@@ -238,18 +347,21 @@ async def epub_to_pdf(file: UploadFile = File(...)):
 async def rtf_to_pdf(file: UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith(".rtf"):
         raise HTTPException(status_code=400, detail="Please upload a .rtf file")
+
     ensure_temp_dir()
+    temp = None
+    out = None
     try:
-        content = await file.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
+        content = await _read_upload(file, label="RTF file")
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.rtf")
         temp.write_bytes(content)
         out = rtf_to_pdf_service.rtf_to_pdf(str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="document.pdf", media_type="application/pdf", background=cleanup)
     except HTTPException:
+        _cleanup_on_error(temp, out)
         raise
     except Exception:
+        _cleanup_on_error(temp, out)
         logger.exception("rtf-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")

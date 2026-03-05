@@ -21,8 +21,9 @@ async def convert_html_to_pdf(
         raise HTTPException(status_code=400, detail="Provide either a URL or HTML content")
 
     if html_content and len(html_content) > MAX_HTML_BYTES:
-        raise HTTPException(status_code=400, detail="HTML content exceeds 2 MB limit")
+        raise HTTPException(status_code=413, detail="HTML content exceeds 2 MB limit")
 
+    output_path = None
     try:
         if url:
             # URL scheme/host validation happens inside url_to_pdf via _validate_url
@@ -38,7 +39,11 @@ async def convert_html_to_pdf(
             background=cleanup,
         )
     except HTTPException:
+        if output_path:
+            remove_files(output_path)
         raise
     except Exception:
+        if output_path:
+            remove_files(output_path)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

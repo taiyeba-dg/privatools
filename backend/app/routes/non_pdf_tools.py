@@ -1,187 +1,608 @@
 """Non-PDF tool routes: image, video/audio, and archive processing."""
-from fastapi import APIRouter, UploadFile, File, Form
+
+import io
+import os
+import re
+import shutil
+import subprocess
+import tarfile
+import tempfile
+import zipfile
+from pathlib import PurePosixPath
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
-import tempfile, os, io
 
 router = APIRouter()
 
-# ─── Image Tools ───
+MAX_IMAGE_SIZE = 30 * 1024 * 1024
+MAX_MEDIA_SIZE = 200 * 1024 * 1024
+MAX_ARCHIVE_SIZE = 200 * 1024 * 1024
+MAX_ARCHIVE_FILES = 5000
+MAX_EXTRACTED_BYTES = 500 * 1024 * 1024
+TIMESTAMP_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(?:\.\d+)?$")
+
+IMAGE_FORMATS = {
+    "jpeg": "JPEG",
+    "jpg": "JPEG",
+    "png": "PNG",
+    "webp": "WEBP",
+    "bmp": "BMP",
+    "tiff": "TIFF",
+}
+
+IMAGE_MIME_MAP = {
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "webp": "image/webp",
+    "bmp": "image/bmp",
+    "tiff": "image/tiff",
+}
+
+AUDIO_MIME_MAP = {
+    "mp3": "audio/mpeg",
+    "wav": "audio/wav",
+    "aac": "audio/aac",
+    "flac": "audio/flac",
+    "ogg": "audio/ogg",
+}
+
+VIDEO_MIME_BY_EXT = {
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".webm": "video/webm",
+    ".mkv": "video/x-matroska",
+    ".avi": "video/x-msvideo",
+}
+
+
+def _cleanup_paths(*paths: str) -> None:
+    for path in paths:
+        if not path:
+            continue
+        try:
+            if os.path.isdir(path):
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                os.unlink(path)
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
+
+
+def _safe_filename(name: str | None, fallback: str) -> str:
+    base = os.path.basename(name or "").strip()
+    return base or fallback
+
+
+async def _read_upload(file: UploadFile, max_size: int, label: str = "File") -> bytes:
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail=f"{label} is empty")
+    if len(data) > max_size:
+        raise HTTPException(status_code=413, detail=f"{label} exceeds size limit")
+    return data
+
+
+def _new_temp_file(suffix: str) -> str:
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    tmp.close()
+    return tmp.name
+
+
+def _write_temp_file(content: bytes, suffix: str) -> str:
+    path = _new_temp_file(suffix)
+    with open(path, "wb") as handle:
+        handle.write(content)
+    return path
+
+
+def _run_ffmpeg(cmd: list[str], timeout: int) -> None:
+    try:
+        subprocess.run(cmd, capture_output=True, check=True, timeout=timeout)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail="ffmpeg is not installed") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(status_code=408, detail="Media processing timed out") from exc
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.decode("utf-8", errors="ignore").strip()
+        detail = "ffmpeg failed to process the file"
+        if stderr:
+            detail = f"{detail}: {stderr.splitlines()[-1][:200]}"
+        raise HTTPException(status_code=400, detail=detail) from exc
+
+
+def _validate_timestamp(value: str, label: str) -> None:
+    if not TIMESTAMP_RE.fullmatch(value):
+        raise HTTPException(status_code=400, detail=f"Invalid {label} format. Use HH:MM:SS")
+
+
+def _timestamp_to_seconds(value: str) -> float:
+    hours, minutes, seconds = value.split(":")
+    return int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+
+
+def _safe_archive_name(raw_name: str) -> str:
+    name = PurePosixPath(raw_name)
+    if name.is_absolute():
+        raise HTTPException(status_code=400, detail="Archive contains absolute paths")
+
+    parts: list[str] = []
+    for part in name.parts:
+        if part in ("", "."):
+            continue
+        if part == "..":
+            raise HTTPException(status_code=400, detail="Archive contains unsafe path traversal entries")
+        parts.append(part)
+
+    if not parts:
+        raise HTTPException(status_code=400, detail="Archive contains an invalid file entry")
+
+    return "/".join(parts)
+
+
+def _extract_zip_safely(zip_path: str, extract_dir: str) -> None:
+    total_bytes = 0
+    file_count = 0
+
+    with zipfile.ZipFile(zip_path, "r") as archive:
+        for info in archive.infolist():
+            if info.is_dir():
+                continue
+
+            arc_name = _safe_archive_name(info.filename)
+            file_count += 1
+            total_bytes += info.file_size
+            if file_count > MAX_ARCHIVE_FILES:
+                raise HTTPException(status_code=413, detail="Archive contains too many files")
+            if total_bytes > MAX_EXTRACTED_BYTES:
+                raise HTTPException(status_code=413, detail="Extracted archive data is too large")
+
+            target_path = os.path.join(extract_dir, *arc_name.split("/"))
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            with archive.open(info, "r") as source, open(target_path, "wb") as target:
+                shutil.copyfileobj(source, target)
+
+
+def _extract_tar_safely(tar_path: str, extract_dir: str, mode: str) -> None:
+    total_bytes = 0
+    file_count = 0
+
+    with tarfile.open(tar_path, mode) as archive:
+        for member in archive.getmembers():
+            if not member.isfile():
+                continue
+
+            arc_name = _safe_archive_name(member.name)
+            file_count += 1
+            total_bytes += member.size
+            if file_count > MAX_ARCHIVE_FILES:
+                raise HTTPException(status_code=413, detail="Archive contains too many files")
+            if total_bytes > MAX_EXTRACTED_BYTES:
+                raise HTTPException(status_code=413, detail="Extracted archive data is too large")
+
+            extracted = archive.extractfile(member)
+            if extracted is None:
+                continue
+
+            target_path = os.path.join(extract_dir, *arc_name.split("/"))
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            with extracted, open(target_path, "wb") as target:
+                shutil.copyfileobj(extracted, target)
+
+
+def _zip_directory(source_dir: str, output_zip_path: str) -> None:
+    with zipfile.ZipFile(output_zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for root, _dirs, files in os.walk(source_dir):
+            for name in files:
+                full_path = os.path.join(root, name)
+                relative_path = os.path.relpath(full_path, source_dir).replace(os.sep, "/")
+                archive.write(full_path, relative_path)
+
+
+def _unique_name(name: str, used: set[str]) -> str:
+    if name not in used:
+        used.add(name)
+        return name
+
+    stem, ext = os.path.splitext(name)
+    index = 1
+    candidate = f"{stem}_{index}{ext}"
+    while candidate in used:
+        index += 1
+        candidate = f"{stem}_{index}{ext}"
+
+    used.add(candidate)
+    return candidate
+
+
+# Image tools
+
 
 @router.post("/image-compressor")
-async def image_compressor(file: UploadFile = File(...), quality: int = Form(82)):
+async def image_compressor(file: UploadFile = File(...), quality: int = Form(82, ge=1, le=95)):
     from PIL import Image
-    data = await file.read()
+
+    data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
     img = Image.open(io.BytesIO(data))
-    if img.mode == "RGBA":
+    if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
-    img.save(tmp.name, "JPEG", quality=quality, optimize=True)
-    cleanup = BackgroundTask(os.unlink, tmp.name)
-    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"compressed_{file.filename}", background=cleanup)
+
+    out_path = _new_temp_file(".jpg")
+    img.save(out_path, "JPEG", quality=quality, optimize=True)
+
+    base_name = os.path.splitext(_safe_filename(file.filename, "image"))[0]
+    cleanup = BackgroundTask(_cleanup_paths, out_path)
+    return FileResponse(
+        out_path,
+        media_type="image/jpeg",
+        filename=f"compressed_{base_name}.jpg",
+        background=cleanup,
+    )
+
 
 @router.post("/image-converter")
 async def image_converter(file: UploadFile = File(...), target_format: str = Form("png")):
     from PIL import Image
-    data = await file.read()
+
+    fmt_key = target_format.lower().strip()
+    pil_fmt = IMAGE_FORMATS.get(fmt_key)
+    if pil_fmt is None:
+        raise HTTPException(status_code=400, detail="Unsupported target format")
+
+    data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
     img = Image.open(io.BytesIO(data))
-    fmt_map = {"jpeg": "JPEG", "jpg": "JPEG", "png": "PNG", "webp": "WEBP", "bmp": "BMP", "tiff": "TIFF"}
-    pil_fmt = fmt_map.get(target_format.lower(), "PNG")
-    mime_map = {"jpeg": "image/jpeg", "jpg": "image/jpeg", "png": "image/png", "webp": "image/webp", "bmp": "image/bmp", "tiff": "image/tiff"}
-    if pil_fmt == "JPEG" and img.mode == "RGBA":
+
+    if pil_fmt == "JPEG" and img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f".{target_format}")
-    img.save(tmp.name, pil_fmt)
-    cleanup = BackgroundTask(os.unlink, tmp.name)
-    return FileResponse(tmp.name, media_type=mime_map.get(target_format.lower(), "application/octet-stream"), filename=f"converted.{target_format}", background=cleanup)
+
+    suffix = ".jpg" if fmt_key == "jpeg" else f".{fmt_key}"
+    out_path = _new_temp_file(suffix)
+    img.save(out_path, pil_fmt)
+
+    cleanup = BackgroundTask(_cleanup_paths, out_path)
+    return FileResponse(
+        out_path,
+        media_type=IMAGE_MIME_MAP[fmt_key],
+        filename=f"converted{suffix}",
+        background=cleanup,
+    )
+
 
 @router.post("/remove-exif")
 async def remove_exif(file: UploadFile = File(...)):
     from PIL import Image
-    data = await file.read()
+
+    data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
     img = Image.open(io.BytesIO(data))
     clean = Image.new(img.mode, img.size)
     clean.putdata(list(img.getdata()))
-    ext = os.path.splitext(file.filename or "image.jpg")[1] or ".jpg"
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-    fmt = "JPEG" if ext.lower() in [".jpg", ".jpeg"] else "PNG"
-    if fmt == "JPEG" and clean.mode == "RGBA":
-        clean = clean.convert("RGB")
-    clean.save(tmp.name, fmt)
-    cleanup = BackgroundTask(os.unlink, tmp.name)
-    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"clean_{file.filename}", background=cleanup)
+
+    ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
+    if ext in (".jpg", ".jpeg"):
+        fmt = "JPEG"
+        mime_type = "image/jpeg"
+        suffix = ".jpg"
+        if clean.mode in ("RGBA", "P"):
+            clean = clean.convert("RGB")
+    elif ext == ".webp":
+        fmt = "WEBP"
+        mime_type = "image/webp"
+        suffix = ".webp"
+    elif ext == ".bmp":
+        fmt = "BMP"
+        mime_type = "image/bmp"
+        suffix = ".bmp"
+    elif ext in (".tif", ".tiff"):
+        fmt = "TIFF"
+        mime_type = "image/tiff"
+        suffix = ".tiff"
+    else:
+        fmt = "PNG"
+        mime_type = "image/png"
+        suffix = ".png"
+
+    out_path = _new_temp_file(suffix)
+    clean.save(out_path, fmt)
+
+    cleanup = BackgroundTask(_cleanup_paths, out_path)
+    return FileResponse(
+        out_path,
+        media_type=mime_type,
+        filename=f"clean{suffix}",
+        background=cleanup,
+    )
+
 
 @router.post("/resize-crop-image")
-async def resize_crop_image(file: UploadFile = File(...), width: int = Form(800), height: int = Form(600), mode: str = Form("resize")):
+async def resize_crop_image(
+    file: UploadFile = File(...),
+    width: int = Form(800, ge=1, le=8000),
+    height: int = Form(600, ge=1, le=8000),
+    mode: str = Form("resize"),
+):
     from PIL import Image, ImageOps
-    data = await file.read()
+
+    mode_normalized = mode.strip().lower()
+    if mode_normalized not in {"resize", "crop"}:
+        raise HTTPException(status_code=400, detail="mode must be either 'resize' or 'crop'")
+
+    data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
     img = Image.open(io.BytesIO(data))
-    if mode == "crop":
+
+    if mode_normalized == "crop":
         img = ImageOps.fit(img, (width, height))
     else:
         img = img.resize((width, height), Image.LANCZOS)
-    ext = os.path.splitext(file.filename or "image.jpg")[1] or ".jpg"
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-    fmt = "JPEG" if ext.lower() in [".jpg", ".jpeg"] else "PNG"
-    if fmt == "JPEG" and img.mode == "RGBA":
-        img = img.convert("RGB")
-    img.save(tmp.name, fmt)
-    cleanup = BackgroundTask(os.unlink, tmp.name)
-    return FileResponse(tmp.name, media_type="image/jpeg", filename=f"{mode}_{file.filename}", background=cleanup)
 
-# ─── Video/Audio Tools ─── (require ffmpeg)
+    ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
+    if ext in (".jpg", ".jpeg"):
+        fmt = "JPEG"
+        mime_type = "image/jpeg"
+        suffix = ".jpg"
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+    else:
+        fmt = "PNG"
+        mime_type = "image/png"
+        suffix = ".png"
+
+    out_path = _new_temp_file(suffix)
+    img.save(out_path, fmt)
+
+    cleanup = BackgroundTask(_cleanup_paths, out_path)
+    return FileResponse(
+        out_path,
+        media_type=mime_type,
+        filename=f"{mode_normalized}{suffix}",
+        background=cleanup,
+    )
+
+
+# Video/Audio tools (require ffmpeg)
+
 
 @router.post("/video-to-gif")
-async def video_to_gif(file: UploadFile = File(...), fps: int = Form(10), width: int = Form(480)):
-    import subprocess
-    data = await file.read()
-    input_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    input_tmp.write(data)
-    input_tmp.close()
-    output_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".gif")
+async def video_to_gif(
+    file: UploadFile = File(...),
+    fps: int = Form(10, ge=1, le=30),
+    width: int = Form(480, ge=120, le=1920),
+):
+    input_ext = os.path.splitext(_safe_filename(file.filename, "video.mp4"))[1] or ".mp4"
+    data = await _read_upload(file, MAX_MEDIA_SIZE, label="Video")
+    input_path = _write_temp_file(data, input_ext)
+    output_path = _new_temp_file(".gif")
+
     try:
-        subprocess.run(["ffmpeg", "-y", "-i", input_tmp.name, "-vf", f"fps={fps},scale={width}:-1:flags=lanczos", "-loop", "0", output_tmp.name],
-                       capture_output=True, timeout=120)
-    except FileNotFoundError:
-        os.unlink(input_tmp.name)
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=500, content={"detail": "ffmpeg not installed"})
-    os.unlink(input_tmp.name)
-    cleanup = BackgroundTask(os.unlink, output_tmp.name)
-    return FileResponse(output_tmp.name, media_type="image/gif", filename="output.gif", background=cleanup)
+        _run_ffmpeg(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                input_path,
+                "-vf",
+                f"fps={fps},scale={width}:-1:flags=lanczos",
+                "-loop",
+                "0",
+                output_path,
+            ],
+            timeout=180,
+        )
+    except HTTPException:
+        _cleanup_paths(input_path, output_path)
+        raise
+
+    cleanup = BackgroundTask(_cleanup_paths, input_path, output_path)
+    return FileResponse(output_path, media_type="image/gif", filename="output.gif", background=cleanup)
+
 
 @router.post("/extract-audio")
 async def extract_audio(file: UploadFile = File(...), format: str = Form("mp3")):
-    import subprocess
-    data = await file.read()
-    input_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    input_tmp.write(data)
-    input_tmp.close()
-    output_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f".{format}")
+    audio_format = format.lower().strip()
+    codec_map = {
+        "mp3": "libmp3lame",
+        "wav": "pcm_s16le",
+        "aac": "aac",
+        "flac": "flac",
+        "ogg": "libvorbis",
+    }
+    if audio_format not in codec_map:
+        raise HTTPException(status_code=400, detail="Unsupported output audio format")
+
+    input_ext = os.path.splitext(_safe_filename(file.filename, "video.mp4"))[1] or ".mp4"
+    data = await _read_upload(file, MAX_MEDIA_SIZE, label="Media file")
+    input_path = _write_temp_file(data, input_ext)
+    output_path = _new_temp_file(f".{audio_format}")
+
     try:
-        subprocess.run(["ffmpeg", "-y", "-i", input_tmp.name, "-vn", "-acodec", "libmp3lame" if format == "mp3" else "copy", output_tmp.name],
-                       capture_output=True, timeout=120)
-    except FileNotFoundError:
-        os.unlink(input_tmp.name)
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=500, content={"detail": "ffmpeg not installed"})
-    os.unlink(input_tmp.name)
-    mime_map = {"mp3": "audio/mpeg", "wav": "audio/wav", "aac": "audio/aac", "flac": "audio/flac", "ogg": "audio/ogg"}
-    cleanup = BackgroundTask(os.unlink, output_tmp.name)
-    return FileResponse(output_tmp.name, media_type=mime_map.get(format, "audio/mpeg"), filename=f"audio.{format}", background=cleanup)
+        _run_ffmpeg(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                input_path,
+                "-vn",
+                "-acodec",
+                codec_map[audio_format],
+                output_path,
+            ],
+            timeout=180,
+        )
+    except HTTPException:
+        _cleanup_paths(input_path, output_path)
+        raise
+
+    cleanup = BackgroundTask(_cleanup_paths, input_path, output_path)
+    return FileResponse(
+        output_path,
+        media_type=AUDIO_MIME_MAP[audio_format],
+        filename=f"audio.{audio_format}",
+        background=cleanup,
+    )
+
 
 @router.post("/trim-media")
-async def trim_media(file: UploadFile = File(...), start: str = Form("00:00:00"), end: str = Form("00:00:10")):
-    import subprocess
-    data = await file.read()
-    ext = os.path.splitext(file.filename or "media.mp4")[1] or ".mp4"
-    input_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-    input_tmp.write(data)
-    input_tmp.close()
-    output_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+async def trim_media(
+    file: UploadFile = File(...),
+    start: str = Form("00:00:00"),
+    end: str = Form("00:00:10"),
+):
+    _validate_timestamp(start, "start timestamp")
+    _validate_timestamp(end, "end timestamp")
+    if _timestamp_to_seconds(start) >= _timestamp_to_seconds(end):
+        raise HTTPException(status_code=400, detail="end timestamp must be greater than start timestamp")
+
+    ext = os.path.splitext(_safe_filename(file.filename, "media.mp4"))[1] or ".mp4"
+    data = await _read_upload(file, MAX_MEDIA_SIZE, label="Media file")
+    input_path = _write_temp_file(data, ext)
+    output_path = _new_temp_file(ext)
+
     try:
-        subprocess.run(["ffmpeg", "-y", "-i", input_tmp.name, "-ss", start, "-to", end, "-c", "copy", output_tmp.name],
-                       capture_output=True, timeout=120)
-    except FileNotFoundError:
-        os.unlink(input_tmp.name)
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=500, content={"detail": "ffmpeg not installed"})
-    os.unlink(input_tmp.name)
-    cleanup = BackgroundTask(os.unlink, output_tmp.name)
-    return FileResponse(output_tmp.name, media_type="application/octet-stream", filename=f"trimmed{ext}", background=cleanup)
+        _run_ffmpeg(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                input_path,
+                "-ss",
+                start,
+                "-to",
+                end,
+                "-c",
+                "copy",
+                output_path,
+            ],
+            timeout=180,
+        )
+    except HTTPException:
+        _cleanup_paths(input_path, output_path)
+        raise
+
+    cleanup = BackgroundTask(_cleanup_paths, input_path, output_path)
+    media_type = VIDEO_MIME_BY_EXT.get(ext.lower(), "application/octet-stream")
+    return FileResponse(output_path, media_type=media_type, filename=f"trimmed{ext}", background=cleanup)
+
 
 @router.post("/compress-video")
-async def compress_video(file: UploadFile = File(...), quality: int = Form(28)):
-    import subprocess
-    data = await file.read()
-    input_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    input_tmp.write(data)
-    input_tmp.close()
-    output_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    try:
-        subprocess.run(["ffmpeg", "-y", "-i", input_tmp.name, "-vcodec", "libx264", "-crf", str(quality), output_tmp.name],
-                       capture_output=True, timeout=300)
-    except FileNotFoundError:
-        os.unlink(input_tmp.name)
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=500, content={"detail": "ffmpeg not installed"})
-    os.unlink(input_tmp.name)
-    cleanup = BackgroundTask(os.unlink, output_tmp.name)
-    return FileResponse(output_tmp.name, media_type="video/mp4", filename=f"compressed_{file.filename}", background=cleanup)
+async def compress_video(file: UploadFile = File(...), quality: int = Form(28, ge=18, le=40)):
+    data = await _read_upload(file, MAX_MEDIA_SIZE, label="Video")
+    input_ext = os.path.splitext(_safe_filename(file.filename, "video.mp4"))[1] or ".mp4"
+    input_path = _write_temp_file(data, input_ext)
+    output_path = _new_temp_file(".mp4")
 
-# ─── Archive Tools ───
+    try:
+        _run_ffmpeg(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                input_path,
+                "-vcodec",
+                "libx264",
+                "-crf",
+                str(quality),
+                "-preset",
+                "medium",
+                "-movflags",
+                "+faststart",
+                output_path,
+            ],
+            timeout=300,
+        )
+    except HTTPException:
+        _cleanup_paths(input_path, output_path)
+        raise
+
+    base_name = os.path.splitext(_safe_filename(file.filename, "video"))[0]
+    cleanup = BackgroundTask(_cleanup_paths, input_path, output_path)
+    return FileResponse(
+        output_path,
+        media_type="video/mp4",
+        filename=f"compressed_{base_name}.mp4",
+        background=cleanup,
+    )
+
+
+# Archive tools
+
 
 @router.post("/extract-archive")
 async def extract_archive(file: UploadFile = File(...)):
-    import zipfile, shutil
-    data = await file.read()
-    input_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename or ".zip")[1])
-    input_tmp.write(data)
-    input_tmp.close()
-    extract_dir = tempfile.mkdtemp()
-    output_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+    archive_name = _safe_filename(file.filename, "archive.zip").lower()
+
+    if archive_name.endswith(".zip"):
+        suffix = ".zip"
+        archive_kind = "zip"
+        tar_mode = ""
+    elif archive_name.endswith(".tar.gz") or archive_name.endswith(".tgz"):
+        suffix = ".tgz"
+        archive_kind = "tar"
+        tar_mode = "r:gz"
+    elif archive_name.endswith(".tar.bz2") or archive_name.endswith(".tbz2"):
+        suffix = ".tbz2"
+        archive_kind = "tar"
+        tar_mode = "r:bz2"
+    elif archive_name.endswith(".tar.xz") or archive_name.endswith(".txz"):
+        suffix = ".txz"
+        archive_kind = "tar"
+        tar_mode = "r:xz"
+    elif archive_name.endswith(".tar"):
+        suffix = ".tar"
+        archive_kind = "tar"
+        tar_mode = "r:"
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported archive type")
+
+    data = await _read_upload(file, MAX_ARCHIVE_SIZE, label="Archive")
+    input_path = _write_temp_file(data, suffix)
+    extract_dir = tempfile.mkdtemp(prefix="extract_")
+    output_path = _new_temp_file(".zip")
+
     try:
-        shutil.unpack_archive(input_tmp.name, extract_dir)
-    except Exception:
-        with zipfile.ZipFile(input_tmp.name, 'r') as z:
-            z.extractall(extract_dir)
-    with zipfile.ZipFile(output_tmp.name, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(extract_dir):
-            for f in files:
-                fp = os.path.join(root, f)
-                zf.write(fp, os.path.relpath(fp, extract_dir))
-    os.unlink(input_tmp.name)
-    shutil.rmtree(extract_dir, ignore_errors=True)
-    cleanup = BackgroundTask(os.unlink, output_tmp.name)
-    return FileResponse(output_tmp.name, media_type="application/zip", filename="extracted.zip", background=cleanup)
+        if archive_kind == "zip":
+            _extract_zip_safely(input_path, extract_dir)
+        else:
+            _extract_tar_safely(input_path, extract_dir, tar_mode)
+
+        _zip_directory(extract_dir, output_path)
+    except HTTPException:
+        _cleanup_paths(input_path, extract_dir, output_path)
+        raise
+    except (zipfile.BadZipFile, tarfile.TarError, OSError, shutil.ReadError) as exc:
+        _cleanup_paths(input_path, extract_dir, output_path)
+        raise HTTPException(status_code=400, detail="Unable to read archive") from exc
+    except Exception as exc:
+        _cleanup_paths(input_path, extract_dir, output_path)
+        raise HTTPException(status_code=500, detail="Failed to extract archive") from exc
+
+    cleanup = BackgroundTask(_cleanup_paths, input_path, extract_dir, output_path)
+    return FileResponse(output_path, media_type="application/zip", filename="extracted.zip", background=cleanup)
+
 
 @router.post("/create-zip")
 async def create_zip(files: list[UploadFile] = File(...), password: str = Form("")):
-    import zipfile
-    output_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
-    with zipfile.ZipFile(output_tmp.name, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for f in files:
-            data = await f.read()
-            zf.writestr(f.filename or "file", data)
-    cleanup = BackgroundTask(os.unlink, output_tmp.name)
-    return FileResponse(output_tmp.name, media_type="application/zip", filename="archive.zip", background=cleanup)
+    if password:
+        raise HTTPException(status_code=400, detail="Password-protected ZIP creation is not supported yet")
+
+    output_path = _new_temp_file(".zip")
+    used_names: set[str] = set()
+
+    try:
+        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as archive:
+            for upload in files:
+                safe_name = _safe_filename(upload.filename, "file")
+                safe_name = _unique_name(safe_name, used_names)
+                data = await _read_upload(upload, MAX_ARCHIVE_SIZE, label=f"File '{safe_name}'")
+                archive.writestr(safe_name, data)
+    except HTTPException:
+        _cleanup_paths(output_path)
+        raise
+    except Exception as exc:
+        _cleanup_paths(output_path)
+        raise HTTPException(status_code=500, detail="Failed to create archive") from exc
+
+    cleanup = BackgroundTask(_cleanup_paths, output_path)
+    return FileResponse(output_path, media_type="application/zip", filename="archive.zip", background=cleanup)

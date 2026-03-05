@@ -20,8 +20,10 @@ async def auto_crop(file: UploadFile = File(...)):
 
     content = await file.read()
     if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
 
+    doc = None
+    out_path = None
     try:
         validate_pdf_content(content)
         import fitz
@@ -56,7 +58,21 @@ async def auto_crop(file: UploadFile = File(...)):
             background=cleanup,
         )
     except HTTPException:
+        if doc is not None:
+            try:
+                doc.close()
+            except Exception:
+                pass
+        if out_path:
+            remove_files(out_path)
         raise
     except Exception:
+        if doc is not None:
+            try:
+                doc.close()
+            except Exception:
+                pass
+        if out_path:
+            remove_files(out_path)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

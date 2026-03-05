@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle, Download, GitCompare } from "lucide-react";
+import { Upload, Loader2, X, FileText, AlertCircle, Download, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { downloadBlob, formatFileSize } from "@/lib/api";
@@ -7,17 +7,23 @@ import { downloadBlob, formatFileSize } from "@/lib/api";
 const COMPARE_MODES = [
   { value: "visual", label: "Visual Diff", desc: "Side-by-side with highlights" },
   { value: "text", label: "Text Diff", desc: "Compare text content only" },
-  { value: "overlay", label: "Overlay Diff", desc: "Superimpose with red/green" },
 ];
+
+interface TextCompareResult {
+  diff: string[];
+  page_count_1: number;
+  page_count_2: number;
+}
 
 export function CompareUI() {
   const [file1, setFile1] = useState<{ name: string; size: string; raw: File } | null>(null);
   const [file2, setFile2] = useState<{ name: string; size: string; raw: File } | null>(null);
-  const [mode, setMode] = useState("visual");
+  const [mode, setMode] = useState<"visual" | "text">("visual");
   const [highlightColor, setHighlightColor] = useState("#ff0000");
   const [state, setState] = useState<"idle" | "processing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [textResult, setTextResult] = useState<TextCompareResult | null>(null);
   const ref1 = useRef<HTMLInputElement>(null);
   const ref2 = useRef<HTMLInputElement>(null);
 
@@ -26,15 +32,22 @@ export function CompareUI() {
     setState("processing"); setError(null);
     try {
       const fd = new FormData();
-      fd.append("files", file1.raw);
-      fd.append("files", file2.raw);
+      fd.append("file1", file1.raw);
+      fd.append("file2", file2.raw);
       fd.append("mode", mode);
       fd.append("highlight_color", highlightColor);
       const res = await fetch("/api/compare", { method: "POST", body: fd });
       if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
-      const blob = await res.blob();
-      setResultBlob(blob);
-      downloadBlob(blob, "comparison.pdf");
+      if (mode === "visual") {
+        const blob = await res.blob();
+        setResultBlob(blob);
+        setTextResult(null);
+        downloadBlob(blob, "comparison.pdf");
+      } else {
+        const json = await res.json() as TextCompareResult;
+        setTextResult(json);
+        setResultBlob(null);
+      }
       setState("done");
     } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
   };
@@ -68,10 +81,24 @@ export function CompareUI() {
     <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-8 text-center">
       <GitCompare size={32} className="mx-auto mb-3 text-emerald-400" />
       <h2 className="text-lg font-bold text-foreground mb-1">Comparison Complete!</h2>
-      <p className="text-sm text-muted-foreground mb-6">Differences highlighted in your downloaded PDF</p>
+      <p className="text-sm text-muted-foreground mb-6">
+        {mode === "visual" ? "Differences highlighted in your downloaded PDF" : "Text comparison finished"}
+      </p>
+      {mode === "text" && textResult && (
+        <div className="mx-auto mb-6 max-w-2xl rounded-xl border border-border bg-card p-4 text-left">
+          <p className="mb-2 text-xs text-muted-foreground">
+            Pages: {textResult.page_count_1} vs {textResult.page_count_2} · Diff lines: {textResult.diff.length}
+          </p>
+          <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md bg-secondary/30 p-3 text-xs text-foreground">
+            {textResult.diff.slice(0, 120).join("\n") || "No textual differences found."}
+          </pre>
+        </div>
+      )}
       <div className="flex justify-center gap-3 flex-wrap">
-        <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, "comparison.pdf")}><Download size={15} /> Download Again</Button>
-        <Button variant="outline" onClick={() => { setFile1(null); setFile2(null); setState("idle"); setResultBlob(null); }}>Compare more</Button>
+        {mode === "visual" && (
+          <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, "comparison.pdf")}><Download size={15} /> Download Again</Button>
+        )}
+        <Button variant="outline" onClick={() => { setFile1(null); setFile2(null); setState("idle"); setResultBlob(null); setTextResult(null); }}>Compare more</Button>
       </div>
     </div>
   );
@@ -87,9 +114,9 @@ export function CompareUI() {
         <div className="rounded-xl border border-border bg-card p-4 space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">Comparison Mode</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {COMPARE_MODES.map(m => (
-                <button key={m.value} onClick={() => setMode(m.value)}
+                <button key={m.value} onClick={() => setMode(m.value as "visual" | "text")}
                   className={cn("rounded-xl border px-3 py-2.5 text-center transition-all",
                     mode === m.value ? "border-primary bg-primary/10 ring-1 ring-primary/20" : "border-border hover:border-primary/30")}>
                   <div className={cn("text-xs font-bold", mode === m.value ? "text-primary" : "text-foreground")}>{m.label}</div>
@@ -102,7 +129,7 @@ export function CompareUI() {
           <div className="flex items-center gap-3">
             <label className="text-xs font-medium text-muted-foreground">Highlight Color</label>
             <input type="color" value={highlightColor} onChange={e => setHighlightColor(e.target.value)}
-              className="h-7 w-7 rounded border border-border cursor-pointer" />
+              className="h-7 w-7 rounded border border-border cursor-pointer" disabled={mode !== "visual"} />
             <span className="text-[10px] text-muted-foreground">{highlightColor}</span>
           </div>
         </div>

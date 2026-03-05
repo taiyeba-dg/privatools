@@ -20,6 +20,7 @@ export interface Tool {
   description: string;
   longDescription: string;
   category: Category;
+  clientOnly?: boolean;
   accepts: string;
   outputLabel: string;
 }
@@ -224,8 +225,8 @@ export const tools: Tool[] = [
   // ── Convert from PDF ────────────────────────────────────────────────────────
   {
     slug: "pdf-to-excel", icon: Table, name: "PDF to Excel",
-    description: "Extract tables and data into a spreadsheet",
-    longDescription: "Detect and extract all tables from your PDF and output them as structured Excel spreadsheets.",
+    description: "Best-effort table/text extraction into a spreadsheet",
+    longDescription: "Extract table-like data from your PDF into Excel. Complex layouts or scanned documents may need manual cleanup after conversion.",
     category: "from-pdf", accepts: ".pdf", outputLabel: "spreadsheet.xlsx",
   },
   {
@@ -236,8 +237,8 @@ export const tools: Tool[] = [
   },
   {
     slug: "pdf-to-pptx", icon: Presentation, name: "PDF to PowerPoint",
-    description: "Convert a PDF into a PowerPoint presentation",
-    longDescription: "Convert each PDF page into an editable PowerPoint slide, preserving layout and images.",
+    description: "Convert each PDF page into a PowerPoint slide image",
+    longDescription: "Create a PPTX where each PDF page is placed as a slide image. Great for presenting PDFs in PowerPoint, but not full text-level editability.",
     category: "from-pdf", accepts: ".pdf", outputLabel: "slides.pptx",
   },
   {
@@ -248,8 +249,8 @@ export const tools: Tool[] = [
   },
   {
     slug: "pdf-to-word", icon: FileOutput, name: "PDF to Word",
-    description: "Convert a PDF into an editable Word document",
-    longDescription: "Extract all text, tables, and formatting from your PDF into a fully editable Word document.",
+    description: "Convert PDF content to an editable Word draft",
+    longDescription: "Extract text and images into a DOCX document. Complex columns, forms, and tables may require post-conversion editing.",
     category: "from-pdf", accepts: ".pdf", outputLabel: "document.docx",
   },
 
@@ -286,8 +287,8 @@ export const tools: Tool[] = [
   },
   {
     slug: "ocr-pdf", icon: ScanText, name: "OCR PDF",
-    description: "Make a scanned PDF searchable using OCR",
-    longDescription: "Use optical character recognition to detect text in scanned documents and make them fully searchable.",
+    description: "Extract text or create a searchable PDF using OCR",
+    longDescription: "Run OCR on scanned PDFs and choose output as on-screen text, downloadable TXT, or a searchable PDF with an OCR text layer.",
     category: "advanced", accepts: ".pdf", outputLabel: "searchable.pdf",
   },
   {
@@ -346,19 +347,19 @@ export const tools: Tool[] = [
     slug: "word-to-pdf", icon: FileText, name: "Word to PDF",
     description: "Convert .docx Word documents to PDF",
     longDescription: "Upload a Word document (.docx) and convert it to a high-quality PDF preserving headings, bold, italic text, and paragraph formatting.",
-    category: "to-pdf", accepts: ".docx,.doc", outputLabel: "converted.pdf",
+    category: "to-pdf", accepts: ".docx", outputLabel: "converted.pdf",
   },
   {
     slug: "excel-to-pdf", icon: Table, name: "Excel to PDF",
     description: "Convert .xlsx spreadsheets to PDF",
     longDescription: "Upload an Excel spreadsheet and convert all sheets into a formatted PDF with headers, grid lines, and automatic column sizing.",
-    category: "to-pdf", accepts: ".xlsx,.xls", outputLabel: "converted.pdf",
+    category: "to-pdf", accepts: ".xlsx", outputLabel: "converted.pdf",
   },
   {
     slug: "pptx-to-pdf-convert", icon: Presentation, name: "PowerPoint to PDF",
     description: "Convert .pptx presentations to PDF",
     longDescription: "Upload a PowerPoint presentation and convert it to a PDF preserving slide dimensions, text, headings, and formatting.",
-    category: "to-pdf", accepts: ".pptx,.ppt", outputLabel: "converted.pdf",
+    category: "to-pdf", accepts: ".pptx", outputLabel: "converted.pdf",
   },
   {
     slug: "txt-to-pdf", icon: Type, name: "Text to PDF",
@@ -454,14 +455,14 @@ export const tools: Tool[] = [
   },
   {
     slug: "form-creator", icon: ClipboardList, name: "Form Creator",
-    description: "Drag-and-drop form builder to create fillable PDFs",
-    longDescription: "Add text fields, checkboxes, radio buttons, and dropdowns to any PDF canvas to generate a fully interactive fillable document.",
+    description: "Add text fields, checkboxes, radios, and dropdowns to PDFs",
+    longDescription: "Define field coordinates and create fillable PDF forms with text inputs, checkboxes, radio buttons, combo boxes, list boxes, and signature fields.",
     category: "advanced", accepts: ".pdf", outputLabel: "form.pdf",
   },
   {
     slug: "transparent-background", icon: Eraser, name: "Transparent Background",
-    description: "Strip the solid white background from PDF pages",
-    longDescription: "Remove the white background from all pages, leaving only ink and line art with a transparent layer — ideal for design overlays.",
+    description: "Convert near-white PDF backgrounds to transparency",
+    longDescription: "Rasterize each page and remove near-white pixels to create transparent backgrounds suitable for overlays and compositing.",
     category: "edit", accepts: ".pdf", outputLabel: "transparent.pdf",
   },
   {
@@ -474,14 +475,14 @@ export const tools: Tool[] = [
   // ── Security & Forensics ────────────────────────────────────────────────────
   {
     slug: "pdfa-validator", icon: BadgeCheck, name: "PDF/A Validator",
-    description: "Check if a document is strictly PDF/A compliant",
-    longDescription: "Upload any PDF and get a detailed compliance report showing which PDF/A rules pass, warn, or fail — for legal and enterprise use.",
+    description: "Run basic PDF/A indicator checks",
+    longDescription: "Checks common PDF/A indicators and metadata warnings. This is a lightweight heuristic check, not a full ISO profile validator.",
     category: "security", accepts: ".pdf", outputLabel: "report",
   },
   {
     slug: "verify-signature", icon: ShieldCheck, name: "Verify Digital Signature",
-    description: "Check if a PDF's cryptographic signature is valid",
-    longDescription: "Upload a digitally signed PDF and verify the cryptographic integrity, signer identity, and certificate trust chain — all locally.",
+    description: "Inspect signature fields in a PDF",
+    longDescription: "Detects and reports signature widgets present in the file. Full cryptographic certificate-chain validation is planned.",
     category: "security", accepts: ".pdf", outputLabel: "verification report",
   },
   {

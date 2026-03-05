@@ -8,6 +8,8 @@ from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files
 from ..services import image_to_pdf_service
 
 ALLOWED_IMAGE_TYPES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"}
+MAX_FILES = 50
+MAX_TOTAL_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -22,25 +24,40 @@ async def image_to_pdf(
 ):
     if not files:
         raise HTTPException(status_code=400, detail="Please upload at least one image")
+    if len(files) > MAX_FILES:
+        raise HTTPException(status_code=400, detail=f"Please upload at most {MAX_FILES} images")
+
+    normalized_page_size = (page_size or "").strip()
+    if normalized_page_size not in image_to_pdf_service.PAGE_SIZES:
+        allowed = ", ".join(sorted(image_to_pdf_service.PAGE_SIZES.keys()))
+        raise HTTPException(status_code=400, detail=f"page_size must be one of: {allowed}")
 
     ensure_temp_dir()
-    input_paths = []
+    input_paths: list[str] = []
+    output_path: str | None = None
+    total_bytes = 0
 
     try:
         for file in files:
-            suffix = "." + file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+            filename = file.filename or ""
+            suffix = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
             if suffix not in ALLOWED_IMAGE_TYPES:
                 raise HTTPException(
                     status_code=400, detail=f"File {file.filename} is not a supported image"
                 )
             content = await file.read()
+            if not content:
+                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")
             if len(content) > MAX_UPLOAD_BYTES:
                 raise HTTPException(status_code=413, detail=f"File {file.filename} exceeds the 50 MB limit")
+            total_bytes += len(content)
+            if total_bytes > MAX_TOTAL_UPLOAD_BYTES:
+                raise HTTPException(status_code=413, detail="Combined image size exceeds the 200 MB limit")
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
             temp_path.write_bytes(content)
             input_paths.append(str(temp_path))
 
-        output_path = image_to_pdf_service.images_to_pdf(input_paths, page_size=page_size)
+        output_path = image_to_pdf_service.images_to_pdf(input_paths, page_size=normalized_page_size)
         cleanup = BackgroundTask(remove_files, *input_paths, output_path)
         return FileResponse(
             path=output_path,
@@ -49,7 +66,11 @@ async def image_to_pdf(
             background=cleanup,
         )
     except HTTPException:
+        to_remove = input_paths + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         raise
     except Exception:
+        to_remove = input_paths + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

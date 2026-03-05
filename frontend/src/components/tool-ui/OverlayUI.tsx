@@ -7,16 +7,14 @@ import { downloadBlob, formatFileSize } from "@/lib/api";
 const API_BASE = "/api";
 
 const MODES = [
-    { value: "overlay", label: "Overlay", desc: "Stack pages from both PDFs" },
+    { value: "overlay", label: "Overlay", desc: "Place second PDF on top of the first" },
     { value: "stamp", label: "Stamp", desc: "Place second PDF as background" },
-    { value: "interleave", label: "Interleave", desc: "Alternate pages from each" },
 ];
 
 export function OverlayUI() {
     const [file1, setFile1] = useState<{ name: string; size: string; raw: File } | null>(null);
     const [file2, setFile2] = useState<{ name: string; size: string; raw: File } | null>(null);
-    const [mode, setMode] = useState("overlay");
-    const [opacity, setOpacity] = useState(100);
+    const [mode, setMode] = useState<"overlay" | "stamp">("overlay");
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
@@ -28,10 +26,9 @@ export function OverlayUI() {
         setState("processing"); setError(null);
         try {
             const fd = new FormData();
-            fd.append("files", file1.raw);
-            fd.append("files", file2.raw);
+            fd.append("base_file", file1.raw);
+            fd.append("overlay_file", file2.raw);
             fd.append("mode", mode);
-            fd.append("opacity", String(opacity));
             const res = await fetch(`${API_BASE}/overlay`, { method: "POST", body: fd });
             if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
             const blob = await res.blob();
@@ -87,9 +84,9 @@ export function OverlayUI() {
                 <div className="rounded-xl border border-border bg-card p-4 space-y-4">
                     <div className="space-y-2">
                         <label className="text-sm font-semibold text-foreground">Overlay Mode</label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                             {MODES.map(m => (
-                                <button key={m.value} onClick={() => setMode(m.value)}
+                                <button key={m.value} onClick={() => setMode(m.value as "overlay" | "stamp")}
                                     className={cn("rounded-xl border px-3 py-2.5 text-center transition-all",
                                         mode === m.value ? "border-primary bg-primary/10 ring-1 ring-primary/20" : "border-border hover:border-primary/30")}>
                                     <div className={cn("text-xs font-bold", mode === m.value ? "text-primary" : "text-foreground")}>{m.label}</div>
@@ -98,16 +95,6 @@ export function OverlayUI() {
                             ))}
                         </div>
                     </div>
-
-                    {mode === "overlay" && (
-                        <div className="space-y-1">
-                            <div className="flex justify-between">
-                                <label className="text-xs font-medium text-muted-foreground">Overlay Opacity</label>
-                                <span className="text-xs text-muted-foreground">{opacity}%</span>
-                            </div>
-                            <input type="range" min={10} max={100} value={opacity} onChange={e => setOpacity(+e.target.value)} className="w-full accent-primary" />
-                        </div>
-                    )}
                 </div>
             )}
 

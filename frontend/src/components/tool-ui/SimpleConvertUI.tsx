@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { processAndDownload } from "@/lib/api";
+import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 
 /* Shared "upload PDF → convert" UI for simpler conversion tools. */
@@ -24,7 +25,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         setStatus("processing"); setError(null);
         try {
             const outName = outputFilename || file.name.replace(/\.[^.]+$/, `.${outputExt}`);
-            await processAndDownload(`/${slug}`, file, outName);
+            await processAndDownload(getToolEndpoint(slug), file, outName);
             setStatus("done");
         } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
     };
@@ -65,9 +66,9 @@ export function PdfToMarkdownUI2() { return <SimpleConvertUI slug="pdf-to-markdo
 export function ExtractImagesUI() { return <SimpleConvertUI slug="extract-images" label="Extract Images" outputExt="zip" outputFilename="images.zip" acceptFileTypes=".pdf" description="Download all embedded images as a ZIP archive" />; }
 export function ExtractTablesUI() { return <SimpleConvertUI slug="extract-tables" label="Extract Tables" outputExt="csv" outputFilename="tables.csv" acceptFileTypes=".pdf" description="Detect and extract tables into CSV format" />; }
 export function PdfToPdfaUI() { return <SimpleConvertUI slug="pdf-to-pdfa" label="Convert to PDF/A" outputExt="pdf" outputFilename="archive.pdf" acceptFileTypes=".pdf" description="Convert to ISO-standard PDF/A for long-term archiving" />; }
-export function WordToPdfUI() { return <SimpleConvertUI slug="word-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".docx,.doc" description="Convert Word documents to PDF format" />; }
-export function ExcelToPdfUI() { return <SimpleConvertUI slug="excel-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".xlsx,.xls" description="Convert Excel spreadsheets to PDF with formatting" />; }
-export function PptxToPdfUI() { return <SimpleConvertUI slug="pptx-to-pdf-convert" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".pptx,.ppt" description="Convert PowerPoint presentations to PDF" />; }
+export function WordToPdfUI() { return <SimpleConvertUI slug="word-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".docx" description="Convert Word documents to PDF format" />; }
+export function ExcelToPdfUI() { return <SimpleConvertUI slug="excel-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".xlsx" description="Convert Excel spreadsheets to PDF with formatting" />; }
+export function PptxToPdfUI() { return <SimpleConvertUI slug="pptx-to-pdf-convert" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".pptx" description="Convert PowerPoint presentations to PDF" />; }
 export function TxtToPdfUI() { return <SimpleConvertUI slug="txt-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".txt" description="Convert plain text files to formatted PDF" />; }
 export function JsonToPdfUI() { return <SimpleConvertUI slug="json-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="document.pdf" acceptFileTypes=".json" description="Render JSON with syntax highlighting as PDF" />; }
 export function XmlToPdfUI() { return <SimpleConvertUI slug="xml-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="document.pdf" acceptFileTypes=".xml" description="Render XML with tag coloring as PDF" />; }

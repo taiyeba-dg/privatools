@@ -31,8 +31,10 @@ async def sign_pdf(
 
     pdf_content = await file.read()
     if len(pdf_content) > MAX_SIZE:
-        raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
 
+    temp_pdf = None
+    signature_path = None
     try:
         validate_pdf_content(pdf_content)
         temp_pdf = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
@@ -69,7 +71,15 @@ async def sign_pdf(
             background=cleanup,
         )
     except HTTPException:
+        if temp_pdf is not None:
+            remove_files(str(temp_pdf))
+        if signature_path is not None:
+            remove_files(signature_path)
         raise
     except Exception:
+        if temp_pdf is not None:
+            remove_files(str(temp_pdf))
+        if signature_path is not None:
+            remove_files(signature_path)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

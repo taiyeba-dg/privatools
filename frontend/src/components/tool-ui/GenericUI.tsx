@@ -3,6 +3,7 @@ import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Cloc
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { ProcessingBar } from "./FileUploadZone";
 
@@ -41,7 +42,7 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
     setState("processing");
     setError(null);
     try {
-      const endpoint = apiEndpoint || `/${slug}`;
+      const endpoint = apiEndpoint || getToolEndpoint(slug);
       const res = await uploadFile(endpoint, files[0].file, params);
       const blob = await res.blob();
       setResultBlob(blob);

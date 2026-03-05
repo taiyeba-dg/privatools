@@ -14,7 +14,7 @@ def overlay(base_path: str, overlay_path: str, mode: str = "stamp") -> str:
 
         for i, page in enumerate(base_pdf.pages):
             ovl_page = ovl_pages[i] if i < len(ovl_pages) else ovl_pages[0]
-            if mode == "stamp":
+            if mode == "overlay":
                 page.add_overlay(ovl_page)
             else:
                 page.add_underlay(ovl_page)
