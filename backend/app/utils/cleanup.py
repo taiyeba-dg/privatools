@@ -46,3 +46,20 @@ def validate_pdf_content(content: bytes) -> None:
     """Raise HTTPException(400) if content doesn't look like a valid PDF."""
     if not content[:5] == b'%PDF-':
         raise HTTPException(status_code=400, detail="File does not appear to be a valid PDF")
+
+
+def safe_open_pdf(path: str, **kwargs):
+    """Open a PDF with pikepdf, converting PasswordError to a friendly ValueError.
+
+    Usage:
+        with safe_open_pdf(input_path) as pdf:
+            ...
+    """
+    import pikepdf
+    try:
+        return pikepdf.open(path, **kwargs)
+    except pikepdf.PasswordError:
+        raise ValueError(
+            "This PDF is password-protected. Please unlock it first using the Unlock PDF tool."
+        )
+

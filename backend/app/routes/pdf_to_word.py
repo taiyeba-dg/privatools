@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException
@@ -31,7 +32,7 @@ async def pdf_to_word(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = await pdf_to_word_service.pdf_to_word(str(temp_path))
+        output_path = await asyncio.to_thread(pdf_to_word_service.pdf_to_word, str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,

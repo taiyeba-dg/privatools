@@ -30,10 +30,17 @@ def compare_text(path1: str, path2: str) -> dict:
         lineterm=""
     ))
 
+    # Summary statistics
+    additions = sum(1 for line in diff if line.startswith("+") and not line.startswith("+++"))
+    deletions = sum(1 for line in diff if line.startswith("-") and not line.startswith("---"))
+
     return {
         "diff": diff,
         "page_count_1": len(pages1),
         "page_count_2": len(pages2),
+        "additions": additions,
+        "deletions": deletions,
+        "identical": len(diff) == 0,
     }
 
 

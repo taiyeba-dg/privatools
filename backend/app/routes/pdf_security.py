@@ -72,11 +72,15 @@ async def verify_signature(file: UploadFile = File(...)):
             for widget in widgets:
                 if widget.field_type_string == "Sig":
                     signatures.append(
-                        {"signer": widget.field_value or "Unknown", "date": "", "valid": True}
+                        {"signer": widget.field_value or "Unknown", "date": "", "status": "detected"}
                     )
 
-        valid = len(signatures) > 0 and all(sig["valid"] for sig in signatures)
-        return JSONResponse({"valid": valid, "signatures": signatures})
+        has_signatures = len(signatures) > 0
+        return JSONResponse({
+            "has_signatures": has_signatures,
+            "signatures": signatures,
+            "note": "Signatures detected but cryptographic verification is not yet supported. Use a dedicated PDF reader (e.g. Adobe Acrobat) for full validation."
+        })
     except fitz.FileDataError as exc:
         raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
     except Exception as exc:

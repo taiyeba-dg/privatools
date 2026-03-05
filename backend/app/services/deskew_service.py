@@ -105,7 +105,7 @@ def deskew(input_path: str) -> str:
             angle = _detect_skew_angle_fast(detect_pix)
 
             if abs(angle) > 0.3:
-                pix = page.get_pixmap(matrix=fitz.Matrix(100 / 72, 100 / 72))
+                pix = page.get_pixmap(matrix=fitz.Matrix(200 / 72, 200 / 72))
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                 rotated = img.rotate(-angle, expand=True, fillcolor=(255, 255, 255),
                                      resample=Image.Resampling.BICUBIC)

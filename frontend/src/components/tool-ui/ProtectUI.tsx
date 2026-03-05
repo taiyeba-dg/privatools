@@ -1,17 +1,35 @@
-import { useState, useRef } from "react";
-import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useState, useRef, useMemo } from "react";
+import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { processAndDownload, formatFileSize } from "@/lib/api";
+
+function getPasswordStrength(pw: string): { level: "weak" | "medium" | "strong"; percent: number; color: string } {
+  if (!pw) return { level: "weak", percent: 0, color: "bg-muted" };
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  if (score <= 2) return { level: "weak", percent: 33, color: "bg-red-500" };
+  if (score <= 3) return { level: "medium", percent: 66, color: "bg-amber-500" };
+  return { level: "strong", percent: 100, color: "bg-emerald-500" };
+}
 
 export function ProtectUI() {
   const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [allowPrint, setAllowPrint] = useState(true);
+  const [allowExtract, setAllowExtract] = useState(false);
+  const [allowModify, setAllowModify] = useState(false);
   const [state, setState] = useState<"idle" | "processing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
+
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
 
   const pick = (fl: FileList) => { const f = fl[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); setState("idle"); setError(null); };
 
@@ -19,7 +37,12 @@ export function ProtectUI() {
     if (!file || !password) return;
     setState("processing"); setError(null);
     try {
-      await processAndDownload("/protect", file.raw, "protected.pdf", { password });
+      await processAndDownload("/protect", file.raw, "protected.pdf", {
+        password,
+        allow_print: allowPrint,
+        allow_extract: allowExtract,
+        allow_modify: allowModify,
+      });
       setState("done");
     } catch (e: any) { setError(e.message || "Protection failed"); setState("idle"); }
   };
@@ -60,16 +83,53 @@ export function ProtectUI() {
             <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-            <label className="text-sm font-semibold text-foreground">Password</label>
-            <div className="relative">
-              <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter a strong password"
-                className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2.5 pr-10 text-sm text-foreground outline-none focus:border-primary/50" />
-              <button onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <div>
+              <label className="text-sm font-semibold text-foreground">Password</label>
+              <div className="relative mt-1">
+                <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter a strong password"
+                  className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2.5 pr-10 text-sm text-foreground outline-none focus:border-primary/50" />
+                <button onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              {/* Password strength indicator */}
+              {password && (
+                <div className="mt-2 space-y-1">
+                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <div className={cn("h-full rounded-full transition-all duration-300", strength.color)}
+                      style={{ width: `${strength.percent}%` }} />
+                  </div>
+                  <p className={cn("text-xs font-medium",
+                    strength.level === "weak" ? "text-red-500" :
+                      strength.level === "medium" ? "text-amber-500" : "text-emerald-500")}>
+                    {strength.level === "weak" ? "Weak — add uppercase, numbers, or symbols" :
+                      strength.level === "medium" ? "Medium — consider making it longer" : "Strong password ✓"}
+                  </p>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">Anyone opening the PDF will need this password.</p>
+
+            {/* Permission controls */}
+            <div>
+              <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <Shield size={13} className="text-muted-foreground" /> Permissions
+              </label>
+              <p className="text-xs text-muted-foreground mb-2">Control what recipients can do with the protected PDF</p>
+              <div className="space-y-2">
+                {([
+                  { id: "print", label: "Allow printing", checked: allowPrint, set: setAllowPrint },
+                  { id: "extract", label: "Allow content extraction / copy", checked: allowExtract, set: setAllowExtract },
+                  { id: "modify", label: "Allow modification", checked: allowModify, set: setAllowModify },
+                ] as const).map(perm => (
+                  <label key={perm.id} className="flex items-center gap-2.5 cursor-pointer group">
+                    <input type="checkbox" checked={perm.checked} onChange={e => perm.set(e.target.checked)}
+                      className="h-4 w-4 rounded border-border text-primary accent-primary" />
+                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{perm.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
           {error && (

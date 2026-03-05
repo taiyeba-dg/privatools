@@ -4,6 +4,7 @@ import json
 import logging
 import re
 import tempfile
+import uuid
 import zipfile
 
 import fitz
@@ -165,7 +166,7 @@ async def pdf_to_epub(file: UploadFile = File(...)):
                 "content.opf",
                 """<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
-<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:12345</dc:identifier><dc:title>Converted PDF</dc:title><dc:language>en</dc:language></metadata>
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:{uuid.uuid4()}</dc:identifier><dc:title>Converted PDF</dc:title><dc:language>en</dc:language></metadata>
 <manifest><item id="content" href="content.xhtml" media-type="application/xhtml+xml"/></manifest>
 <spine><itemref idref="content"/></spine>
 </package>""",
@@ -189,42 +190,80 @@ async def pdf_to_epub(file: UploadFile = File(...)):
 
 @router.post("/markdown-to-pdf")
 async def markdown_to_pdf(file: UploadFile = File(...)):
-    """Convert Markdown-like text to PDF."""
+    """Convert Markdown text to PDF with full formatting support."""
     raw = await _read_upload(file, MAX_TEXT_BYTES, "Input file")
     text = raw.decode("utf-8", errors="replace")
 
-    html = text
-    html = re.sub(r"^### (.+)$", r"<h3>\1</h3>", html, flags=re.MULTILINE)
-    html = re.sub(r"^## (.+)$", r"<h2>\1</h2>", html, flags=re.MULTILINE)
-    html = re.sub(r"^# (.+)$", r"<h1>\1</h1>", html, flags=re.MULTILINE)
-    html = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", html)
-    html = re.sub(r"\*(.+?)\*", r"<i>\1</i>", html)
-    html = re.sub(r"`(.+?)`", r"<code>\1</code>", html)
-    html = re.sub(r"^- (.+)$", r"<li>\1</li>", html, flags=re.MULTILINE)
-    html = html.replace("\n\n", "<br/><br/>")
+    # Try to use a proper Markdown parser; fall back to regex for basic formatting
+    try:
+        import mistune
+        html_body = mistune.html(text)
+    except ImportError:
+        try:
+            import markdown
+            html_body = markdown.markdown(text, extensions=["tables", "fenced_code", "codehilite"])
+        except ImportError:
+            # Absolute fallback: basic regex
+            html_body = text
+            html_body = re.sub(r"^### (.+)$", r"<h3>\1</h3>", html_body, flags=re.MULTILINE)
+            html_body = re.sub(r"^## (.+)$", r"<h2>\1</h2>", html_body, flags=re.MULTILINE)
+            html_body = re.sub(r"^# (.+)$", r"<h1>\1</h1>", html_body, flags=re.MULTILINE)
+            html_body = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", html_body)
+            html_body = re.sub(r"\*(.+?)\*", r"<i>\1</i>", html_body)
+            html_body = re.sub(r"`(.+?)`", r"<code>\1</code>", html_body)
+            html_body = re.sub(r"^- (.+)$", r"<li>\1</li>", html_body, flags=re.MULTILINE)
+            html_body = html_body.replace("\n\n", "<br/><br/>")
 
     full_html = (
         "<html><head><style>"
-        "body{font-family:sans-serif;padding:40px;max-width:800px;margin:auto}"
-        "code{background:#f0f0f0;padding:2px 6px;border-radius:3px}"
-        "h1,h2,h3{color:#333}"
+        "body{font-family:sans-serif;font-size:11px;line-height:1.6;color:#222}"
+        "h1{font-size:22px;color:#1a1a2e;border-bottom:2px solid #e0e0e0;padding-bottom:6px;margin-top:18px}"
+        "h2{font-size:18px;color:#16213e;margin-top:14px}"
+        "h3{font-size:15px;color:#333;margin-top:12px}"
+        "code{background:#f4f4f4;padding:2px 6px;border-radius:3px;font-size:10px;font-family:monospace}"
+        "pre{background:#f4f4f4;padding:12px;border-radius:6px;overflow-x:auto;font-size:10px}"
+        "pre code{background:none;padding:0}"
+        "table{border-collapse:collapse;width:100%;margin:12px 0}"
+        "th{background:#2d3748;color:#fff;padding:6px 10px;text-align:left;border:1px solid #4a5568;font-size:10px}"
+        "td{padding:5px 10px;border:1px solid #cbd5e0;font-size:10px}"
+        "tr:nth-child(even) td{background:#f7fafc}"
+        "blockquote{border-left:4px solid #667eea;margin:12px 0;padding:8px 16px;background:#f0f4ff;color:#444}"
+        "li{margin:3px 0}"
+        "a{color:#667eea}"
+        "hr{border:none;border-top:1px solid #e0e0e0;margin:16px 0}"
         "</style></head><body>"
-        f"{html}</body></html>"
+        f"{html_body}</body></html>"
     )
 
-    doc = fitz.open()
     tmp = None
     try:
-        page = doc.new_page()
-        try:
-            rect = page.rect + fitz.Rect(40, 40, -40, -40)
-            page.insert_htmlbox(rect, full_html)
-        except Exception:
-            page.insert_text((40, 60), text, fontsize=11)
-
         tmp = _new_temp_file(".pdf")
         tmp.close()
-        doc.save(tmp.name)
+
+        # Use fitz Story for proper multi-page rendering
+        try:
+            writer = fitz.DocumentWriter(tmp.name)
+            story = fitz.Story(html=full_html)
+            mediabox = fitz.paper_rect("a4")
+            where = mediabox + fitz.Rect(50, 50, -50, -50)
+            more = True
+            while more:
+                dev = writer.begin_page(mediabox)
+                more, _ = story.place(where)
+                story.draw(dev)
+                writer.end_page()
+            writer.close()
+        except Exception:
+            # Fallback for older PyMuPDF versions
+            doc = fitz.open()
+            page = doc.new_page()
+            try:
+                rect = page.rect + fitz.Rect(40, 40, -40, -40)
+                page.insert_htmlbox(rect, full_html)
+            except Exception:
+                page.insert_text((40, 60), text, fontsize=11)
+            doc.save(tmp.name)
+            doc.close()
 
         cleanup = BackgroundTask(remove_files, tmp.name)
         return FileResponse(tmp.name, media_type="application/pdf", filename="document.pdf", background=cleanup)
@@ -233,8 +272,6 @@ async def markdown_to_pdf(file: UploadFile = File(...)):
             remove_files(tmp.name)
         logger.exception("markdown-to-pdf error")
         raise HTTPException(status_code=500, detail="Markdown to PDF conversion failed") from exc
-    finally:
-        doc.close()
 
 
 @router.post("/csv-to-pdf")
@@ -245,23 +282,70 @@ async def csv_to_pdf(file: UploadFile = File(...)):
 
     reader = csv.reader(io.StringIO(text))
     rows = list(reader)
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
 
-    doc = fitz.open()
+    # Build HTML table with styling
+    html_parts = [
+        '<html><head><style>',
+        'body { font-family: sans-serif; font-size: 9px; }',
+        'table { border-collapse: collapse; width: 100%; }',
+        'th { background: #2d3748; color: #fff; font-weight: bold; padding: 6px 8px; text-align: left; border: 1px solid #4a5568; }',
+        'td { padding: 4px 8px; border: 1px solid #cbd5e0; }',
+        'tr:nth-child(even) td { background: #f7fafc; }',
+        '</style></head><body><table>',
+    ]
+
+    # First row as header
+    html_parts.append('<tr>')
+    for cell in rows[0]:
+        escaped = str(cell).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        html_parts.append(f'<th>{escaped}</th>')
+    html_parts.append('</tr>')
+
+    # Data rows (no truncation)
+    for row in rows[1:]:
+        html_parts.append('<tr>')
+        for cell in row:
+            escaped = str(cell).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            html_parts.append(f'<td>{escaped}</td>')
+        html_parts.append('</tr>')
+
+    html_parts.append('</table></body></html>')
+    html_content = ''.join(html_parts)
+
     tmp = None
     try:
-        page = doc.new_page()
-        y = 40
-        for row in rows[:100]:
-            line = " | ".join(str(cell)[:30] for cell in row)
-            if y > page.rect.height - 40:
-                page = doc.new_page()
-                y = 40
-            page.insert_text((40, y), line, fontsize=9)
-            y += 14
-
         tmp = _new_temp_file(".pdf")
         tmp.close()
-        doc.save(tmp.name)
+
+        # Use fitz Story for multi-page HTML rendering
+        try:
+            writer = fitz.DocumentWriter(tmp.name)
+            story = fitz.Story(html=html_content)
+            mediabox = fitz.paper_rect("a4")
+            where = mediabox + fitz.Rect(30, 30, -30, -30)
+            more = True
+            while more:
+                dev = writer.begin_page(mediabox)
+                more, _ = story.place(where)
+                story.draw(dev)
+                writer.end_page()
+            writer.close()
+        except Exception:
+            # Fallback for older PyMuPDF versions
+            doc = fitz.open()
+            page = doc.new_page()
+            y = 40
+            for row in rows:
+                line = " | ".join(str(cell) for cell in row)
+                if y > page.rect.height - 40:
+                    page = doc.new_page()
+                    y = 40
+                page.insert_text((40, y), line, fontsize=9)
+                y += 14
+            doc.save(tmp.name)
+            doc.close()
 
         cleanup = BackgroundTask(remove_files, tmp.name)
         return FileResponse(tmp.name, media_type="application/pdf", filename="table.pdf", background=cleanup)
@@ -270,8 +354,6 @@ async def csv_to_pdf(file: UploadFile = File(...)):
             remove_files(tmp.name)
         logger.exception("csv-to-pdf error")
         raise HTTPException(status_code=500, detail="CSV to PDF conversion failed") from exc
-    finally:
-        doc.close()
 
 
 @router.post("/add-hyperlinks")
@@ -294,12 +376,27 @@ async def add_hyperlinks(file: UploadFile = File(...)):
             for block in text_dict.get("blocks", []):
                 for line in block.get("lines", []):
                     for span in line.get("spans", []):
-                        urls = url_pattern.findall(span.get("text", ""))
-                        if not urls:
+                        urls = url_pattern.finditer(span.get("text", ""))
+                        span_text = span.get("text", "")
+                        text_len = len(span_text) or 1
+                        found_any = False
+                        for match in urls:
+                            found_any = True
+                            url = match.group()
+                            # Calculate proportional rect for this URL within the span
+                            full_rect = fitz.Rect(span["bbox"])
+                            span_width = full_rect.width
+                            char_start = match.start() / text_len
+                            char_end = match.end() / text_len
+                            url_rect = fitz.Rect(
+                                full_rect.x0 + span_width * char_start,
+                                full_rect.y0,
+                                full_rect.x0 + span_width * char_end,
+                                full_rect.y1,
+                            )
+                            page.insert_link({"kind": 2, "from": url_rect, "uri": url})
+                        if not found_any:
                             continue
-                        rect = fitz.Rect(span["bbox"])
-                        for url in urls:
-                            page.insert_link({"kind": 2, "from": rect, "uri": url})
 
         tmp = _new_temp_file(".pdf")
         tmp.close()

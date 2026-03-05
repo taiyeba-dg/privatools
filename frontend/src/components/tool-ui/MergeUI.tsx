@@ -11,6 +11,8 @@ export function MergeUI() {
   const [state, setState] = useState<"idle" | "processing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const ref = useRef<HTMLInputElement>(null);
 
   const add = useCallback((fl: FileList) => {
@@ -59,10 +61,10 @@ export function MergeUI() {
         onDragLeave={() => setDrag(false)}
         onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
         onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
+        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload file"
         className={cn(
           "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
           drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20"
@@ -88,14 +90,26 @@ export function MergeUI() {
       {files.length > 0 && (
         <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30">
-            <span className="text-xs font-medium text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""} · use arrows to reorder</span>
+            <span className="text-xs font-medium text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""} · drag to reorder</span>
             <button type="button" onClick={() => ref.current?.click()} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <Plus size={12} /> Add more
             </button>
           </div>
           {files.map((f, i) => (
-            <div key={f.id} className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors">
-              <GripVertical size={15} className="text-muted-foreground/40 shrink-0" />
+            <div key={f.id}
+              draggable
+              onDragStart={() => setDragIdx(i)}
+              onDragOver={e => { e.preventDefault(); setDragOverIdx(i); }}
+              onDragEnd={() => {
+                if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+                  moveFile(dragIdx, dragOverIdx);
+                }
+                setDragIdx(null); setDragOverIdx(null);
+              }}
+              className={cn("flex items-center gap-3 px-4 py-3 transition-all",
+                dragIdx === i ? "opacity-40 scale-95" : "hover:bg-secondary/30",
+                dragOverIdx === i && dragIdx !== i ? "border-t-2 border-primary" : "")}>
+              <GripVertical size={15} className="text-muted-foreground/40 shrink-0 cursor-grab active:cursor-grabbing" />
               <span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary">
                 <FileText size={13} className="text-muted-foreground" />

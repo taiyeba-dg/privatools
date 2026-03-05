@@ -105,10 +105,9 @@ export function downloadBlob(blob: Blob, filename: string) {
     }, 100);
 
     // Show toast notification
-    try {
-        const { toast } = require("sonner");
+    import("sonner").then(({ toast }) => {
         toast.success("Downloaded!", { description: filename, duration: 3000 });
-    } catch { }
+    }).catch(() => { });
 }
 
 /** Helper: upload file → get blob → download. Returns response headers for metadata. */

@@ -4,6 +4,7 @@ import pikepdf
 from fastapi import HTTPException
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.exceptions import ValidationError
 
 
 def _iter_fields(fields_array):
@@ -110,7 +111,7 @@ def get_form_fields(input_path: str) -> list:
             acroform = pdf.Root.AcroForm
             fields_array = acroform.Fields
         except AttributeError as exc:
-            raise HTTPException(status_code=400, detail="PDF has no form fields") from exc
+            raise ValidationError("PDF has no form fields") from exc
 
         result = []
         for field in _iter_fields(fields_array):
@@ -149,7 +150,7 @@ def fill_form(input_path: str, field_values: dict) -> str:
             acroform = pdf.Root.AcroForm
             fields_array = acroform.Fields
         except AttributeError as exc:
-            raise HTTPException(status_code=400, detail="PDF has no form fields") from exc
+            raise ValidationError("PDF has no form fields") from exc
 
         for field in _iter_fields(fields_array):
             name = _pdf_value_to_string(field.get("/T", "")).strip()

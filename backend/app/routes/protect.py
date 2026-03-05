@@ -18,6 +18,9 @@ async def protect_pdf(
     file: UploadFile = File(...),
     password: str = Form(...),
     owner_password: Optional[str] = Form(None),
+    allow_print: bool = Form(True),
+    allow_extract: bool = Form(False),
+    allow_modify: bool = Form(False),
 ):
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
@@ -49,6 +52,9 @@ async def protect_pdf(
             str(temp_path),
             password=clean_password,
             owner_pw=clean_owner_password,
+            allow_print=allow_print,
+            allow_extract=allow_extract,
+            allow_modify=allow_modify,
         )
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(

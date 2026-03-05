@@ -3,7 +3,7 @@ import io
 import pikepdf
 import uuid
 from PIL import Image
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, safe_open_pdf
 
 _PRESETS = {
     "light": {"max_image_dim": 2200, "jpeg_quality": 85},
@@ -47,7 +47,7 @@ def compress_pdf(input_path: str, level: str = "recommended") -> str:
     max_image_dim = int(preset["max_image_dim"])
     jpeg_quality = int(preset["jpeg_quality"])
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         for page in pdf.pages:
             resources = page.get("/Resources")
             if resources is None:
@@ -77,12 +77,15 @@ def compress_pdf(input_path: str, level: str = "recommended") -> str:
                     # Only replace if actually smaller
                     if new_bytes and len(new_bytes) < len(raw):
                         xobj.write(new_bytes, filter=pikepdf.Name("/DCTDecode"))
-                        img_check = Image.open(io.BytesIO(new_bytes))
-                        xobj["/Width"] = img_check.width
-                        xobj["/Height"] = img_check.height
+                        # Get dimensions from the recompressed image
+                        recompressed_img = Image.open(io.BytesIO(new_bytes))
+                        xobj["/Width"] = recompressed_img.width
+                        xobj["/Height"] = recompressed_img.height
                         xobj["/ColorSpace"] = pikepdf.Name("/DeviceRGB")
                         xobj["/BitsPerComponent"] = 8
-                except Exception:
+                except Exception as exc:
+                    import logging
+                    logging.getLogger(__name__).debug("Skipping image %s: %s", key, exc)
                     continue
 
         # Stream compression + garbage collection

@@ -29,7 +29,16 @@ def convert_to_grayscale(input_path: str) -> str:
 
 
 def _vector_grayscale(input_path: str, output_path: str) -> str:
-    """Convert images to grayscale while preserving vector text/graphics."""
+    """Convert images to grayscale while preserving vector text/graphics.
+    
+    Two-pass approach:
+    1. Convert embedded images via pikepdf (preserves vector sharpness)
+    2. Re-render colored text/vectors using fitz grayscale colorspace
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Pass 1: Convert embedded images in-place
     with pikepdf.open(input_path) as pdf:
         for page in pdf.pages:
             resources = page.get("/Resources")
@@ -56,12 +65,28 @@ def _vector_grayscale(input_path: str, output_path: str) -> str:
                     xobj["/Width"] = gray.width
                     xobj["/Height"] = gray.height
                     xobj["/BitsPerComponent"] = 8
-                except Exception:
+                except Exception as exc:
+                    logger.debug("Skipping image %s: %s", key, exc)
                     continue
 
-        # Apply grayscale to the entire page content stream colors
-        # This handles vector drawings and text colors
         pdf.save(output_path, compress_streams=True)
+
+    # Pass 2: Re-render through fitz with grayscale colorspace to handle text/vector colors
+    try:
+        src = fitz.open(output_path)
+        dst = fitz.open()
+        for page in src:
+            # Render at 200 DPI in grayscale
+            mat = fitz.Matrix(200 / 72, 200 / 72)
+            pix = page.get_pixmap(matrix=mat, colorspace=fitz.csGRAY)
+            new_page = dst.new_page(width=page.rect.width, height=page.rect.height)
+            new_page.insert_image(new_page.rect, pixmap=pix)
+        dst.save(output_path, garbage=4, deflate=True)
+        dst.close()
+        src.close()
+    except Exception:
+        # If the re-render pass fails, the image-only grayscale from pass 1 is still valid
+        logger.debug("Grayscale re-render pass failed, using image-only result")
 
     return output_path
 

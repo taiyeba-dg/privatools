@@ -27,13 +27,14 @@ async def repair_pdf(file: UploadFile = File(...)):
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = repair_service.repair_pdf(str(temp_path))
+        output_path, repair_status = repair_service.repair_pdf(str(temp_path))
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,
             filename="repaired.pdf",
             media_type="application/pdf",
             background=cleanup,
+            headers={"X-Repair-Status": repair_status},
         )
     except HTTPException:
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
