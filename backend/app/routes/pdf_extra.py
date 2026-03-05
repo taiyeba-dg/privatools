@@ -20,14 +20,14 @@ logger = logging.getLogger(__name__)
 
 MAX_FORM_FIELDS = 300
 MAX_FORM_OPTIONS = 50
+MAX_PDF_BYTES = 2 * 1024 * 1024 * 1024  # effectively unlimited
+MAX_TEXT_BYTES = 2 * 1024 * 1024 * 1024
 
 
 async def _read_upload(file: UploadFile, max_bytes: int, label: str) -> bytes:
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail=f"{label} is empty")
-    if len(data) > max_bytes:
-        raise HTTPException(status_code=413, detail=f"{label} exceeds size limit")
     return data
 
 
