@@ -19,10 +19,15 @@ async def convert_to_pptx(input_path: str) -> str:
         page = doc[page_num]
         slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank layout
 
-        # Render page as image and add to slide
-        pix = page.get_pixmap(dpi=150)
-        img_data = pix.tobytes("png")
-        img_stream = io.BytesIO(img_data)
+        # Render at 200 DPI for crisp slides on modern displays
+        pix = page.get_pixmap(dpi=200)
+
+        # Use JPEG for smaller file sizes (slides don't need transparency)
+        img_data = io.BytesIO()
+        from PIL import Image
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        img.save(img_data, format="JPEG", quality=90, optimize=True)
+        img_data.seek(0)
 
         # Calculate dimensions to fit slide
         slide_w = prs.slide_width
@@ -40,7 +45,7 @@ async def convert_to_pptx(input_path: str) -> str:
         left = int((slide_w - width) / 2)
         top = int((slide_h - height) / 2)
 
-        slide.shapes.add_picture(img_stream, left, top, width, height)
+        slide.shapes.add_picture(img_data, left, top, width, height)
 
     doc.close()
     output_path = get_temp_path(f"converted_{uuid.uuid4().hex}.pptx")

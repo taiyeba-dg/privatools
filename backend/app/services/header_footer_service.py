@@ -1,9 +1,7 @@
-import pikepdf
+"""Add header/footer using PyMuPDF direct text insertion."""
 import uuid
-import io
+import fitz  # PyMuPDF
 from ..utils.cleanup import get_temp_path, ensure_temp_dir
-from reportlab.pdfgen import canvas
-from reportlab.lib.colors import black
 
 
 def add_header_footer(
@@ -15,33 +13,31 @@ def add_header_footer(
     ensure_temp_dir()
     output_path = get_temp_path(f"headerfooter_{uuid.uuid4().hex}.pdf")
 
-    with pikepdf.open(input_path) as pdf:
-        for page in pdf.pages:
-            mediabox = page.mediabox
-            width = float(mediabox[2]) - float(mediabox[0])
-            height = float(mediabox[3]) - float(mediabox[1])
+    doc = fitz.open(input_path)
+    margin = 20
 
-            packet = io.BytesIO()
-            c = canvas.Canvas(packet, pagesize=(width, height))
-            c.setFillColor(black)
-            c.setFont("Helvetica", font_size)
+    for page in doc:
+        rect = page.rect
+        w, h = rect.width, rect.height
 
-            margin = 20
+        if header_text:
+            page.insert_text(
+                fitz.Point(w / 2, margin + font_size),
+                header_text,
+                fontsize=font_size,
+                fontname="helv",
+                color=(0, 0, 0),
+            )
 
-            if header_text:
-                c.drawCentredString(width / 2, height - margin - font_size, header_text)
+        if footer_text:
+            page.insert_text(
+                fitz.Point(w / 2, h - margin),
+                footer_text,
+                fontsize=font_size,
+                fontname="helv",
+                color=(0, 0, 0),
+            )
 
-            if footer_text:
-                c.drawCentredString(width / 2, margin, footer_text)
-
-            c.save()
-            packet.seek(0)
-
-            overlay_pdf = pikepdf.Pdf.open(packet)
-            overlay_page = overlay_pdf.pages[0]
-            page_obj = pikepdf.Page(page)
-            page_obj.add_overlay(overlay_page)
-
-        pdf.save(str(output_path))
-
+    doc.save(str(output_path), garbage=4, deflate=True)
+    doc.close()
     return str(output_path)

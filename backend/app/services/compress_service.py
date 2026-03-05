@@ -1,3 +1,4 @@
+"""PDF compression using pikepdf with improved quality settings."""
 import io
 import pikepdf
 import uuid
@@ -26,7 +27,14 @@ def _recompress_image(
         if w > max_image_dim or h > max_image_dim:
             img.thumbnail((max_image_dim, max_image_dim), Image.LANCZOS)
         out = io.BytesIO()
-        img.save(out, format="JPEG", quality=jpeg_quality, optimize=True)
+        # Progressive JPEG for better web loading + optimize for smaller size
+        img.save(
+            out,
+            format="JPEG",
+            quality=jpeg_quality,
+            optimize=True,
+            progressive=True,
+        )
         return out.getvalue()
     except Exception:
         return None
@@ -53,19 +61,35 @@ def compress_pdf(input_path: str, level: str = "recommended") -> str:
                     if xobj.get("/Subtype") != "/Image":
                         continue
                     raw = xobj.read_raw_bytes()
+
+                    # Skip tiny images (logos, icons) — not worth recompressing
+                    img_w = int(xobj.get("/Width", 0))
+                    img_h = int(xobj.get("/Height", 0))
+                    if img_w < 50 or img_h < 50:
+                        continue
+
                     new_bytes = _recompress_image(
                         raw,
                         str(xobj.get("/Filter", "")),
                         max_image_dim=max_image_dim,
                         jpeg_quality=jpeg_quality,
                     )
+                    # Only replace if actually smaller
                     if new_bytes and len(new_bytes) < len(raw):
                         xobj.write(new_bytes, filter=pikepdf.Name("/DCTDecode"))
-                        if "/Width" in xobj and "/Height" in xobj:
-                            img_check = Image.open(io.BytesIO(new_bytes))
-                            xobj["/Width"] = img_check.width
-                            xobj["/Height"] = img_check.height
+                        img_check = Image.open(io.BytesIO(new_bytes))
+                        xobj["/Width"] = img_check.width
+                        xobj["/Height"] = img_check.height
+                        xobj["/ColorSpace"] = pikepdf.Name("/DeviceRGB")
+                        xobj["/BitsPerComponent"] = 8
                 except Exception:
                     continue
-        pdf.save(str(output_path), compress_streams=True, recompress_flate=True)
+
+        # Stream compression + garbage collection
+        pdf.save(
+            str(output_path),
+            compress_streams=True,
+            recompress_flate=True,
+            object_stream_mode=pikepdf.ObjectStreamMode.generate,
+        )
     return str(output_path)
