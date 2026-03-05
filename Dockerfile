@@ -21,6 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     build-essential \
     swig \
+    poppler-utils \
+    colord \
+    libreoffice-writer-nogui \
+    libreoffice-calc-nogui \
+    libreoffice-impress-nogui \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
