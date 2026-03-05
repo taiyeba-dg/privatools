@@ -21,7 +21,8 @@ async def split_by_size(file: UploadFile = File(...), max_size_mb: float = Form(
     output_path = None
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()        validate_pdf_content(content)
+        content = await file.read()
+        validate_pdf_content(content)
         temp_path.write_bytes(content)
         output_path = split_by_size_service.split_by_size(str(temp_path), max_size_mb=max_size_mb)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)

@@ -50,14 +50,16 @@ async def watermark_pdf(
     try:
         content = await file.read()
         if not content:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty")        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         if has_image_watermark and watermark_image is not None:
             image_bytes = await watermark_image.read()
             if not image_bytes:
-                raise HTTPException(status_code=400, detail="Uploaded watermark image is empty")            try:
+                raise HTTPException(status_code=400, detail="Uploaded watermark image is empty")
+            try:
                 with Image.open(io.BytesIO(image_bytes)) as img:
                     img.verify()
             except Exception as exc:

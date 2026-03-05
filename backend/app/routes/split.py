@@ -31,7 +31,8 @@ async def split_pdf(
     output_path = None
 
     try:
-        content = await file.read()        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
+        content = await file.read()
+        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 

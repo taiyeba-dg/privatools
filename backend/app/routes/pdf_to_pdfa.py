@@ -21,7 +21,8 @@ async def pdf_to_pdfa(file: UploadFile = File(...)):
 
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()        validate_pdf_content(content)
+        content = await file.read()
+        validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         output_path = await pdf_to_pdfa_service.convert_to_pdfa(str(temp_path))

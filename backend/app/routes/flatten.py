@@ -21,7 +21,8 @@ async def flatten_pdf(file: UploadFile = File(...)):
 
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()        validate_pdf_content(content)
+        content = await file.read()
+        validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         output_path = flatten_service.flatten_pdf(str(temp_path))

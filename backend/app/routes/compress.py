@@ -28,7 +28,8 @@ async def compress_pdf(
     output_path = None
 
     try:
-        content = await file.read()        original_size = len(content)
+        content = await file.read()
+        original_size = len(content)
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         validate_pdf_content(content)
         temp_path.write_bytes(content)

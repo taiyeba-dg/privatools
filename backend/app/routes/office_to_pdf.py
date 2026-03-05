@@ -30,7 +30,8 @@ async def office_to_pdf(file: UploadFile = File(...)):
     try:
         content = await file.read()
         if not content:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty")        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
+            temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
         temp_path.write_bytes(content)
 
         output_path = await office_to_pdf_service.office_to_pdf(str(temp_path))

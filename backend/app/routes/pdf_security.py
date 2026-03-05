@@ -14,7 +14,8 @@ router = APIRouter()
 async def _read_pdf(upload: UploadFile, label: str = "PDF") -> bytes:
     data = await upload.read()
     if not data:
-        raise HTTPException(status_code=400, detail=f"{label} is empty")    validate_pdf_content(data)
+        raise HTTPException(status_code=400, detail=f"{label} is empty")
+        validate_pdf_content(data)
     return data
 
 
