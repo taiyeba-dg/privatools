@@ -44,7 +44,7 @@ async def add_page_numbers(
         content = await file.read()
         if not content:
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
-            temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
+        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
