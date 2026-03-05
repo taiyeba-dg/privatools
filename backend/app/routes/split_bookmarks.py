@@ -36,6 +36,10 @@ async def split_by_bookmarks(file: UploadFile = File(...)):
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise
+    except ValueError as ve:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception:
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)

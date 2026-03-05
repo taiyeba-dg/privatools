@@ -15,10 +15,27 @@ export function OcrUI() {
   const ref = useRef<HTMLInputElement>(null);
 
   const langs = [
+    // European
     { id: "eng", label: "English" }, { id: "fra", label: "French" }, { id: "deu", label: "German" },
     { id: "spa", label: "Spanish" }, { id: "ita", label: "Italian" }, { id: "por", label: "Portuguese" },
-    { id: "chi_sim", label: "Chinese (Simplified)" }, { id: "jpn", label: "Japanese" }, { id: "kor", label: "Korean" },
-    { id: "ara", label: "Arabic" }, { id: "hin", label: "Hindi" }, { id: "rus", label: "Russian" },
+    { id: "nld", label: "Dutch" }, { id: "pol", label: "Polish" }, { id: "rus", label: "Russian" },
+    { id: "ukr", label: "Ukrainian" }, { id: "ces", label: "Czech" }, { id: "ron", label: "Romanian" },
+    { id: "hun", label: "Hungarian" }, { id: "ell", label: "Greek" }, { id: "bul", label: "Bulgarian" },
+    { id: "hrv", label: "Croatian" }, { id: "slk", label: "Slovak" }, { id: "slv", label: "Slovenian" },
+    { id: "srp", label: "Serbian" }, { id: "cat", label: "Catalan" }, { id: "dan", label: "Danish" },
+    { id: "fin", label: "Finnish" }, { id: "nor", label: "Norwegian" }, { id: "swe", label: "Swedish" },
+    { id: "tur", label: "Turkish" },
+    // Asian
+    { id: "chi_sim", label: "Chinese (Simplified)" }, { id: "chi_tra", label: "Chinese (Traditional)" },
+    { id: "jpn", label: "Japanese" }, { id: "kor", label: "Korean" }, { id: "tha", label: "Thai" },
+    { id: "vie", label: "Vietnamese" }, { id: "ind", label: "Indonesian" }, { id: "msa", label: "Malay" },
+    // South Asian
+    { id: "hin", label: "Hindi" }, { id: "ben", label: "Bengali" }, { id: "tam", label: "Tamil" },
+    { id: "tel", label: "Telugu" }, { id: "kan", label: "Kannada" }, { id: "mal", label: "Malayalam" },
+    { id: "mar", label: "Marathi" }, { id: "guj", label: "Gujarati" }, { id: "pan", label: "Punjabi" },
+    { id: "urd", label: "Urdu" },
+    // Middle Eastern
+    { id: "ara", label: "Arabic" }, { id: "heb", label: "Hebrew" },
   ];
 
   const pick = (fl: FileList) => { const f = fl[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); setState("idle"); setError(null); };

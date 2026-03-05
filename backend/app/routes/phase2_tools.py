@@ -11,6 +11,7 @@ from starlette.background import BackgroundTask
 
 from ..services import bg_remover_service, esign_service, table_extractor_service
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
+from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -21,16 +22,11 @@ ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
 
 async def _read_upload(file: UploadFile, *, label: str, max_bytes: int = MAX_SIZE) -> bytes:
-    data = await file.read()
-    if not data:
-        raise HTTPException(status_code=400, detail=f"{label} is empty")
-    if len(data) > max_bytes:
-        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
-    return data
+    return await read_upload(file, label=label, max_bytes=max_bytes)
 
 
 def _cleanup_on_error(*paths: str | Path | None) -> None:
-    remove_files(*[p for p in paths if p is not None])
+    cleanup_on_error(*paths)
 
 
 # ─── E-Sign PDF ───────────────────────────────────────────

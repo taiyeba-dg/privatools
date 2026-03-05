@@ -228,18 +228,32 @@ async def image_compressor(file: UploadFile = File(...), quality: int = Form(82,
 
     data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
     img = Image.open(io.BytesIO(data))
-    if img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
 
-    out_path = _new_temp_file(".jpg")
-    img.save(out_path, "JPEG", quality=quality, optimize=True)
+    # Detect input format and preserve it
+    ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
+    if ext == ".png":
+        fmt, mime, suffix = "PNG", "image/png", ".png"
+        # PNG compression: optimize without quality loss
+        save_kwargs = {"optimize": True}
+    elif ext == ".webp":
+        fmt, mime, suffix = "WEBP", "image/webp", ".webp"
+        save_kwargs = {"quality": quality, "method": 4}
+    else:
+        # Default to JPEG for everything else
+        fmt, mime, suffix = "JPEG", "image/jpeg", ".jpg"
+        save_kwargs = {"quality": quality, "optimize": True}
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+    out_path = _new_temp_file(suffix)
+    img.save(out_path, fmt, **save_kwargs)
 
     base_name = os.path.splitext(_safe_filename(file.filename, "image"))[0]
     cleanup = BackgroundTask(_cleanup_paths, out_path)
     return FileResponse(
         out_path,
-        media_type="image/jpeg",
-        filename=f"compressed_{base_name}.jpg",
+        media_type=mime,
+        filename=f"compressed_{base_name}{suffix}",
         background=cleanup,
     )
 
@@ -278,16 +292,20 @@ async def remove_exif(file: UploadFile = File(...)):
 
     data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
     img = Image.open(io.BytesIO(data))
-    clean = Image.new(img.mode, img.size)
-    clean.putdata(list(img.getdata()))
+
+    # Strip EXIF data while preserving ICC profiles and other non-EXIF metadata
+    if hasattr(img, "getexif"):
+        img.getexif().clear()
+    # Remove exif from info dict (used during save)
+    img.info.pop("exif", None)
 
     ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
     if ext in (".jpg", ".jpeg"):
         fmt = "JPEG"
         mime_type = "image/jpeg"
         suffix = ".jpg"
-        if clean.mode in ("RGBA", "P"):
-            clean = clean.convert("RGB")
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
     elif ext == ".webp":
         fmt = "WEBP"
         mime_type = "image/webp"
@@ -306,7 +324,12 @@ async def remove_exif(file: UploadFile = File(...)):
         suffix = ".png"
 
     out_path = _new_temp_file(suffix)
-    clean.save(out_path, fmt)
+    # Preserve ICC profile if present
+    icc = img.info.get("icc_profile")
+    save_kwargs = {}
+    if icc and fmt in ("JPEG", "PNG", "TIFF", "WEBP"):
+        save_kwargs["icc_profile"] = icc
+    img.save(out_path, fmt, **save_kwargs)
 
     cleanup = BackgroundTask(_cleanup_paths, out_path)
     return FileResponse(

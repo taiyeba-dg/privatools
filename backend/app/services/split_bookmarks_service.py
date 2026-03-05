@@ -45,15 +45,7 @@ def split_by_bookmarks(input_path: str) -> str:
                 pass
 
             if not bookmarks:
-                # No bookmarks: return full PDF as single chunk
-                chunk_path = get_temp_path(f"chunk_{uuid.uuid4().hex}.pdf")
-                chunk_paths.append(chunk_path)
-                with pikepdf.Pdf.new() as out:
-                    out.pages.extend(pdf.pages)
-                    out.save(str(chunk_path))
-                with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
-                    zf.write(str(chunk_path), "full_document.pdf")
-                return str(zip_path)
+                raise ValueError("PDF has no bookmarks to split on. Use the regular Split tool instead.")
 
             # Sort by page index
             bookmarks.sort(key=lambda x: x[1])

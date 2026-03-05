@@ -8,6 +8,7 @@ import {
   Shuffle, GitCompare, ImageDown, FormInput, Grid2x2, ScanText, Copy, QrCode, Archive,
   FileX2, ScissorsSquare, BookMarked, Link2, ClipboardList, Eraser, Moon,
   BadgeCheck, ShieldCheck, Sparkles, Code2, FileSpreadsheet,
+  Highlighter, PenLine, Shapes, Braces, FileCode, GalleryVerticalEnd, Droplets,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -122,7 +123,7 @@ export const tools: Tool[] = [
     category: "optimize", accepts: ".pdf", outputLabel: "compressed.pdf",
   },
   {
-    slug: "flatten-pdf", icon: Layers, name: "Flatten PDF",
+    slug: "flatten-pdf", icon: GalleryVerticalEnd, name: "Flatten PDF",
     description: "Flatten forms and annotations into PDF content",
     longDescription: "Permanently merge all interactive form fields and annotations into the static page content.",
     category: "optimize", accepts: ".pdf", outputLabel: "flattened.pdf",
@@ -374,7 +375,7 @@ export const tools: Tool[] = [
     category: "edit", accepts: ".pdf", outputLabel: "stamped.pdf",
   },
   {
-    slug: "esign-pdf", icon: PenTool, name: "E-Sign PDF",
+    slug: "esign-pdf", icon: PenLine, name: "E-Sign PDF",
     description: "Add your signature to any PDF document",
     longDescription: "Draw or upload your signature and place it on any page of your PDF. Position and resize freely — all processed locally with zero data leaving your device.",
     category: "edit", accepts: ".pdf", outputLabel: "signed.pdf",
@@ -398,13 +399,13 @@ export const tools: Tool[] = [
     category: "edit", accepts: ".pdf", outputLabel: "whiteout.pdf",
   },
   {
-    slug: "annotate-pdf", icon: PenTool, name: "Annotate PDF",
+    slug: "annotate-pdf", icon: Highlighter, name: "Annotate PDF",
     description: "Add highlights, underlines, and sticky notes",
     longDescription: "Add highlight, underline, strikethrough, and sticky note annotations to your PDF pages with customizable colors — perfect for reviewing documents.",
     category: "edit", accepts: ".pdf", outputLabel: "annotated.pdf",
   },
   {
-    slug: "add-shapes", icon: Crop, name: "Add Shapes to PDF",
+    slug: "add-shapes", icon: Shapes, name: "Add Shapes to PDF",
     description: "Draw rectangles, circles, lines, and arrows",
     longDescription: "Add geometric shapes to your PDF pages — rectangles, circles, lines, and arrows with customizable colors, fill, and stroke width.",
     category: "edit", accepts: ".pdf", outputLabel: "shapes.pdf",
@@ -422,13 +423,13 @@ export const tools: Tool[] = [
     category: "edit", accepts: ".pdf", outputLabel: "with_attachment.pdf",
   },
   {
-    slug: "json-to-pdf", icon: Code, name: "JSON to PDF",
+    slug: "json-to-pdf", icon: Braces, name: "JSON to PDF",
     description: "Format JSON data as a styled PDF document",
     longDescription: "Upload a JSON file and convert it to a beautifully formatted PDF with syntax highlighting, key-value coloring, and proper indentation.",
     category: "to-pdf", accepts: ".json", outputLabel: "document.pdf",
   },
   {
-    slug: "xml-to-pdf", icon: Code, name: "XML to PDF",
+    slug: "xml-to-pdf", icon: FileCode, name: "XML to PDF",
     description: "Convert XML data to a formatted PDF document",
     longDescription: "Upload an XML file and render it as a clean, indented PDF with tag colorizing and proper formatting.",
     category: "to-pdf", accepts: ".xml", outputLabel: "document.pdf",
@@ -460,7 +461,7 @@ export const tools: Tool[] = [
     category: "advanced", accepts: ".pdf", outputLabel: "form.pdf",
   },
   {
-    slug: "transparent-background", icon: Eraser, name: "Transparent Background",
+    slug: "transparent-background", icon: Droplets, name: "Transparent Background",
     description: "Convert near-white PDF backgrounds to transparency",
     longDescription: "Rasterize each page and remove near-white pixels to create transparent backgrounds suitable for overlays and compositing.",
     category: "edit", accepts: ".pdf", outputLabel: "transparent.pdf",

@@ -26,7 +26,7 @@ def _fitz_color_to_rgb(color_int: int) -> RGBColor | None:
         return None
 
 
-async def pdf_to_word(input_path: str) -> str:
+def pdf_to_word(input_path: str) -> str:
     ensure_temp_dir()
     doc = fitz.open(input_path)
     word = Document()

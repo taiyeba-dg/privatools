@@ -105,4 +105,10 @@ def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2)
     with zipfile.ZipFile(str(zip_path), "w") as zf:
         for f in output_files:
             zf.write(f, Path(f).name)
+    # Clean up individual page files after zipping
+    for f in output_files:
+        try:
+            Path(f).unlink(missing_ok=True)
+        except OSError:
+            pass
     return str(zip_path)
