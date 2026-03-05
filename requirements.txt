@@ -15,6 +15,7 @@ python-docx
 openpyxl
 python-pptx
 pillow-heif
+onnxruntime
 rembg
 cairosvg
 python-barcode
