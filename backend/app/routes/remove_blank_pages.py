@@ -13,32 +13,56 @@ MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
-    """CPU-heavy pixel analysis — runs in a thread to avoid blocking the event loop."""
+    """Detect and remove blank pages using fast pixel sampling."""
     import fitz
 
     doc = fitz.open(stream=data, filetype="pdf")
     threshold = (100 - sensitivity) / 100.0
     pages_to_keep = []
+
     for i in range(len(doc)):
         page = doc[i]
-        # Quick check: if page has text content, keep it immediately (fast path)
+
+        # Fast path: if page has text content, keep it immediately
         if page.get_text("text").strip():
             pages_to_keep.append(i)
             continue
-        # Slow path: render to pixmap and check whiteness
+
+        # Render at low DPI for blank detection
         pix = page.get_pixmap(dpi=72)
         samples = pix.samples
-        total = len(samples)
-        white = sum(
-            1
-            for j in range(0, total, pix.n)
-            if all(samples[j + c] > 250 for c in range(min(pix.n, 3)))
-        )
-        ratio = white / (total // pix.n) if total > 0 else 1
+        total_pixels = pix.width * pix.height
+        n = pix.n  # channels per pixel
+
+        # Fast sampling: check every 8th pixel instead of every pixel
+        # This is 64x faster with negligible accuracy loss for blank detection
+        stride = 8
+        white_count = 0
+        sample_count = 0
+
+        # Use memoryview for zero-copy access
+        mv = memoryview(samples)
+        for y in range(0, pix.height, stride):
+            row_offset = y * pix.width * n
+            for x in range(0, pix.width, stride):
+                offset = row_offset + x * n
+                sample_count += 1
+                # Check if pixel is near-white (all channels > 250)
+                is_white = True
+                for c in range(min(n, 3)):
+                    if mv[offset + c] <= 250:
+                        is_white = False
+                        break
+                if is_white:
+                    white_count += 1
+
+        ratio = white_count / sample_count if sample_count > 0 else 1
         if ratio < (1 - threshold):
             pages_to_keep.append(i)
+
     if not pages_to_keep:
         pages_to_keep = list(range(len(doc)))
+
     new_doc = fitz.open()
     for i in pages_to_keep:
         new_doc.insert_pdf(doc, from_page=i, to_page=i)

@@ -1,6 +1,8 @@
 import asyncio
+import os
 import uuid
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
@@ -10,24 +12,71 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 MAX_SIZE = 50 * 1024 * 1024  # 50 MB
+_MAX_WORKERS = min(os.cpu_count() or 2, 4)
+
+
+def _invert_page(args: tuple) -> tuple:
+    """Invert a single page. Returns (index, width, height, png_bytes)."""
+    import fitz
+
+    idx, page_bytes, dpi = args
+    doc = fitz.open(stream=page_bytes, filetype="pdf")
+    page = doc[0]
+    w, h = page.rect.width, page.rect.height
+    pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72))
+    pix.invert_irect(pix.irect)
+    png_bytes = pix.tobytes("png")
+    doc.close()
+    return (idx, w, h, png_bytes)
 
 
 def _invert(input_path: str, dpi: int) -> str:
-    """CPU-heavy pixmap inversion — runs in a thread."""
+    """CPU-heavy pixmap inversion — processes pages in parallel."""
     import fitz
 
     src = fitz.open(input_path)
-    doc = fitz.open()
-    for page in src:
-        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-        pix.invert_irect(pix.irect)
-        new_page = doc.new_page(width=page.rect.width, height=page.rect.height)
-        new_page.insert_image(new_page.rect, pixmap=pix)
+    page_count = len(src)
+
+    if page_count <= 2:
+        # Few pages — direct sequential (avoids overhead)
+        doc = fitz.open()
+        for page in src:
+            pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72))
+            pix.invert_irect(pix.irect)
+            new_page = doc.new_page(width=page.rect.width, height=page.rect.height)
+            new_page.insert_image(new_page.rect, pixmap=pix)
+        out_path = str(get_temp_path(f"inverted_{uuid.uuid4().hex}.pdf"))
+        doc.save(out_path, deflate=True, garbage=4)
+        doc.close()
+        src.close()
+        return out_path
+
+    # Extract individual page PDFs for parallel processing
+    page_pdfs = []
+    for i in range(page_count):
+        single = fitz.open()
+        single.insert_pdf(src, from_page=i, to_page=i)
+        page_pdfs.append(single.tobytes())
+        single.close()
+    src.close()
+
+    tasks = [(i, pb, dpi) for i, pb in enumerate(page_pdfs)]
+
+    results = [None] * page_count
+    with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
+        for idx, w, h, png_bytes in pool.map(_invert_page, tasks):
+            results[idx] = (w, h, png_bytes)
+
+    # Assemble final PDF
+    import fitz as fitz2
+    doc = fitz2.open()
+    for w, h, png_bytes in results:
+        new_page = doc.new_page(width=w, height=h)
+        new_page.insert_image(new_page.rect, stream=png_bytes)
 
     out_path = str(get_temp_path(f"inverted_{uuid.uuid4().hex}.pdf"))
     doc.save(out_path, deflate=True, garbage=4)
     doc.close()
-    src.close()
     return out_path
 
 
