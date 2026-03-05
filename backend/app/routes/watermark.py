@@ -14,7 +14,6 @@ from ..services import watermark_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 MAX_WATERMARK_IMAGE_BYTES = 20 * 1024 * 1024  # 20 MB
 
 VALID_POSITIONS = {"center", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right", "diagonal", "tile"}
@@ -51,20 +50,14 @@ async def watermark_pdf(
     try:
         content = await file.read()
         if not content:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty")
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
-        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         if has_image_watermark and watermark_image is not None:
             image_bytes = await watermark_image.read()
             if not image_bytes:
-                raise HTTPException(status_code=400, detail="Uploaded watermark image is empty")
-            if len(image_bytes) > MAX_WATERMARK_IMAGE_BYTES:
-                raise HTTPException(status_code=413, detail="Watermark image exceeds the 20 MB limit")
-            try:
+                raise HTTPException(status_code=400, detail="Uploaded watermark image is empty")            try:
                 with Image.open(io.BytesIO(image_bytes)) as img:
                     img.verify()
             except Exception as exc:

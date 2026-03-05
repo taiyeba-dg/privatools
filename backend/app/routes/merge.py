@@ -10,7 +10,6 @@ from ..services import merge_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 MAX_FILES = 100
 MAX_TOTAL_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
 
@@ -35,10 +34,7 @@ async def merge_pdfs(files: List[UploadFile] = File(...)):
                 )
             content = await file.read()
             if not content:
-                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")
-            if len(content) > MAX_UPLOAD_BYTES:
-                raise HTTPException(status_code=413, detail=f"File {file.filename} exceeds the 50 MB limit")
-            total_bytes += len(content)
+                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")            total_bytes += len(content)
             if total_bytes > MAX_TOTAL_UPLOAD_BYTES:
                 raise HTTPException(status_code=413, detail="Combined PDF size exceeds the 200 MB limit")
             validate_pdf_content(content)

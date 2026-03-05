@@ -29,7 +29,6 @@ from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024
 MAX_JSON_ITEMS = 1000
 SAFE_FILENAME_RE = re.compile(r"[^A-Za-z0-9._ -]+")
 

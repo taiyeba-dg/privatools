@@ -8,7 +8,6 @@ from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, valida
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/auto-crop")
@@ -19,9 +18,6 @@ async def auto_crop(file: UploadFile = File(...)):
     ensure_temp_dir()
 
     content = await file.read()
-    if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
-
     doc = None
     out_path = None
     try:

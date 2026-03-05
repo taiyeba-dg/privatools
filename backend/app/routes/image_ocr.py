@@ -11,7 +11,6 @@ from ..utils.cleanup import remove_files
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".gif"}
 
 VALID_LANGS = {
@@ -62,9 +61,6 @@ async def image_ocr(
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="Uploaded image is empty")
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
-
     # Write to temp file
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
     tmp.write(content)

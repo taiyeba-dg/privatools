@@ -9,7 +9,6 @@ from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, valida
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
@@ -83,9 +82,6 @@ async def remove_blank_pages(
     ensure_temp_dir()
 
     content = await file.read()
-    if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
-
     out_path = None
     try:
         validate_pdf_content(content)
