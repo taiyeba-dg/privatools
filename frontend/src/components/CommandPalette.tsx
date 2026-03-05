@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ArrowRight, Clock, Command } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,11 @@ export default function CommandPalette() {
     const listRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const { history } = useHistory();
+
+    const go = useCallback((href: string) => {
+        setOpen(false);
+        navigate(href);
+    }, [navigate]);
 
     // Global keyboard shortcut
     useEffect(() => {
@@ -88,7 +93,7 @@ export default function CommandPalette() {
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
-    }, [open, selected, results]);
+    }, [open, selected, results, go]);
 
     // Scroll selected into view
     useEffect(() => {
@@ -96,11 +101,6 @@ export default function CommandPalette() {
         const item = listRef.current.children[selected] as HTMLElement;
         item?.scrollIntoView({ block: "nearest" });
     }, [selected]);
-
-    const go = (href: string) => {
-        setOpen(false);
-        navigate(href);
-    };
 
     if (!open) return null;
 

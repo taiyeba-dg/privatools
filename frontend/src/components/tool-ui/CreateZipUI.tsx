@@ -57,6 +57,9 @@ export function CreateZipUI() {
         <label className="text-xs font-medium text-muted-foreground">Password (optional)</label>
         <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Leave blank for no password"
           className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none" />
+        <p className="mt-2 text-[11px] text-amber-400/90">
+          Note: encrypted ZIP output is not enabled yet; archives are currently created as standard ZIP files.
+        </p>
       </div>
       {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
       {status === "done" ? (

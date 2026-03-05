@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
+import { ProcessingBar } from "./FileUploadZone";
 
 interface GenericUIProps {
   toolName: string;
@@ -24,16 +25,19 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
   const ref = useRef<HTMLInputElement>(null);
 
   const add = (fl: FileList) => {
-    const newFiles = Array.from(fl).map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), file: f, bytes: f.size }));
-    setFiles(p => [...p, ...newFiles]);
+    const selected = fl[0];
+    if (!selected) return;
+    setFiles([{ id: Math.random().toString(36).slice(2), name: selected.name, size: formatFileSize(selected.size), file: selected }]);
     setState("idle");
     setError(null);
   };
 
   const sizeWarning = files.length > 0 ? getFileSizeWarning(files[0].file.size) : null;
   const timeEstimate = files.length > 0 ? estimateTime(files[0].file.size) : null;
+  const canProcess = files.length > 0 && state !== "processing";
 
   const process = async () => {
+    if (!files.length) return;
     setState("processing");
     setError(null);
     try {
@@ -84,6 +88,15 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
         onDragLeave={() => setDrag(false)}
         onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
         onClick={() => ref.current?.click()}
+        onKeyDown={e => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            ref.current?.click();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`Upload file for ${toolName}`}
         className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
           drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}
       >
@@ -107,6 +120,11 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
 
       {files.length > 0 && (
         <div className="space-y-2">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground/70">
+            <span className="rounded-full border border-border px-2 py-0.5">1. Upload</span>
+            <span className={cn("rounded-full border px-2 py-0.5", state === "processing" ? "border-primary/40 text-primary" : "border-border")}>2. Process</span>
+            <span className={cn("rounded-full border px-2 py-0.5", state === "done" ? "border-emerald-400/40 text-emerald-400" : "border-border")}>3. Download</span>
+          </div>
           {sizeWarning && (
             <div className="flex items-center gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/5 px-4 py-2.5 text-[12px] text-yellow-400">
               <AlertCircle size={13} className="shrink-0" />
@@ -120,8 +138,13 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
               <button onClick={() => setFiles(p => p.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
             </div>
           ))}
+          {state === "processing" && (
+            <div className="rounded-xl border border-border bg-card px-4 py-3">
+              <ProcessingBar label={`Processing ${files[0].name}`} />
+            </div>
+          )}
           <div className="flex items-center gap-3 pt-1">
-            <Button onClick={process} disabled={state === "processing"} className="glow-primary">
+            <Button onClick={process} disabled={!canProcess} className="glow-primary">
               {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Processing…</> : (actionLabel || toolName)}
             </Button>
             <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setFiles([])}>Clear</Button>

@@ -99,11 +99,11 @@ export function EditPdfUI() {
     const pick = (f: File) => { setFile(f); setState("editing"); setError(null); setEdits([]); };
 
     const uid = () => Math.random().toString(36).slice(2);
-    const pdfCoords = (clientX: number, clientY: number) => {
+    const pdfCoords = useCallback((clientX: number, clientY: number) => {
         if (!overlayRef.current) return { x: 0, y: 0 };
         const r = overlayRef.current.getBoundingClientRect();
         return { x: Math.round(((clientX - r.left) / r.width) * pageSize.w), y: Math.round((1 - (clientY - r.top) / r.height) * pageSize.h) };
-    };
+    }, [pageSize]);
 
     const addEdit = useCallback((clientX: number, clientY: number) => {
         const { x, y } = pdfCoords(clientX, clientY);
@@ -124,7 +124,7 @@ export function EditPdfUI() {
         }
         setEdits(prev => [...prev, edit]);
         setSelectedId(edit.id);
-    }, [activeTool, currentPage, pageSize]);
+    }, [activeTool, currentPage, pdfCoords]);
 
     const updateEdit = (id: string, updates: Partial<Edit>) => {
         setEdits(prev => prev.map(e => e.id === id ? { ...e, ...updates } as Edit : e));
