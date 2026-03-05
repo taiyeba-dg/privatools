@@ -1,19 +1,19 @@
+"""PDF comparison using PyMuPDF for fast rendering (no poppler needed)."""
 import uuid
 import difflib
 import io
-import pikepdf
+import fitz  # PyMuPDF
 from PIL import Image, ImageChops
-from pdf2image import convert_from_path
-import pypdf
 from ..utils.cleanup import get_temp_path, ensure_temp_dir
 
 
 def compare_text(path1: str, path2: str) -> dict:
     def extract_text(path):
         pages = []
-        reader = pypdf.PdfReader(path)
-        for page in reader.pages:
-            pages.append(page.extract_text() or "")
+        doc = fitz.open(path)
+        for page in doc:
+            pages.append(page.get_text("text") or "")
+        doc.close()
         return pages
 
     pages1 = extract_text(path1)
@@ -50,37 +50,51 @@ def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
 
 
 def compare_visual(path1: str, path2: str, highlight_color: str = "#ff0000") -> str:
+    """Visual PDF comparison using PyMuPDF (no poppler subprocess)."""
     ensure_temp_dir()
     output_path = get_temp_path(f"compare_visual_{uuid.uuid4().hex}.pdf")
     color = _hex_to_rgb(highlight_color)
 
-    images1 = convert_from_path(path1, dpi=150)
-    images2 = convert_from_path(path2, dpi=150)
+    doc1 = fitz.open(path1)
+    doc2 = fitz.open(path2)
 
-    max_pages = max(len(images1), len(images2))
+    max_pages = max(len(doc1), len(doc2))
     result_images = []
 
     for i in range(max_pages):
-        if i < len(images1) and i < len(images2):
-            img1 = images1[i].convert("RGB")
-            img2 = images2[i].convert("RGB")
+        if i < len(doc1) and i < len(doc2):
+            # Render both pages at 150 DPI
+            mat = fitz.Matrix(150 / 72, 150 / 72)
+            pix1 = doc1[i].get_pixmap(matrix=mat)
+            pix2 = doc2[i].get_pixmap(matrix=mat)
+
+            img1 = Image.frombytes("RGB", [pix1.width, pix1.height], pix1.samples)
+            img2 = Image.frombytes("RGB", [pix2.width, pix2.height], pix2.samples)
+
             # Resize to same dimensions
             w = max(img1.width, img2.width)
             h = max(img1.height, img2.height)
             img1 = img1.resize((w, h), Image.Resampling.LANCZOS)
             img2 = img2.resize((w, h), Image.Resampling.LANCZOS)
+
             diff = ImageChops.difference(img1, img2)
-            # Highlight differences in red
             diff_arr = diff.split()
             red_mask = diff_arr[0].point(lambda x: 255 if x > 10 else 0)
             highlighted = img1.copy()
             red_layer = Image.new("RGB", (w, h), color)
             highlighted.paste(red_layer, mask=red_mask)
             result_images.append(highlighted)
-        elif i < len(images1):
-            result_images.append(images1[i].convert("RGB"))
+        elif i < len(doc1):
+            mat = fitz.Matrix(150 / 72, 150 / 72)
+            pix = doc1[i].get_pixmap(matrix=mat)
+            result_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
         else:
-            result_images.append(images2[i].convert("RGB"))
+            mat = fitz.Matrix(150 / 72, 150 / 72)
+            pix = doc2[i].get_pixmap(matrix=mat)
+            result_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
+
+    doc1.close()
+    doc2.close()
 
     if not result_images:
         raise ValueError("No pages to compare")

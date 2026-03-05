@@ -1,42 +1,44 @@
+"""Extract images from PDF using PyMuPDF native extraction (fast, no roundtrip)."""
 import uuid
 import zipfile
-import io
-import pikepdf
-from PIL import Image
+import fitz  # PyMuPDF
 from ..utils.cleanup import get_temp_path, ensure_temp_dir
 
 
 def extract_images(input_path: str) -> str:
+    """Extract all images from a PDF using PyMuPDF's native extraction.
+
+    Uses doc.extract_image() which returns raw bytes directly,
+    avoiding the pikepdf → PIL → bytes roundtrip.
+    """
     ensure_temp_dir()
     zip_path = get_temp_path(f"extracted_images_{uuid.uuid4().hex}.zip")
 
-    with pikepdf.open(input_path) as pdf:
-        image_count = 0
-        with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
-            for page_num, page in enumerate(pdf.pages, start=1):
-                resources = page.get("/Resources")
-                if resources is None:
-                    continue
-                xobjects = resources.get("/XObject")
-                if xobjects is None:
-                    continue
-                for name, obj in xobjects.items():
-                    try:
-                        if obj.get("/Subtype") != "/Image":
-                            continue
-                        pdfimage = pikepdf.PdfImage(obj)
-                        pil_image = pdfimage.as_pil_image()
-                        image_count += 1
-                        ext = "png" if pil_image.mode in ("RGBA", "P") else "jpg"
-                        img_bytes = io.BytesIO()
-                        if ext == "jpg":
-                            pil_image = pil_image.convert("RGB")
-                            pil_image.save(img_bytes, format="JPEG", quality=90)
-                        else:
-                            pil_image.save(img_bytes, format="PNG")
-                        img_bytes.seek(0)
-                        zf.writestr(f"page{page_num}_{name.lstrip('/')}_{image_count}.{ext}", img_bytes.read())
-                    except Exception:
+    doc = fitz.open(input_path)
+    image_count = 0
+
+    with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            image_list = page.get_images(full=True)
+
+            for img_index, img_info in enumerate(image_list):
+                xref = img_info[0]
+                try:
+                    img_data = doc.extract_image(xref)
+                    if not img_data:
                         continue
 
+                    image_bytes = img_data["image"]
+                    ext = img_data["ext"]  # "png", "jpeg", etc.
+                    if ext == "jpeg":
+                        ext = "jpg"
+
+                    image_count += 1
+                    filename = f"page{page_num + 1}_img{img_index + 1}.{ext}"
+                    zf.writestr(filename, image_bytes)
+                except Exception:
+                    continue
+
+    doc.close()
     return str(zip_path)

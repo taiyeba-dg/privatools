@@ -1,9 +1,7 @@
-import pikepdf
+"""Add page numbers using PyMuPDF direct text insertion (no reportlab overhead)."""
 import uuid
-import io
+import fitz  # PyMuPDF
 from ..utils.cleanup import get_temp_path, ensure_temp_dir
-from reportlab.pdfgen import canvas
-from reportlab.lib.colors import black
 
 
 def add_page_numbers(
@@ -15,41 +13,40 @@ def add_page_numbers(
     ensure_temp_dir()
     output_path = get_temp_path(f"numbered_{uuid.uuid4().hex}.pdf")
 
-    with pikepdf.open(input_path) as pdf:
-        for i, page in enumerate(pdf.pages):
-            page_num = i + start_number
-            mediabox = page.mediabox
-            width = float(mediabox[2]) - float(mediabox[0])
-            height = float(mediabox[3]) - float(mediabox[1])
+    doc = fitz.open(input_path)
+    margin = 20
 
-            packet = io.BytesIO()
-            c = canvas.Canvas(packet, pagesize=(width, height))
-            c.setFillColor(black)
-            c.setFont("Helvetica", font_size)
+    for i, page in enumerate(doc):
+        page_num = i + start_number
+        text = str(page_num)
+        rect = page.rect
+        w, h = rect.width, rect.height
 
-            margin = 20
-            text = str(page_num)
+        # Calculate insertion point based on position
+        if position == "bottom-center":
+            point = fitz.Point(w / 2, h - margin)
+        elif position == "bottom-left":
+            point = fitz.Point(margin, h - margin)
+        elif position == "bottom-right":
+            point = fitz.Point(w - margin, h - margin)
+        elif position == "top-center":
+            point = fitz.Point(w / 2, margin + font_size)
+        elif position == "top-left":
+            point = fitz.Point(margin, margin + font_size)
+        elif position == "top-right":
+            point = fitz.Point(w - margin, margin + font_size)
+        else:
+            point = fitz.Point(w / 2, h - margin)
 
-            if position == "bottom-center":
-                c.drawCentredString(width / 2, margin, text)
-            elif position == "bottom-left":
-                c.drawString(margin, margin, text)
-            elif position == "bottom-right":
-                c.drawRightString(width - margin, margin, text)
-            elif position == "top-center":
-                c.drawCentredString(width / 2, height - margin - font_size, text)
-            elif position == "top-left":
-                c.drawString(margin, height - margin - font_size, text)
-            elif position == "top-right":
-                c.drawRightString(width - margin, height - margin - font_size, text)
+        # Insert text directly on the page
+        page.insert_text(
+            point,
+            text,
+            fontsize=font_size,
+            fontname="helv",  # Helvetica
+            color=(0, 0, 0),
+        )
 
-            c.save()
-            packet.seek(0)
-
-            num_pdf = pikepdf.Pdf.open(packet)
-            num_page = num_pdf.pages[0]
-            page_obj = pikepdf.Page(page)
-            page_obj.add_overlay(num_page)
-
-        pdf.save(str(output_path))
+    doc.save(str(output_path), garbage=4, deflate=True)
+    doc.close()
     return str(output_path)
