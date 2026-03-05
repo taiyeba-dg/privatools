@@ -33,7 +33,9 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
             const reader = new FileReader();
             reader.onload = () => setPreviewSrc(reader.result as string);
             reader.readAsDataURL(f);
+            return;
         }
+        setPreviewSrc(null);
     }, [onFileSelect, showPreview]);
 
     const IconComp = file ? getFileIcon(file.name) : Upload;

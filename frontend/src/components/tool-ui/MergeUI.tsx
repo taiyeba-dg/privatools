@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { FileText, Upload, X, Download, Loader2, CheckCircle2, GripVertical, Plus, AlertCircle } from "lucide-react";
+import { FileText, Upload, X, Download, Loader2, CheckCircle2, GripVertical, Plus, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize } from "@/lib/api";
@@ -29,6 +29,16 @@ export function MergeUI() {
       setError(e.message || "Merge failed");
       setState("idle");
     }
+  };
+
+  const moveFile = (fromIndex: number, toIndex: number) => {
+    setFiles(prev => {
+      if (toIndex < 0 || toIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
   };
 
   if (state === "done") return (
@@ -74,14 +84,14 @@ export function MergeUI() {
       {files.length > 0 && (
         <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30">
-            <span className="text-xs font-medium text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""} · drag to reorder</span>
+            <span className="text-xs font-medium text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""} · use arrows to reorder</span>
             <button onClick={() => ref.current?.click()} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <Plus size={12} /> Add more
             </button>
           </div>
           {files.map((f, i) => (
             <div key={f.id} className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors">
-              <GripVertical size={15} className="text-muted-foreground/40 cursor-grab shrink-0" />
+              <GripVertical size={15} className="text-muted-foreground/40 shrink-0" />
               <span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary">
                 <FileText size={13} className="text-muted-foreground" />
@@ -89,6 +99,26 @@ export function MergeUI() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
                 <p className="text-xs text-muted-foreground">{f.size}</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => moveFile(i, i - 1)}
+                  disabled={i === 0}
+                  className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
+                  aria-label="Move file up"
+                >
+                  <ChevronUp size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveFile(i, i + 1)}
+                  disabled={i === files.length - 1}
+                  className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
+                  aria-label="Move file down"
+                >
+                  <ChevronDown size={14} />
+                </button>
               </div>
               <button onClick={() => setFiles(p => p.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-foreground">
                 <X size={14} />

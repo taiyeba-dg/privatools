@@ -1,66 +1,83 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy, type ComponentType } from "react";
 import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta } from "@/data/non-pdf-tools";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, ArrowLeft, Github, ExternalLink } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
-
-// UIs
-import { ImageCompressorUI } from "@/components/tool-ui/ImageCompressorUI";
-import { ImageConverterUI } from "@/components/tool-ui/ImageConverterUI";
-import { RemoveExifUI } from "@/components/tool-ui/RemoveExifUI";
-import { ResizeCropImageUI } from "@/components/tool-ui/ResizeCropImageUI";
-import { VideoToGifUI } from "@/components/tool-ui/VideoToGifUI";
-import { ExtractAudioUI } from "@/components/tool-ui/ExtractAudioUI";
-import { TrimMediaUI } from "@/components/tool-ui/TrimMediaUI";
-import { CompressVideoUI } from "@/components/tool-ui/CompressVideoUI";
-import { JsonXmlFormatterUI } from "@/components/tool-ui/JsonXmlFormatterUI";
-import { TextDiffUI } from "@/components/tool-ui/TextDiffUI";
-import { Base64UI } from "@/components/tool-ui/Base64UI";
-import { HashGeneratorUI } from "@/components/tool-ui/HashGeneratorUI";
-import { ExtractArchiveUI } from "@/components/tool-ui/ExtractArchiveUI";
-import { CreateZipUI } from "@/components/tool-ui/CreateZipUI";
-import { CsvJsonUI } from "@/components/tool-ui/CsvJsonUI";
-import { MarkdownHtmlUI } from "@/components/tool-ui/MarkdownHtmlUI";
-import { ImageOcrUI } from "@/components/tool-ui/ImageOcrUI";
-import { BarcodeGeneratorUI } from "@/components/tool-ui/BarcodeGeneratorUI";
-import { UrlToPdfUI } from "@/components/tool-ui/UrlToPdfUI";
-import { ImageWatermarkUI } from "@/components/tool-ui/ImageWatermarkUI";
-import { CollageUI } from "@/components/tool-ui/CollageUI";
-import { BackgroundRemoverUI } from "@/components/tool-ui/BackgroundRemoverUI";
-import { SvgToPngUI } from "@/components/tool-ui/SvgToPngUI";
-import { HeicToJpgUI } from "@/components/tool-ui/HeicToJpgUI";
-import { FaviconUI } from "@/components/tool-ui/FaviconUI";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
+
+type AnyModule = Record<string, unknown>;
+
+function lazyNamed<T extends AnyModule>(loader: () => Promise<T>, exportName: keyof T) {
+  return lazy(async () => ({
+    default: (await loader())[exportName] as ComponentType,
+  }));
+}
+
+const LazyImageCompressorUI = lazyNamed(() => import("@/components/tool-ui/ImageCompressorUI"), "ImageCompressorUI");
+const LazyImageConverterUI = lazyNamed(() => import("@/components/tool-ui/ImageConverterUI"), "ImageConverterUI");
+const LazyRemoveExifUI = lazyNamed(() => import("@/components/tool-ui/RemoveExifUI"), "RemoveExifUI");
+const LazyResizeCropImageUI = lazyNamed(() => import("@/components/tool-ui/ResizeCropImageUI"), "ResizeCropImageUI");
+const LazyVideoToGifUI = lazyNamed(() => import("@/components/tool-ui/VideoToGifUI"), "VideoToGifUI");
+const LazyExtractAudioUI = lazyNamed(() => import("@/components/tool-ui/ExtractAudioUI"), "ExtractAudioUI");
+const LazyTrimMediaUI = lazyNamed(() => import("@/components/tool-ui/TrimMediaUI"), "TrimMediaUI");
+const LazyCompressVideoUI = lazyNamed(() => import("@/components/tool-ui/CompressVideoUI"), "CompressVideoUI");
+const LazyJsonXmlFormatterUI = lazyNamed(() => import("@/components/tool-ui/JsonXmlFormatterUI"), "JsonXmlFormatterUI");
+const LazyTextDiffUI = lazyNamed(() => import("@/components/tool-ui/TextDiffUI"), "TextDiffUI");
+const LazyBase64UI = lazyNamed(() => import("@/components/tool-ui/Base64UI"), "Base64UI");
+const LazyHashGeneratorUI = lazyNamed(() => import("@/components/tool-ui/HashGeneratorUI"), "HashGeneratorUI");
+const LazyExtractArchiveUI = lazyNamed(() => import("@/components/tool-ui/ExtractArchiveUI"), "ExtractArchiveUI");
+const LazyCreateZipUI = lazyNamed(() => import("@/components/tool-ui/CreateZipUI"), "CreateZipUI");
+const LazyCsvJsonUI = lazyNamed(() => import("@/components/tool-ui/CsvJsonUI"), "CsvJsonUI");
+const LazyMarkdownHtmlUI = lazyNamed(() => import("@/components/tool-ui/MarkdownHtmlUI"), "MarkdownHtmlUI");
+const LazyImageOcrUI = lazyNamed(() => import("@/components/tool-ui/ImageOcrUI"), "ImageOcrUI");
+const LazyBarcodeGeneratorUI = lazyNamed(() => import("@/components/tool-ui/BarcodeGeneratorUI"), "BarcodeGeneratorUI");
+const LazyUrlToPdfUI = lazyNamed(() => import("@/components/tool-ui/UrlToPdfUI"), "UrlToPdfUI");
+const LazyImageWatermarkUI = lazyNamed(() => import("@/components/tool-ui/ImageWatermarkUI"), "ImageWatermarkUI");
+const LazyCollageUI = lazyNamed(() => import("@/components/tool-ui/CollageUI"), "CollageUI");
+const LazyBackgroundRemoverUI = lazyNamed(() => import("@/components/tool-ui/BackgroundRemoverUI"), "BackgroundRemoverUI");
+const LazySvgToPngUI = lazyNamed(() => import("@/components/tool-ui/SvgToPngUI"), "SvgToPngUI");
+const LazyHeicToJpgUI = lazyNamed(() => import("@/components/tool-ui/HeicToJpgUI"), "HeicToJpgUI");
+const LazyFaviconUI = lazyNamed(() => import("@/components/tool-ui/FaviconUI"), "FaviconUI");
+
+function ToolLoadingCard() {
+  return (
+    <div className="space-y-3">
+      <div className="h-36 animate-pulse rounded-2xl border border-border bg-card/70" />
+      <div className="h-14 animate-pulse rounded-xl border border-border bg-card/60" />
+      <div className="h-14 animate-pulse rounded-xl border border-border bg-card/60" />
+    </div>
+  );
+}
 
 function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
-    case "image-compressor": return <ImageCompressorUI />;
-    case "image-converter": return <ImageConverterUI />;
-    case "remove-exif": return <RemoveExifUI />;
-    case "resize-crop-image": return <ResizeCropImageUI />;
-    case "video-to-gif": return <VideoToGifUI />;
-    case "extract-audio": return <ExtractAudioUI />;
-    case "trim-media": return <TrimMediaUI />;
-    case "compress-video": return <CompressVideoUI />;
-    case "json-xml-formatter": return <JsonXmlFormatterUI />;
-    case "text-diff": return <TextDiffUI />;
-    case "base64": return <Base64UI />;
-    case "hash-generator": return <HashGeneratorUI />;
-    case "extract-archive": return <ExtractArchiveUI />;
-    case "create-zip": return <CreateZipUI />;
-    case "csv-json": return <CsvJsonUI />;
-    case "markdown-html": return <MarkdownHtmlUI />;
-    case "image-ocr": return <ImageOcrUI />;
-    case "generate-barcode": return <BarcodeGeneratorUI />;
-    case "url-to-pdf": return <UrlToPdfUI />;
-    case "image-watermark": return <ImageWatermarkUI />;
-    case "collage-maker": return <CollageUI />;
-    case "remove-background": return <BackgroundRemoverUI />;
-    case "svg-to-png": return <SvgToPngUI />;
-    case "heic-to-jpg": return <HeicToJpgUI />;
-    case "generate-favicon": return <FaviconUI />;
+    case "image-compressor": return <LazyImageCompressorUI />;
+    case "image-converter": return <LazyImageConverterUI />;
+    case "remove-exif": return <LazyRemoveExifUI />;
+    case "resize-crop-image": return <LazyResizeCropImageUI />;
+    case "video-to-gif": return <LazyVideoToGifUI />;
+    case "extract-audio": return <LazyExtractAudioUI />;
+    case "trim-media": return <LazyTrimMediaUI />;
+    case "compress-video": return <LazyCompressVideoUI />;
+    case "json-xml-formatter": return <LazyJsonXmlFormatterUI />;
+    case "text-diff": return <LazyTextDiffUI />;
+    case "base64": return <LazyBase64UI />;
+    case "hash-generator": return <LazyHashGeneratorUI />;
+    case "extract-archive": return <LazyExtractArchiveUI />;
+    case "create-zip": return <LazyCreateZipUI />;
+    case "csv-json": return <LazyCsvJsonUI />;
+    case "markdown-html": return <LazyMarkdownHtmlUI />;
+    case "image-ocr": return <LazyImageOcrUI />;
+    case "generate-barcode": return <LazyBarcodeGeneratorUI />;
+    case "url-to-pdf": return <LazyUrlToPdfUI />;
+    case "image-watermark": return <LazyImageWatermarkUI />;
+    case "make-collage": return <LazyCollageUI />;
+    case "remove-background": return <LazyBackgroundRemoverUI />;
+    case "svg-to-png": return <LazySvgToPngUI />;
+    case "heic-to-jpg": return <LazyHeicToJpgUI />;
+    case "generate-favicon": return <LazyFaviconUI />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }
@@ -71,26 +88,30 @@ export default function NonPdfToolPage() {
   const tool = slug ? nonPdfToolBySlug[slug] : null;
   const { addEntry } = useHistory();
 
-  // Track tool usage in history
   useEffect(() => {
     if (tool && slug) {
       addEntry({ slug, name: tool.name, href: `/tools/${slug}` });
     }
   }, [slug, tool, addEntry]);
 
-  // SEO: dynamic title and meta description
   useEffect(() => {
     if (tool) {
       document.title = `${tool.name} — PrivaTools`;
       let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-      if (!meta) { meta = document.createElement("meta"); meta.name = "description"; document.head.appendChild(meta); }
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.name = "description";
+        document.head.appendChild(meta);
+      }
       meta.content = tool.longDescription || tool.description;
     }
-    return () => { document.title = "PrivaTools"; };
+    return () => {
+      document.title = "PrivaTools";
+    };
   }, [tool]);
 
   const relatedTools = nonPdfTools
-    .filter(t => t.category === tool?.category && t.slug !== slug)
+    .filter((t) => t.category === tool?.category && t.slug !== slug)
     .slice(0, 6);
 
   if (!tool) {
@@ -109,7 +130,6 @@ export default function NonPdfToolPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/70 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex h-14 items-center gap-3">
@@ -122,8 +142,12 @@ export default function NonPdfToolPage() {
             <span className="text-muted-foreground text-sm">/</span>
             <span className="text-sm text-muted-foreground truncate max-w-[160px] sm:max-w-none">{tool.name}</span>
             <div className="flex-1" />
-            <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <a
+              href="https://github.com/taiyeba-dg/privatools"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
               <Github size={13} /><span className="hidden sm:inline">Open Source</span>
             </a>
           </div>
@@ -136,7 +160,6 @@ export default function NonPdfToolPage() {
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8">
-          {/* Main */}
           <div>
             <div className="flex items-start gap-4 mb-8">
               <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl", meta.iconBg)}>
@@ -153,9 +176,10 @@ export default function NonPdfToolPage() {
               </div>
             </div>
 
-            <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
+            <Suspense fallback={<ToolLoadingCard />}>
+              <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
+            </Suspense>
 
-            {/* How it works */}
             <div className="mt-10">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">How it works</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -163,7 +187,7 @@ export default function NonPdfToolPage() {
                   { step: "1", title: "Upload your file", desc: "Drag & drop or click to select. Files are processed on your self-hosted server." },
                   { step: "2", title: "Configure & process", desc: "Adjust any settings, then process instantly on your server." },
                   { step: "3", title: "Download result", desc: "Your processed file is ready immediately. No email, no waiting." },
-                ].map(s => (
+                ].map((s) => (
                   <div key={s.step} className="rounded-xl border border-border bg-card p-4">
                     <div className="text-xs font-bold text-primary mb-2">Step {s.step}</div>
                     <p className="text-sm font-semibold text-foreground mb-1">{s.title}</p>
@@ -174,18 +198,20 @@ export default function NonPdfToolPage() {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-4">
             {relatedTools.length > 0 && (
               <div className="rounded-xl border border-border bg-card p-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Related tools</h3>
                 <div className="space-y-0.5">
-                  {relatedTools.map(t => {
+                  {relatedTools.map((t) => {
                     const TIcon = t.icon;
                     const m = nonPdfCategoryMeta[t.category];
                     return (
-                      <Link key={t.slug} to={`/tools/${t.slug}`}
-                        className="flex items-center gap-3 rounded-lg px-2.5 py-2 hover:bg-secondary/60 transition-colors group">
+                      <Link
+                        key={t.slug}
+                        to={`/tools/${t.slug}`}
+                        className="flex items-center gap-3 rounded-lg px-2.5 py-2 hover:bg-secondary/60 transition-colors group"
+                      >
                         <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", m.iconBg)}>
                           <TIcon size={14} strokeWidth={1.75} className={m.iconColor} />
                         </div>
@@ -204,7 +230,12 @@ export default function NonPdfToolPage() {
                 <span className="text-sm font-semibold text-foreground">Open Source</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no tracking. Forever.</p>
-              <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+              <a
+                href="https://github.com/taiyeba-dg/privatools"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
                 View on GitHub <ExternalLink size={11} />
               </a>
             </div>
