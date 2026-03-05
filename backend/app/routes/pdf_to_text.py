@@ -19,7 +19,8 @@ async def pdf_to_text(file: UploadFile = File(...)):
 
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()        validate_pdf_content(content)
+        content = await file.read()
+        validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         result = pdf_to_text_service.extract_text(str(temp_path))

@@ -46,7 +46,8 @@ async def image_to_pdf(
                 )
             content = await file.read()
             if not content:
-                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")            total_bytes += len(content)
+                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")
+                total_bytes += len(content)
             if total_bytes > MAX_TOTAL_UPLOAD_BYTES:
                 raise HTTPException(status_code=413, detail="Combined image size exceeds the 200 MB limit")
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")

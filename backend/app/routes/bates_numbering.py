@@ -42,7 +42,8 @@ async def bates_numbering(
 
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()        validate_pdf_content(content)
+        content = await file.read()
+        validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         output_path = bates_numbering_service.add_bates_numbering(

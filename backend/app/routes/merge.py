@@ -11,7 +11,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 MAX_FILES = 100
-MAX_TOTAL_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
 
 
 @router.post("/merge")
@@ -24,7 +23,6 @@ async def merge_pdfs(files: List[UploadFile] = File(...)):
     ensure_temp_dir()
     input_paths: list[str] = []
     output_path: str | None = None
-    total_bytes = 0
 
     try:
         for file in files:
@@ -34,9 +32,7 @@ async def merge_pdfs(files: List[UploadFile] = File(...)):
                 )
             content = await file.read()
             if not content:
-                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")            total_bytes += len(content)
-            if total_bytes > MAX_TOTAL_UPLOAD_BYTES:
-                raise HTTPException(status_code=413, detail="Combined PDF size exceeds the 200 MB limit")
+                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")
             validate_pdf_content(content)
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
             temp_path.write_bytes(content)

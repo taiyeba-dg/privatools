@@ -24,7 +24,8 @@ async def delete_pages(
 
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()        validate_pdf_content(content)
+        content = await file.read()
+        validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         output_path = delete_pages_service.delete_pages(str(temp_path), pages)
