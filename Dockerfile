@@ -34,7 +34,8 @@ WORKDIR /app
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
-    && python -c "import fitz; print('PyMuPDF OK:', fitz.version)"
+    && python -c "import fitz; print('PyMuPDF OK:', fitz.version)" \
+    && python -c "from rembg import new_session; new_session('u2netp'); print('rembg u2netp model downloaded')"
 
 # Copy backend
 COPY backend/ backend/
