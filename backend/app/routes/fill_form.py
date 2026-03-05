@@ -64,8 +64,12 @@ async def fill_form(file: UploadFile = File(...), field_values: str = Form(...))
         if temp_path is not None:
             remove_files(str(temp_path))
         raise
-    except Exception:
+    except (ValueError, Exception) as exc:
         if temp_path is not None:
             remove_files(str(temp_path))
+        # Check if it's a validation-type error (e.g. no form fields)
+        exc_name = type(exc).__name__
+        if exc_name == "ValidationError" or "no form field" in str(exc).lower():
+            raise HTTPException(status_code=400, detail=str(exc))
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
