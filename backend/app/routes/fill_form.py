@@ -29,9 +29,11 @@ async def get_fields(file: UploadFile = File(...)):
         if temp_path is not None:
             remove_files(str(temp_path))
         raise
-    except Exception:
+    except Exception as exc:
         if temp_path is not None:
             remove_files(str(temp_path))
+        if "no form field" in str(exc).lower() or type(exc).__name__ == "ValidationError":
+            return JSONResponse({"fields": []})
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
 
