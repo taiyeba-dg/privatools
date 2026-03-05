@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     swig \
     poppler-utils \
     colord \
+    ffmpeg \
     libreoffice-writer-nogui \
     libreoffice-calc-nogui \
     libreoffice-impress-nogui \

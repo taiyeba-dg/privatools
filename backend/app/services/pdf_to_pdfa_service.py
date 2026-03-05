@@ -51,15 +51,14 @@ async def convert_to_pdfa(input_path: str) -> str:
     meta["creator"] = "PrivaTools"
     doc.set_metadata(meta)
 
-    # Set the PDF version to 1.7 (required for PDF/A-2)
     # Save with maximum cleaning and garbage collection
     doc.save(
         str(output_path),
         garbage=4,          # maximum garbage collection
         deflate=True,       # compress streams
         clean=True,         # clean content streams
-        linear=True,        # linearize for web
     )
+    doc.close()
 
     # Now add PDF/A-2b XMP metadata using pikepdf
     try:
@@ -81,12 +80,10 @@ async def convert_to_pdfa(input_path: str) -> str:
         import shutil
         shutil.move(str(temp_out2), str(output_path))
     except ImportError:
-        # pikepdf not available — the cleaned PDF is still valid, just without
-        # the formal PDF/A XMP declaration
         pass
     except Exception:
         # If XMP tagging fails, the base PDF is still valid
         pass
 
-    doc.close()
     return str(output_path)
+
