@@ -24,6 +24,14 @@ import { CreateZipUI } from "@/components/tool-ui/CreateZipUI";
 import { CsvJsonUI } from "@/components/tool-ui/CsvJsonUI";
 import { MarkdownHtmlUI } from "@/components/tool-ui/MarkdownHtmlUI";
 import { ImageOcrUI } from "@/components/tool-ui/ImageOcrUI";
+import { BarcodeGeneratorUI } from "@/components/tool-ui/BarcodeGeneratorUI";
+import { UrlToPdfUI } from "@/components/tool-ui/UrlToPdfUI";
+import { ImageWatermarkUI } from "@/components/tool-ui/ImageWatermarkUI";
+import { CollageUI } from "@/components/tool-ui/CollageUI";
+import { BackgroundRemoverUI } from "@/components/tool-ui/BackgroundRemoverUI";
+import { SvgToPngUI } from "@/components/tool-ui/SvgToPngUI";
+import { HeicToJpgUI } from "@/components/tool-ui/HeicToJpgUI";
+import { FaviconUI } from "@/components/tool-ui/FaviconUI";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
 
 function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
@@ -45,6 +53,14 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "csv-json": return <CsvJsonUI />;
     case "markdown-html": return <MarkdownHtmlUI />;
     case "image-ocr": return <ImageOcrUI />;
+    case "generate-barcode": return <BarcodeGeneratorUI />;
+    case "url-to-pdf": return <UrlToPdfUI />;
+    case "image-watermark": return <ImageWatermarkUI />;
+    case "collage-maker": return <CollageUI />;
+    case "remove-background": return <BackgroundRemoverUI />;
+    case "svg-to-png": return <SvgToPngUI />;
+    case "heic-to-jpg": return <HeicToJpgUI />;
+    case "generate-favicon": return <FaviconUI />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }
@@ -61,6 +77,17 @@ export default function NonPdfToolPage() {
       addEntry({ slug, name: tool.name, href: `/tools/${slug}` });
     }
   }, [slug, tool, addEntry]);
+
+  // SEO: dynamic title and meta description
+  useEffect(() => {
+    if (tool) {
+      document.title = `${tool.name} — PrivaTools`;
+      let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+      if (!meta) { meta = document.createElement("meta"); meta.name = "description"; document.head.appendChild(meta); }
+      meta.content = tool.longDescription || tool.description;
+    }
+    return () => { document.title = "PrivaTools"; };
+  }, [tool]);
 
   const relatedTools = nonPdfTools
     .filter(t => t.category === tool?.category && t.slug !== slug)
@@ -133,8 +160,8 @@ export default function NonPdfToolPage() {
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">How it works</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
-                  { step: "1", title: "Upload your file", desc: "Drag & drop or click to select. Your files never leave your browser." },
-                  { step: "2", title: "Configure & process", desc: "Adjust any settings, then process instantly in-browser." },
+                  { step: "1", title: "Upload your file", desc: "Drag & drop or click to select. Files are processed on your self-hosted server." },
+                  { step: "2", title: "Configure & process", desc: "Adjust any settings, then process instantly on your server." },
                   { step: "3", title: "Download result", desc: "Your processed file is ready immediately. No email, no waiting." },
                 ].map(s => (
                   <div key={s.step} className="rounded-xl border border-border bg-card p-4">

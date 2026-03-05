@@ -1,10 +1,17 @@
-import { useState, useRef } from "react";
-import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Plus, Trash2, PenTool } from "lucide-react";
+import { useState } from "react";
+import { Download, CheckCircle2, AlertCircle, Plus, Trash2, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { downloadBlob, formatFileSize } from "@/lib/api";
+import { downloadBlob } from "@/lib/api";
+import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 
 const API_BASE = "/api";
+
+const FONTS = [
+    { value: "Helvetica", label: "Helvetica", desc: "Sans-serif" },
+    { value: "Times-Roman", label: "Times", desc: "Serif" },
+    { value: "Courier", label: "Courier", desc: "Monospace" },
+];
 
 interface TextEdit {
     id: string;
@@ -15,20 +22,19 @@ interface TextEdit {
     text: string;
     font_size: number;
     color: string;
+    font_family: string;
+    bold: boolean;
 }
 
 export function EditPdfUI() {
-    const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
+    const [file, setFile] = useState<File | null>(null);
     const [edits, setEdits] = useState<TextEdit[]>([]);
     const [state, setState] = useState<"idle" | "editing" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-    const [drag, setDrag] = useState(false);
-    const ref = useRef<HTMLInputElement>(null);
 
-    const pick = (fl: FileList) => {
-        const f = fl[0];
-        setFile({ name: f.name, size: formatFileSize(f.size), raw: f });
+    const pick = (f: File) => {
+        setFile(f);
         setState("editing");
         setError(null);
         setEdits([]);
@@ -44,6 +50,8 @@ export function EditPdfUI() {
             text: "",
             font_size: 12,
             color: "#000000",
+            font_family: "Helvetica",
+            bold: false,
         }]);
     };
 
@@ -61,7 +69,7 @@ export function EditPdfUI() {
         setError(null);
         try {
             const fd = new FormData();
-            fd.append("file", file.raw);
+            fd.append("file", file);
             // Strip the internal 'id' from edits before sending
             const cleanEdits = edits.map(({ id, ...rest }) => rest);
             fd.append("edits", JSON.stringify(cleanEdits));
@@ -102,11 +110,7 @@ export function EditPdfUI() {
     if ((state === "editing" || state === "processing") && file) return (
         <div className="space-y-4">
             {/* File info */}
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary"><FileText size={14} className="text-muted-foreground" /></div>
-                <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{file.name}</p><p className="text-xs text-muted-foreground">{file.size}</p></div>
-                <button onClick={() => { setFile(null); setState("idle"); setEdits([]); }} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
-            </div>
+            <FileUploadZone file={file} onFileSelect={pick} onClear={() => { setFile(null); setState("idle"); setEdits([]); }} accept=".pdf" />
 
             {/* Edits list */}
             <div className="rounded-xl border border-border bg-card p-5 space-y-4">
@@ -188,6 +192,25 @@ export function EditPdfUI() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Font family & Bold */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-muted-foreground">Font</label>
+                                <select value={edit.font_family} onChange={e => updateEdit(edit.id, "font_family", e.target.value)}
+                                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+                                    {FONTS.map(f => <option key={f.value} value={f.value}>{f.label} — {f.desc}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-muted-foreground">Style</label>
+                                <button onClick={() => updateEdit(edit.id, "bold", edit.bold ? 0 : 1)}
+                                    className={cn("w-full rounded-lg border py-2 text-sm font-bold transition-all",
+                                        edit.bold ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/30")}>
+                                    B Bold
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -198,31 +221,31 @@ export function EditPdfUI() {
                 </div>
             )}
 
-            <div className="flex gap-3">
-                <Button onClick={process} disabled={state === "processing" || edits.length === 0 || edits.some(e => !e.text.trim())} className="glow-primary">
-                    {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Applying Edits…</> : `Apply ${edits.length} Edit${edits.length !== 1 ? "s" : ""}`}
-                </Button>
-                <Button variant="ghost" size="sm" className="text-muted-foreground"
-                    onClick={() => { setFile(null); setState("idle"); setEdits([]); }}>Start Over</Button>
-            </div>
+            {state === "processing" && <ProcessingBar label="Applying edits to your PDF…" />}
+
+            {state !== "processing" && (
+                <div className="flex gap-3">
+                    <Button onClick={process} disabled={edits.length === 0 || edits.some(e => !e.text.trim())} className="glow-primary">
+                        {`Apply ${edits.length} Edit${edits.length !== 1 ? "s" : ""}`}
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground"
+                        onClick={() => { setFile(null); setState("idle"); setEdits([]); }}>Start Over</Button>
+                </div>
+            )}
         </div>
     );
 
     // Upload state
     return (
         <div className="space-y-4">
-            <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
-                onClick={() => ref.current?.click()}
-                className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
-                <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
-                <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
-                    <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
-                </div>
-                <p className="text-sm font-semibold text-foreground">Select a PDF to edit</p>
-                <p className="text-xs text-muted-foreground">Add text, modify content, and customize your PDF</p>
-            </div>
+            <FileUploadZone
+                file={null}
+                onFileSelect={pick}
+                onClear={() => { }}
+                accept=".pdf"
+                label="Select a PDF to edit"
+                hint="Add text, modify content, and customize your PDF"
+            />
         </div>
     );
 }
