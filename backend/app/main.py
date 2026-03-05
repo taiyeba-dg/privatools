@@ -6,10 +6,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.middleware import SlowAPIMiddleware
-from slowapi.errors import RateLimitExceeded
 
 from .routes import (
     merge, split, compress, pdf_to_image, image_to_pdf, rotate, protect,
@@ -60,7 +56,6 @@ def _env_positive_int(name: str, default: int) -> int:
 
 
 _rate_limit_rpm = _env_positive_int("RATE_LIMIT_RPM", 30)
-_slowapi_default_limit = os.environ.get("SLOWAPI_DEFAULT_LIMIT", "60/minute")
 
 app = FastAPI(
     title="PDF Studio API",
@@ -84,17 +79,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-limiter = Limiter(key_func=get_remote_address, default_limits=[_slowapi_default_limit])
-app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
 
-
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request, exc):
-    return JSONResponse(
-        status_code=429,
-        content={"detail": "Rate limit exceeded. Please wait a moment and try again."},
-    )
 
 # Include all routers
 app.include_router(merge.router, prefix="/api")

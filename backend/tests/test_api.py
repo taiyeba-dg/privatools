@@ -65,7 +65,7 @@ def request_with_retry(method, url, *, files=None, data=None, timeout=30, retrie
         response = requests.request(method, url, files=files, data=data, timeout=timeout)
         if response.status_code != 429:
             return response
-        time.sleep(0.2 * (attempt + 1))
+        time.sleep(2 ** attempt)
     return response
 
 
