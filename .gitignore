@@ -30,3 +30,4 @@ temp/
 deep_*
 test_all_tools.py
 lo_input_*.pdf
+.github/workflows/

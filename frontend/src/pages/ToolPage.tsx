@@ -47,6 +47,24 @@ import { PdfToTextUI } from "@/components/tool-ui/PdfToTextUI";
 import { RotateUI } from "@/components/tool-ui/RotateUI";
 import { FillFormUI } from "@/components/tool-ui/FillFormUI";
 import { EditPdfUI } from "@/components/tool-ui/EditPdfUI";
+import { StampUI } from "@/components/tool-ui/StampUI";
+import { ESignUI } from "@/components/tool-ui/ESignUI";
+import { PermissionsUI } from "@/components/tool-ui/PermissionsUI";
+import { AttachmentUI } from "@/components/tool-ui/AttachmentUI";
+import { AnnotateUI } from "@/components/tool-ui/AnnotateUI";
+import { ShapesUI } from "@/components/tool-ui/ShapesUI";
+import { WhiteoutUI } from "@/components/tool-ui/WhiteoutUI";
+import { OverlayUI } from "@/components/tool-ui/OverlayUI";
+import { PdfToWordUI } from "@/components/tool-ui/PdfToWordUI";
+import { PdfToExcelUI } from "@/components/tool-ui/PdfToExcelUI";
+import { PdfToPptxUI } from "@/components/tool-ui/PdfToPptxUI";
+import {
+  PdfToMarkdownUI2, ExtractImagesUI, ExtractTablesUI, PdfToPdfaUI,
+  WordToPdfUI, ExcelToPdfUI, PptxToPdfUI, TxtToPdfUI,
+  JsonToPdfUI, XmlToPdfUI, EpubToPdfUI, RtfToPdfUI,
+  FlattenUI, DeskewUI, RepairUI, GrayscaleUI,
+  StripMetadataUI, DeleteAnnotationsUI, OfficeToPdfUI,
+} from "@/components/tool-ui/SimpleConvertUI";
 
 function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
@@ -86,7 +104,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "qr-code": return <QrCodeUI />;
     case "fill-form": return <FillFormUI />;
     case "alternate-mix": return <MergeUI />;
-    case "overlay": return <CompareUI />;
+    case "overlay": return <OverlayUI />;
     case "form-creator": return <FormCreatorUI />;
     case "pdfa-validator": return <PdfaValidatorUI />;
     case "verify-signature": return <VerifySignatureUI />;
@@ -111,9 +129,42 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     // New edit
     case "add-hyperlinks": return <AddHyperlinksUI />;
     case "transparent-background": return <TransparentBackgroundUI />;
+    case "stamp-pdf": return <StampUI />;
+    case "esign-pdf": return <ESignUI />;
+    case "set-permissions": return <PermissionsUI />;
+    case "add-attachment": return <AttachmentUI />;
+    case "annotate-pdf": return <AnnotateUI />;
+    case "add-shapes": return <ShapesUI />;
+    case "whiteout-pdf": return <WhiteoutUI />;
 
     // New security
     case "sanitize-pdf": return <SanitizeUI />;
+
+    // Phase 3: Conversion tools
+    case "pdf-to-word": return <PdfToWordUI />;
+    case "pdf-to-excel": return <PdfToExcelUI />;
+    case "pdf-to-pptx": return <PdfToPptxUI />;
+    case "pdf-to-markdown": return <PdfToMarkdownUI2 />;
+    case "extract-images": return <ExtractImagesUI />;
+    case "extract-tables": return <ExtractTablesUI />;
+    case "pdf-to-pdfa": return <PdfToPdfaUI />;
+    case "word-to-pdf": return <WordToPdfUI />;
+    case "excel-to-pdf": return <ExcelToPdfUI />;
+    case "pptx-to-pdf-convert": return <PptxToPdfUI />;
+    case "txt-to-pdf": return <TxtToPdfUI />;
+    case "json-to-pdf": return <JsonToPdfUI />;
+    case "xml-to-pdf": return <XmlToPdfUI />;
+    case "epub-to-pdf": return <EpubToPdfUI />;
+    case "rtf-to-pdf": return <RtfToPdfUI />;
+    case "office-to-pdf": return <OfficeToPdfUI />;
+
+    // Phase 5: Polish existing tools
+    case "flatten-pdf": return <FlattenUI />;
+    case "deskew-pdf": return <DeskewUI />;
+    case "repair-pdf": return <RepairUI />;
+    case "grayscale-pdf": return <GrayscaleUI />;
+    case "strip-metadata": return <StripMetadataUI />;
+    case "delete-annotations": return <DeleteAnnotationsUI />;
 
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
@@ -131,6 +182,17 @@ export default function ToolPage() {
       addEntry({ slug, name: tool.name, href: `/tool/${slug}` });
     }
   }, [slug, tool, addEntry]);
+
+  // SEO: dynamic title and meta description
+  useEffect(() => {
+    if (tool) {
+      document.title = `${tool.name} — PrivaTools`;
+      let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+      if (!meta) { meta = document.createElement("meta"); meta.name = "description"; document.head.appendChild(meta); }
+      meta.content = tool.longDescription || tool.description;
+    }
+    return () => { document.title = "PrivaTools"; };
+  }, [tool]);
 
   const relatedTools = tools
     .filter(t => t.category === tool?.category && t.slug !== slug)
@@ -204,8 +266,8 @@ export default function ToolPage() {
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">How it works</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
-                  { step: "1", title: "Upload your file", desc: "Drag & drop or click to select. Your files never leave your browser." },
-                  { step: "2", title: "Configure & process", desc: "Adjust any settings, then click to process your file instantly." },
+                  { step: "1", title: "Upload your file", desc: "Drag & drop or click to select. Files are processed on your self-hosted server." },
+                  { step: "2", title: "Configure & process", desc: "Adjust any settings, then process instantly on your server." },
                   { step: "3", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email." },
                 ].map(s => (
                   <div key={s.step} className="rounded-xl border border-border bg-card p-4">
