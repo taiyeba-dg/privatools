@@ -6,6 +6,7 @@ Limits: 30 requests/minute per IP for API endpoints.
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from collections import defaultdict
+import os
 import time
 
 
@@ -15,8 +16,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.rpm = requests_per_minute
         self.window = 60  # seconds
         self.requests: dict[str, list[float]] = defaultdict(list)
+        self.disabled = os.environ.get("DISABLE_RATE_LIMIT", "").strip().lower() in ("1", "true", "yes")
 
     async def dispatch(self, request: Request, call_next):
+        if self.disabled:
+            return await call_next(request)
+
         # Only rate-limit API endpoints (skip static files, health checks)
         if not request.url.path.startswith("/api/"):
             return await call_next(request)
