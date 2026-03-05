@@ -54,10 +54,14 @@ def edit_pdf(input_path: str, edits: list) -> str:
                     tx = float(edit.get("x", 0))
                     ty = float(edit.get("y", 0))
                     font_size = float(edit.get("font_size", 12))
+                    font_family = edit.get("font_family", "Helvetica")
                     color = edit.get("color", "#000000")
                     r, g, b = _hex_to_rgb(color)
                     c.setFillColor(Color(r, g, b))
-                    c.setFont("Helvetica", font_size)
+                    try:
+                        c.setFont(font_family, font_size)
+                    except KeyError:
+                        c.setFont("Helvetica", font_size)
                     c.drawString(tx, ty, text)
 
                 elif edit_type == "rectangle":
