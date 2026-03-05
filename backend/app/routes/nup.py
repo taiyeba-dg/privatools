@@ -21,10 +21,7 @@ async def nup(file: UploadFile = File(...), pages_per_sheet: int = Form(2)):
     output_path = None
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()
-        if len(content) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
-        validate_pdf_content(content)
+        content = await file.read()        validate_pdf_content(content)
         temp_path.write_bytes(content)
         output_path = nup_service.nup(str(temp_path), pages_per_sheet=pages_per_sheet)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)

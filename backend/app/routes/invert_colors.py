@@ -11,7 +11,6 @@ from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, valida
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 _MAX_WORKERS = min(os.cpu_count() or 2, 4)
 
 
@@ -91,9 +90,6 @@ async def invert_colors(
     ensure_temp_dir()
 
     content = await file.read()
-    if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
-
     temp_pdf = None
     output_path = None
     try:

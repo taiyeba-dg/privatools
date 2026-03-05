@@ -24,10 +24,7 @@ async def add_bookmarks(
 
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()
-        if len(content) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File size exceeds 50 MB limit")
-        validate_pdf_content(content)
+        content = await file.read()        validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         output_path = bookmarks_service.add_bookmarks(str(temp_path), bookmarks)

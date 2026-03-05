@@ -55,8 +55,6 @@ def _env_positive_int(name: str, default: int) -> int:
         return default
 
 
-_rate_limit_rpm = _env_positive_int("RATE_LIMIT_RPM", 30)
-
 app = FastAPI(
     title="PDF Studio API",
     version="1.0.0",
@@ -64,10 +62,6 @@ app = FastAPI(
     docs_url=None if _is_prod else "/docs",
     redoc_url=None if _is_prod else "/redoc",
 )
-
-# Rate limiting — 30 req/min per IP
-from .middleware.rate_limit import RateLimitMiddleware
-app.add_middleware(RateLimitMiddleware, requests_per_minute=_rate_limit_rpm)
 
 _origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:8080").split(",")
 

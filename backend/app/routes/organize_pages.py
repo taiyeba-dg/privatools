@@ -19,10 +19,7 @@ async def get_thumbnails(file: UploadFile = File(...)):
     temp_path = None
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()
-        if len(content) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
-        validate_pdf_content(content)
+        content = await file.read()        validate_pdf_content(content)
         temp_path.write_bytes(content)
         thumbnails = organize_pages_service.generate_thumbnails(str(temp_path))
         remove_files(str(temp_path))
@@ -47,10 +44,7 @@ async def organize_pages(file: UploadFile = File(...), page_order: str = Form(..
     output_path = None
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content = await file.read()
-        if len(content) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
-        validate_pdf_content(content)
+        content = await file.read()        validate_pdf_content(content)
         temp_path.write_bytes(content)
         order = json.loads(page_order)
         output_path = organize_pages_service.reorder_pages(str(temp_path), order)

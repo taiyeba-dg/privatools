@@ -18,8 +18,6 @@ from ..utils.cleanup import remove_files, validate_pdf_content
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_PDF_BYTES = 50 * 1024 * 1024
-MAX_TEXT_BYTES = 5 * 1024 * 1024
 MAX_FORM_FIELDS = 300
 MAX_FORM_OPTIONS = 50
 

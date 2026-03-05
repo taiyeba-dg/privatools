@@ -10,7 +10,6 @@ from ..services import sign_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/sign-pdf")
@@ -30,9 +29,6 @@ async def sign_pdf(
     ensure_temp_dir()
 
     pdf_content = await file.read()
-    if len(pdf_content) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
-
     temp_pdf = None
     signature_path = None
     try:

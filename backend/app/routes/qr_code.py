@@ -10,7 +10,6 @@ from ..services import qr_code_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/qr-code")
@@ -38,10 +37,7 @@ async def generate_qr_code(
         if embed_in_pdf and embed_in_pdf.filename:
             if not embed_in_pdf.filename.lower().endswith(".pdf"):
                 raise HTTPException(status_code=400, detail="embed_in_pdf must be a PDF file")
-            pdf_content = await embed_in_pdf.read()
-            if len(pdf_content) > MAX_SIZE:
-                raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
-            validate_pdf_content(pdf_content)
+            pdf_content = await embed_in_pdf.read()            validate_pdf_content(pdf_content)
             temp_pdf = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
             temp_pdf.write_bytes(pdf_content)
             output_path = qr_code_service.embed_qr_in_pdf(

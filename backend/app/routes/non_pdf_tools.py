@@ -16,11 +16,9 @@ from starlette.background import BackgroundTask
 
 router = APIRouter()
 
-MAX_IMAGE_SIZE = 30 * 1024 * 1024
 MAX_MEDIA_SIZE = 200 * 1024 * 1024
 MAX_ARCHIVE_SIZE = 200 * 1024 * 1024
 MAX_ARCHIVE_FILES = 5000
-MAX_EXTRACTED_BYTES = 500 * 1024 * 1024
 TIMESTAMP_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(?:\.\d+)?$")
 
 IMAGE_FORMATS = {
@@ -78,12 +76,10 @@ def _safe_filename(name: str | None, fallback: str) -> str:
     return base or fallback
 
 
-async def _read_upload(file: UploadFile, max_size: int, label: str = "File") -> bytes:
+async def _read_upload(file: UploadFile, max_size: int = 0, label: str = "File") -> bytes:
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail=f"{label} is empty")
-    if len(data) > max_size:
-        raise HTTPException(status_code=413, detail=f"{label} exceeds size limit")
     return data
 
 

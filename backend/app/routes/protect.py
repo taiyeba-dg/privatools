@@ -10,7 +10,6 @@ from ..services import protect_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/protect")
@@ -41,10 +40,7 @@ async def protect_pdf(
     try:
         content = await file.read()
         if not content:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty")
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
-        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")        temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 

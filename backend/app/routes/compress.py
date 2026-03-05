@@ -10,7 +10,6 @@ from ..services import compress_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 VALID_LEVELS = {"light", "recommended", "extreme"}
 
 
@@ -29,10 +28,7 @@ async def compress_pdf(
     output_path = None
 
     try:
-        content = await file.read()
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
-        original_size = len(content)
+        content = await file.read()        original_size = len(content)
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         validate_pdf_content(content)
         temp_path.write_bytes(content)

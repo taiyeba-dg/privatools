@@ -28,17 +28,11 @@ async def alternate_mix(
     output_path = None
     try:
         path1 = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content1 = await file1.read()
-        if len(content1) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
-        validate_pdf_content(content1)
+        content1 = await file1.read()        validate_pdf_content(content1)
         path1.write_bytes(content1)
 
         path2 = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content2 = await file2.read()
-        if len(content2) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
-        validate_pdf_content(content2)
+        content2 = await file2.read()        validate_pdf_content(content2)
         path2.write_bytes(content2)
 
         output_path = alternate_mix_service.alternate_mix(str(path1), str(path2), mode=mode)

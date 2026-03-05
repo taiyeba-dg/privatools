@@ -11,7 +11,6 @@ from ..services import redact_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/redact")
@@ -24,9 +23,6 @@ async def redact_pdf(
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
     content = await file.read()
-    if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
-
     try:
         rects = json.loads(redactions)
     except json.JSONDecodeError:

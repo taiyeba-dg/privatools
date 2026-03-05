@@ -29,17 +29,11 @@ async def overlay(
     output_path = None
     try:
         base_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content1 = await base_file.read()
-        if len(content1) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
-        validate_pdf_content(content1)
+        content1 = await base_file.read()        validate_pdf_content(content1)
         base_path.write_bytes(content1)
 
         ovl_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-        content2 = await overlay_file.read()
-        if len(content2) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
-        validate_pdf_content(content2)
+        content2 = await overlay_file.read()        validate_pdf_content(content2)
         ovl_path.write_bytes(content2)
 
         output_path = overlay_service.overlay(str(base_path), str(ovl_path), mode=mode)

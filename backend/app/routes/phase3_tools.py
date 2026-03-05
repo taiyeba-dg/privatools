@@ -26,7 +26,6 @@ from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024
 MAX_COLLAGE_FILES = 25
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 ALLOWED_FAVICON_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS | {".svg"}

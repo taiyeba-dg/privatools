@@ -9,16 +9,12 @@ from ..utils.cleanup import remove_files, validate_pdf_content
 
 router = APIRouter()
 
-MAX_SIZE = 50 * 1024 * 1024
 
 
 async def _read_pdf(upload: UploadFile, label: str = "PDF") -> bytes:
     data = await upload.read()
     if not data:
-        raise HTTPException(status_code=400, detail=f"{label} is empty")
-    if len(data) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail=f"{label} exceeds 50 MB limit")
-    validate_pdf_content(data)
+        raise HTTPException(status_code=400, detail=f"{label} is empty")    validate_pdf_content(data)
     return data
 
 

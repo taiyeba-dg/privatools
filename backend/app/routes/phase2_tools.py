@@ -16,7 +16,6 @@ from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 PAGE_SELECTION_RE = re.compile(r"^(all|\d+(?:\s*,\s*\d+)*)$", re.IGNORECASE)
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 

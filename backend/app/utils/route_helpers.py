@@ -6,7 +6,7 @@ from fastapi import HTTPException, UploadFile
 
 from .cleanup import remove_files
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
+MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB (effectively unlimited)
 
 
 async def read_upload(
@@ -19,8 +19,6 @@ async def read_upload(
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail=f"{label} is empty")
-    if len(data) > max_bytes:
-        raise HTTPException(status_code=413, detail=f"File exceeds {max_bytes // (1024 * 1024)} MB limit")
     return data
 
 

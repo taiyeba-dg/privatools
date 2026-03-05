@@ -14,7 +14,6 @@ MAX_TOTAL_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/image-to-pdf")
@@ -47,10 +46,7 @@ async def image_to_pdf(
                 )
             content = await file.read()
             if not content:
-                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")
-            if len(content) > MAX_UPLOAD_BYTES:
-                raise HTTPException(status_code=413, detail=f"File {file.filename} exceeds the 50 MB limit")
-            total_bytes += len(content)
+                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")            total_bytes += len(content)
             if total_bytes > MAX_TOTAL_UPLOAD_BYTES:
                 raise HTTPException(status_code=413, detail="Combined image size exceeds the 200 MB limit")
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")

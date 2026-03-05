@@ -10,7 +10,6 @@ from ..services import edit_pdf_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/edit-pdf")
@@ -22,9 +21,6 @@ async def edit_pdf(
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
     content = await file.read()
-    if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
-
     try:
         edits_list = json.loads(edits)
     except json.JSONDecodeError:
