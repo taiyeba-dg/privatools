@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { Upload, Loader2, AlertCircle, FileText, X, Download } from "lucide-react";
+import { useState } from "react";
+import { Upload, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { processAndDownload, formatFileSize } from "@/lib/api";
 
@@ -20,8 +20,8 @@ export function ExtractArchiveUI() {
       <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-primary/40 transition-all">
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop archive here"}</p>
-        <p className="text-xs text-muted-foreground">{file ? file.size : "ZIP, RAR, 7z, TAR, GZ"}</p>
-        <input type="file" accept=".zip,.rar,.7z,.tar,.gz,.tar.gz,.tgz,.bz2" className="hidden" onChange={e => { if (e.target.files?.[0]) { const f = e.target.files[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); } }} />
+        <p className="text-xs text-muted-foreground">{file ? file.size : "ZIP, TAR, TAR.GZ, TGZ, TAR.BZ2, TAR.XZ"}</p>
+        <input type="file" accept=".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz" className="hidden" onChange={e => { if (e.target.files?.[0]) { const f = e.target.files[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); } }} />
       </label>
       {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
       {status === "done" ? (

@@ -37,9 +37,22 @@ def compare_text(path1: str, path2: str) -> dict:
     }
 
 
-def compare_visual(path1: str, path2: str) -> str:
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    color = (hex_color or "").strip().lstrip("#")
+    if len(color) == 3:
+        color = "".join(ch * 2 for ch in color)
+    if len(color) != 6:
+        return (255, 0, 0)
+    try:
+        return (int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16))
+    except ValueError:
+        return (255, 0, 0)
+
+
+def compare_visual(path1: str, path2: str, highlight_color: str = "#ff0000") -> str:
     ensure_temp_dir()
     output_path = get_temp_path(f"compare_visual_{uuid.uuid4().hex}.pdf")
+    color = _hex_to_rgb(highlight_color)
 
     images1 = convert_from_path(path1, dpi=150)
     images2 = convert_from_path(path2, dpi=150)
@@ -61,7 +74,7 @@ def compare_visual(path1: str, path2: str) -> str:
             diff_arr = diff.split()
             red_mask = diff_arr[0].point(lambda x: 255 if x > 10 else 0)
             highlighted = img1.copy()
-            red_layer = Image.new("RGB", (w, h), (255, 0, 0))
+            red_layer = Image.new("RGB", (w, h), color)
             highlighted.paste(red_layer, mask=red_mask)
             result_images.append(highlighted)
         elif i < len(images1):

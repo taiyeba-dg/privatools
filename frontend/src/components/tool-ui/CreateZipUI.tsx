@@ -1,11 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatFileSize, downloadBlob } from "@/lib/api";
 
 export function CreateZipUI() {
   const [files, setFiles] = useState<{ id: string; name: string; size: string; file: File }[]>([]);
-  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLInputElement>(null);
@@ -19,7 +18,6 @@ export function CreateZipUI() {
     try {
       const fd = new FormData();
       for (const f of files) fd.append("files", f.file);
-      if (password) fd.append("password", password);
       const res = await fetch("/api/create-zip", { method: "POST", body: fd });
       if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
       const blob = await res.blob();
@@ -41,7 +39,9 @@ export function CreateZipUI() {
         <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30">
             <span className="text-xs font-medium text-muted-foreground">{files.length} files</span>
-            <button onClick={() => ref.current?.click()} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus size={12} /> Add more</button>
+            <button type="button" onClick={() => ref.current?.click()} className="flex items-center gap-1 text-xs text-primary hover:underline">
+              <Plus size={12} /> Add more
+            </button>
           </div>
           {files.map(f => (
             <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
@@ -53,14 +53,9 @@ export function CreateZipUI() {
           ))}
         </div>
       )}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <label className="text-xs font-medium text-muted-foreground">Password (optional)</label>
-        <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Leave blank for no password"
-          className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none" />
-        <p className="mt-2 text-[11px] text-amber-400/90">
-          Note: encrypted ZIP output is not enabled yet; archives are currently created as standard ZIP files.
-        </p>
-      </div>
+      <p className="text-[11px] text-muted-foreground/80">
+        Standard ZIP archives are generated locally. Password-encrypted ZIP output is not enabled yet.
+      </p>
       {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
       {status === "done" ? (
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">

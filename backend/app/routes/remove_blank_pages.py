@@ -60,8 +60,9 @@ async def remove_blank_pages(
 
     content = await file.read()
     if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
 
+    out_path = None
     try:
         validate_pdf_content(content)
         out_path = str(get_temp_path(f"cleaned_{uuid.uuid4().hex}.pdf"))
@@ -74,7 +75,11 @@ async def remove_blank_pages(
             background=cleanup,
         )
     except HTTPException:
+        if out_path:
+            remove_files(out_path)
         raise
     except Exception:
+        if out_path:
+            remove_files(out_path)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

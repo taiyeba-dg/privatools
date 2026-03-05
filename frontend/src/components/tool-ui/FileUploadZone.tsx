@@ -55,7 +55,9 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
                         <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                         <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                     </div>
-                    <button onClick={onClear} className="text-muted-foreground hover:text-foreground transition-colors"><X size={15} /></button>
+                    <button type="button" aria-label="Remove selected file" onClick={onClear} className="text-muted-foreground hover:text-foreground transition-colors">
+                        <X size={15} />
+                    </button>
                 </div>
             </div>
         );
@@ -67,6 +69,15 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
             onDragLeave={() => setDrag(false)}
             onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
             onClick={() => ref.current?.click()}
+            onKeyDown={e => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    ref.current?.click();
+                }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={label || "Upload file"}
             className={cn(
                 "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-12 px-6 text-center",
                 drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20",

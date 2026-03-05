@@ -10,6 +10,7 @@ Requires a running server:
 
 import io
 import json
+import time
 import pytest
 import fitz  # PyMuPDF
 import requests
@@ -58,14 +59,24 @@ def fillable_pdf():
     return buf.getvalue()
 
 
+def request_with_retry(method, url, *, files=None, data=None, timeout=30, retries=5):
+    """Retry on 429 to avoid false negatives from local rate limiting middleware."""
+    for attempt in range(retries):
+        response = requests.request(method, url, files=files, data=data, timeout=timeout)
+        if response.status_code != 429:
+            return response
+        time.sleep(0.2 * (attempt + 1))
+    return response
+
+
 def post(endpoint, files=None, data=None, timeout=30):
-    return requests.post(f"{BASE_URL}/{endpoint}", files=files, data=data or {}, timeout=timeout)
+    return request_with_retry("POST", f"{BASE_URL}/{endpoint}", files=files, data=data or {}, timeout=timeout)
 
 
 # ── Health ──
 
 def test_health():
-    r = requests.get(f"{BASE_URL}/health", timeout=5)
+    r = request_with_retry("GET", f"{BASE_URL}/health", timeout=5)
     assert r.status_code == 200
 
 
@@ -82,6 +93,12 @@ def test_compress_returns_valid_pdf(small_pdf):
 def test_split_pages(small_pdf):
     r = post("split", files={"file": ("test.pdf", small_pdf, "application/pdf")}, data={"mode": "pages", "pages": "1"})
     assert r.status_code == 200
+
+
+def test_split_pages_with_end_keyword(small_pdf):
+    r = post("split", files={"file": ("test.pdf", small_pdf, "application/pdf")}, data={"mode": "pages", "pages": "1-end"})
+    assert r.status_code == 200
+    assert r.content[:5] == b"%PDF-"
 
 
 # ── Organize ──
@@ -106,6 +123,21 @@ def test_delete_pages_reduces_count(small_pdf):
 
 def test_watermark(small_pdf):
     r = post("watermark", files={"file": ("test.pdf", small_pdf, "application/pdf")}, data={"text": "CONFIDENTIAL", "position": "center", "opacity": "0.3"})
+    assert r.status_code == 200
+    assert r.content[:5] == b"%PDF-"
+
+
+def test_watermark_with_image(small_pdf, jpeg_image):
+    r = request_with_retry(
+        "POST",
+        f"{BASE_URL}/watermark",
+        files={
+            "file": ("test.pdf", small_pdf, "application/pdf"),
+            "watermark_image": ("wm.jpg", jpeg_image, "image/jpeg"),
+        },
+        data={"position": "center", "opacity": "0.4", "image_scale": "0.2"},
+        timeout=30,
+    )
     assert r.status_code == 200
     assert r.content[:5] == b"%PDF-"
 
@@ -151,6 +183,17 @@ def test_pdf_to_text_extracts_content(small_pdf):
     assert len(text) > 10
 
 
+def test_ocr_searchable_pdf_output(small_pdf):
+    r = post(
+        "ocr",
+        files={"file": ("test.pdf", small_pdf, "application/pdf")},
+        data={"lang": "eng", "output": "searchable_pdf"},
+        timeout=60,
+    )
+    assert r.status_code == 200
+    assert r.content[:5] == b"%PDF-"
+
+
 def test_pdf_to_image(small_pdf):
     r = post("pdf-to-image", files={"file": ("test.pdf", small_pdf, "application/pdf")}, data={"format": "png", "dpi": "72"})
     assert r.status_code == 200
@@ -164,7 +207,7 @@ def test_image_to_pdf(jpeg_image):
 
 
 def test_html_to_pdf():
-    r = requests.post(f"{BASE_URL}/html-to-pdf", data={"html_content": "<h1>Hello</h1>"}, timeout=10)
+    r = request_with_retry("POST", f"{BASE_URL}/html-to-pdf", data={"html_content": "<h1>Hello</h1>"}, timeout=10)
     assert r.status_code == 200
     assert r.content[:5] == b"%PDF-"
 
@@ -173,6 +216,33 @@ def test_csv_to_pdf():
     r = post("csv-to-pdf", files={"file": ("test.csv", b"Name,Age\nAlice,30\n", "text/csv")})
     assert r.status_code == 200
     assert r.content[:5] == b"%PDF-"
+
+
+def test_form_creator_adds_fields(small_pdf):
+    form_fields = json.dumps([
+        {
+            "name": "full_name",
+            "type": "text",
+            "page": 1,
+            "x": 72,
+            "y": 72,
+            "width": 220,
+            "height": 24,
+            "required": True,
+            "value": "",
+            "multiline": False,
+        }
+    ])
+    r = post(
+        "form-creator",
+        files={"file": ("test.pdf", small_pdf, "application/pdf")},
+        data={"form_fields": form_fields},
+    )
+    assert r.status_code == 200
+    doc = fitz.open(stream=r.content, filetype="pdf")
+    widgets = list(doc[0].widgets() or [])
+    doc.close()
+    assert any(w.field_name == "full_name" for w in widgets)
 
 
 # ── Optimize ──
@@ -203,6 +273,16 @@ def test_auto_crop(small_pdf):
     assert r.content[:5] == b"%PDF-"
 
 
+def test_transparent_background_with_threshold(small_pdf):
+    r = post(
+        "transparent-background",
+        files={"file": ("test.pdf", small_pdf, "application/pdf")},
+        data={"threshold": "240", "dpi": "120"},
+    )
+    assert r.status_code == 200
+    assert r.content[:5] == b"%PDF-"
+
+
 def test_remove_blank_pages_keeps_content(small_pdf):
     r = post("remove-blank-pages", files={"file": ("test.pdf", small_pdf, "application/pdf")}, data={"sensitivity": "85"})
     assert r.status_code == 200
@@ -222,7 +302,7 @@ def test_merge_combines_pages(small_pdf):
 
 
 def test_qr_code():
-    r = requests.post(f"{BASE_URL}/qr-code", data={"data": "https://example.com", "size": "200", "format": "png"}, timeout=10)
+    r = request_with_retry("POST", f"{BASE_URL}/qr-code", data={"data": "https://example.com", "size": "200", "format": "png"}, timeout=10)
     assert r.status_code == 200
     assert len(r.content) > 100
 
@@ -261,3 +341,54 @@ def test_invalid_pdf_rejected():
 def test_missing_required_param(small_pdf):
     r = post("bookmarks", files={"file": ("test.pdf", small_pdf, "application/pdf")})
     assert r.status_code == 422
+
+
+def test_url_to_pdf_blocks_internal_hosts():
+    r = request_with_retry("POST", f"{BASE_URL}/url-to-pdf", data={"url": "http://127.0.0.1/admin"}, timeout=10)
+    assert r.status_code == 400
+    assert "Local/internal URLs" in r.text
+
+
+def test_whiteout_requires_non_empty_regions(small_pdf):
+    r = post(
+        "whiteout-pdf",
+        files={"file": ("test.pdf", small_pdf, "application/pdf")},
+        data={"regions": "[]"},
+    )
+    assert r.status_code == 400
+
+
+def test_image_to_pdf_rejects_invalid_page_size(jpeg_image):
+    r = post(
+        "image-to-pdf",
+        files=[("files", ("test.jpg", jpeg_image, "image/jpeg"))],
+        data={"page_size": "A3"},
+    )
+    assert r.status_code == 400
+
+
+def test_pdf_to_image_rejects_out_of_range_dpi(small_pdf):
+    r = post(
+        "pdf-to-image",
+        files={"file": ("test.pdf", small_pdf, "application/pdf")},
+        data={"format": "png", "dpi": "5"},
+    )
+    assert r.status_code == 422
+
+
+def test_protect_rejects_blank_password(small_pdf):
+    r = post(
+        "protect",
+        files={"file": ("test.pdf", small_pdf, "application/pdf")},
+        data={"password": "   "},
+    )
+    assert r.status_code == 400
+
+
+def test_ocr_rejects_invalid_output(small_pdf):
+    r = post(
+        "ocr",
+        files={"file": ("test.pdf", small_pdf, "application/pdf")},
+        data={"lang": "eng", "output": "xml"},
+    )
+    assert r.status_code == 400

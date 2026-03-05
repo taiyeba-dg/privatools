@@ -7,7 +7,7 @@ import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 type Mode = "pages" | "individual" | "every_n";
 
 const modes: { id: Mode; label: string; desc: string }[] = [
-  { id: "pages", label: "By page ranges", desc: "e.g. 1-3, 5, 8-10" },
+  { id: "pages", label: "By page ranges", desc: "e.g. 1-3, 5, 7-end, -4, 9-" },
   { id: "individual", label: "Every page", desc: "Each page becomes a separate file" },
   { id: "every_n", label: "Every N pages", desc: "Split into chunks of N pages" },
 ];
@@ -58,6 +58,10 @@ export function SplitUI() {
         <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
           onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
           onClick={() => ref.current?.click()}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload file"
           className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
             drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
           <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
@@ -94,7 +98,7 @@ export function SplitUI() {
                 <label className="text-xs font-medium text-muted-foreground">Page ranges</label>
                 <input value={pages} onChange={e => setPages(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
-                  placeholder="e.g. 1-3, 5, 8-10" />
+                  placeholder="e.g. 1-3, 5, 7-end, -4, 9-" />
               </div>
             )}
             {mode === "every_n" && (

@@ -16,9 +16,9 @@ MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 async def pdf_to_image(
     file: UploadFile = File(...),
     format: str = Form("jpeg"),
-    dpi: int = Form(150),
+    dpi: int = Form(150, ge=36, le=600),
 ):
-    if not file.filename.lower().endswith(".pdf"):
+    if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
     fmt = format.lower()
@@ -26,9 +26,13 @@ async def pdf_to_image(
         raise HTTPException(status_code=400, detail="Format must be jpeg or png")
 
     ensure_temp_dir()
+    temp_path = None
+    output_path = None
 
     try:
         content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
         if len(content) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
@@ -54,7 +58,11 @@ async def pdf_to_image(
             background=cleanup,
         )
     except HTTPException:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         raise
     except Exception:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

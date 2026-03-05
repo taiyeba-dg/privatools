@@ -2,7 +2,7 @@ import uuid
 import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
-from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content
+from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
 from ..services import pdf_to_text_service
 
 router = APIRouter()
@@ -15,19 +15,25 @@ async def pdf_to_text(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
     ensure_temp_dir()
+    temp_path = None
 
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         content = await file.read()
         if len(content) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="File size exceeds 50 MB limit")
+            raise HTTPException(status_code=413, detail="File size exceeds 50 MB limit")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         result = pdf_to_text_service.extract_text(str(temp_path))
+        remove_files(str(temp_path))
         return JSONResponse(result)
     except HTTPException:
+        if temp_path is not None:
+            remove_files(str(temp_path))
         raise
     except Exception:
+        if temp_path is not None:
+            remove_files(str(temp_path))
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

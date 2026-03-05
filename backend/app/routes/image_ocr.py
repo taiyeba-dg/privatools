@@ -6,6 +6,7 @@ import os
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
+from ..utils.cleanup import remove_files
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ VALID_LANGS = {
     "tha", "heb", "ind", "msa", "ben", "tam", "tel", "kan", "mal", "mar", "guj",
     "pan", "urd",
 }
+VALID_OUTPUTS = {"json", "txt"}
 
 
 def _extract_text(image_path: str, lang: str) -> str:
@@ -54,8 +56,12 @@ async def image_ocr(
 
     if lang not in VALID_LANGS:
         raise HTTPException(status_code=400, detail=f"Invalid language code: {lang}")
+    if output not in VALID_OUTPUTS:
+        raise HTTPException(status_code=400, detail=f"output must be one of: {', '.join(sorted(VALID_OUTPUTS))}")
 
     content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty")
     if len(content) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="File exceeds the 50 MB limit")
 
@@ -67,22 +73,21 @@ async def image_ocr(
     try:
         text = await asyncio.to_thread(_extract_text, tmp.name, lang)
     except RuntimeError as e:
-        os.unlink(tmp.name)
+        remove_files(tmp.name)
         raise HTTPException(status_code=500, detail=str(e))
     except Exception:
-        os.unlink(tmp.name)
+        remove_files(tmp.name)
         logger.exception("OCR failed")
         raise HTTPException(status_code=500, detail="OCR processing failed. Is Tesseract installed?")
     finally:
         # Clean up input file
-        if os.path.exists(tmp.name):
-            os.unlink(tmp.name)
+        remove_files(tmp.name)
 
     if output == "txt":
         txt_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8")
         txt_tmp.write(text)
         txt_tmp.close()
-        cleanup = BackgroundTask(os.unlink, txt_tmp.name)
+        cleanup = BackgroundTask(remove_files, txt_tmp.name)
         return FileResponse(
             path=txt_tmp.name,
             filename="extracted_text.txt",

@@ -7,7 +7,7 @@ import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 export function OcrUI() {
   const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
   const [lang, setLang] = useState("eng");
-  const [output, setOutput] = useState<"json" | "txt">("json");
+  const [output, setOutput] = useState<"json" | "txt" | "searchable_pdf">("json");
   const [state, setState] = useState<"idle" | "processing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [extractedText, setExtractedText] = useState("");
@@ -33,7 +33,9 @@ export function OcrUI() {
         setExtractedText(data.text || "");
       } else {
         const blob = await res.blob();
-        downloadBlob(blob, "extracted_text.txt");
+        const filename = output === "txt" ? "extracted_text.txt" : "searchable.pdf";
+        downloadBlob(blob, filename);
+        setExtractedText("");
       }
       setState("done");
     } catch (e: any) { setError(e.message || "OCR failed"); setState("idle"); }
@@ -43,7 +45,9 @@ export function OcrUI() {
     <div className="space-y-4">
       <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
         <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
-        <h2 className="text-lg font-bold text-foreground mb-1">Text extracted!</h2>
+        <h2 className="text-lg font-bold text-foreground mb-1">
+          {output === "searchable_pdf" ? "Searchable PDF created!" : "Text extracted!"}
+        </h2>
       </div>
       {extractedText && (
         <div className="rounded-xl border border-border bg-card p-4">
@@ -64,6 +68,10 @@ export function OcrUI() {
         <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
           onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
           onClick={() => ref.current?.click()}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload file"
           className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
             drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
           <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
@@ -91,11 +99,11 @@ export function OcrUI() {
             <div>
               <label className="text-sm font-semibold text-foreground">Output</label>
               <div className="flex gap-2 mt-1">
-                {(["json", "txt"] as const).map(o => (
+                {(["json", "txt", "searchable_pdf"] as const).map(o => (
                   <button key={o} onClick={() => setOutput(o)}
                     className={cn("flex-1 rounded-lg border py-2 text-xs font-medium transition-all",
                       output === o ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-secondary/40")}>
-                    {o === "json" ? "Show text" : "Download .txt"}
+                    {o === "json" ? "Show text" : o === "txt" ? "Download .txt" : "Download searchable PDF"}
                   </button>
                 ))}
               </div>

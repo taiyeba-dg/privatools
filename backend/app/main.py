@@ -48,6 +48,20 @@ async def lifespan(app: FastAPI):
 
 _is_prod = os.environ.get("ENVIRONMENT", "").lower() == "production"
 
+
+def _env_positive_int(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return default
+
+
+_rate_limit_rpm = _env_positive_int("RATE_LIMIT_RPM", 30)
+_slowapi_default_limit = os.environ.get("SLOWAPI_DEFAULT_LIMIT", "60/minute")
+
 app = FastAPI(
     title="PDF Studio API",
     version="1.0.0",
@@ -58,7 +72,7 @@ app = FastAPI(
 
 # Rate limiting — 30 req/min per IP
 from .middleware.rate_limit import RateLimitMiddleware
-app.add_middleware(RateLimitMiddleware, requests_per_minute=30)
+app.add_middleware(RateLimitMiddleware, requests_per_minute=_rate_limit_rpm)
 
 _origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:8080").split(",")
 
@@ -70,7 +84,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+limiter = Limiter(key_func=get_remote_address, default_limits=[_slowapi_default_limit])
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
@@ -175,5 +189,3 @@ def _resolve_frontend_path() -> Path:
 _frontend_path = _resolve_frontend_path()
 if _frontend_path.exists():
     app.mount("/", StaticFiles(directory=str(_frontend_path), html=True), name="frontend")
-
-

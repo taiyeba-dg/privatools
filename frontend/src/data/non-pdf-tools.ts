@@ -21,6 +21,7 @@ export interface NonPdfTool {
   description: string;
   longDescription: string;
   category: NonPdfCategory;
+  clientOnly?: boolean;
   accepts: string;
   outputLabel: string;
 }
@@ -89,38 +90,38 @@ export const nonPdfTools: NonPdfTool[] = [
     slug: "json-xml-formatter", icon: Braces, name: "JSON / XML Formatter",
     description: "Prettify and validate JSON or XML offline",
     longDescription: "Paste any JSON or XML string to instantly format, validate, and highlight errors. 100% offline — sensitive API payloads never leave your browser.",
-    category: "developer", accepts: ".json,.xml", outputLabel: "formatted",
+    category: "developer", clientOnly: true, accepts: ".json,.xml", outputLabel: "formatted",
   },
   {
     slug: "text-diff", icon: GitCompare, name: "Text Diff / Comparator",
     description: "Highlight exact differences between two text blocks",
     longDescription: "Paste two versions of text or code side-by-side and get a line-by-line diff with additions highlighted in green and deletions in red.",
-    category: "developer", accepts: "", outputLabel: "diff report",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "diff report",
   },
   {
     slug: "base64", icon: KeyRound, name: "Base64 Encoder / Decoder",
     description: "Encode or decode text and files as Base64",
     longDescription: "Encode text strings or binary files to Base64, or decode Base64 back to the original. Supports text, images, and any file type.",
-    category: "developer", accepts: "*", outputLabel: "encoded/decoded",
+    category: "developer", clientOnly: true, accepts: "*", outputLabel: "encoded/decoded",
   },
   {
     slug: "hash-generator", icon: Hash, name: "Hash Generator",
     description: "Generate MD5, SHA-1, SHA-256 hashes of text or files",
     longDescription: "Verify file integrity by generating cryptographic hashes. Paste text or upload a file and get instant MD5, SHA-1, SHA-256, and SHA-512 digests.",
-    category: "developer", accepts: "*", outputLabel: "hash digest",
+    category: "developer", clientOnly: true, accepts: "*", outputLabel: "hash digest",
   },
 
   // ── Archive & File Management ───────────────────────────────────────────────
   {
-    slug: "extract-archive", icon: Archive, name: "Extract ZIP / RAR",
-    description: "Extract archive files locally — no WinRAR needed",
-    longDescription: "Upload a ZIP, TAR, or RAR file and extract its contents directly in the browser. Download individual files or the whole archive.",
-    category: "archive", accepts: ".zip,.tar,.gz,.rar,.7z", outputLabel: "extracted files",
+    slug: "extract-archive", icon: Archive, name: "Extract ZIP / TAR",
+    description: "Extract ZIP and TAR archives locally",
+    longDescription: "Upload a ZIP or TAR archive (.zip, .tar, .tar.gz, .tgz, .tar.bz2, .tar.xz) and extract its contents locally. Download the extracted files as a ZIP.",
+    category: "archive", accepts: ".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz", outputLabel: "extracted files",
   },
   {
-    slug: "create-zip", icon: Lock, name: "Create Password-Protected ZIP",
-    description: "Bundle files into an AES-256 encrypted ZIP",
-    longDescription: "Select multiple files, set a strong password, and create an AES-256 encrypted ZIP archive — safe to send via email or messaging.",
+    slug: "create-zip", icon: Lock, name: "Create ZIP Archive",
+    description: "Bundle multiple files into a ZIP archive",
+    longDescription: "Select multiple files and package them into a standard ZIP archive locally. Password-encrypted ZIP output is not available yet.",
     category: "archive", accepts: "*", outputLabel: "archive.zip",
   },
 
@@ -129,13 +130,13 @@ export const nonPdfTools: NonPdfTool[] = [
     slug: "csv-json", icon: ArrowLeftRight, name: "CSV ↔ JSON Converter",
     description: "Swap between CSV and JSON data formats instantly",
     longDescription: "Paste or upload a CSV file to get clean JSON, or paste JSON to convert it into a downloadable CSV spreadsheet.",
-    category: "document-office", accepts: ".csv,.json", outputLabel: "converted file",
+    category: "document-office", clientOnly: true, accepts: ".csv,.json", outputLabel: "converted file",
   },
   {
     slug: "markdown-html", icon: Code2, name: "Markdown to HTML",
     description: "Convert Markdown writing into web-ready HTML",
     longDescription: "Paste or upload a Markdown file and get clean, semantic HTML output. Includes live preview and syntax highlighting.",
-    category: "document-office", accepts: ".md,.markdown", outputLabel: "output.html",
+    category: "document-office", clientOnly: true, accepts: ".md,.markdown", outputLabel: "output.html",
   },
   {
     slug: "heic-to-jpg", icon: RefreshCw, name: "HEIC to JPG",

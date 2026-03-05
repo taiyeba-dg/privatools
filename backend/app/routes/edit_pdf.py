@@ -23,7 +23,7 @@ async def edit_pdf(
 
     content = await file.read()
     if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
 
     try:
         edits_list = json.loads(edits)
@@ -34,6 +34,8 @@ async def edit_pdf(
         raise HTTPException(status_code=400, detail="Edits must be a JSON array")
 
     ensure_temp_dir()
+    temp_pdf = None
+    output_path = None
 
     try:
         validate_pdf_content(content)
@@ -49,7 +51,11 @@ async def edit_pdf(
             background=cleanup,
         )
     except HTTPException:
+        to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         raise
     except Exception:
+        to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

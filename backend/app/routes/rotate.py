@@ -25,6 +25,8 @@ async def rotate_pdf(
         raise HTTPException(status_code=400, detail="Angle must be a multiple of 90")
 
     ensure_temp_dir()
+    temp_path = None
+    output_path = None
 
     try:
         content = await file.read()
@@ -43,7 +45,11 @@ async def rotate_pdf(
             background=cleanup,
         )
     except HTTPException:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         raise
     except Exception:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
         logger.exception("Unexpected error")
         raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")

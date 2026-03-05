@@ -18,6 +18,8 @@ function lazyNamed<T extends AnyModule>(loader: () => Promise<T>, exportName: ke
 
 const LazyMergeUI = lazyNamed(() => import("@/components/tool-ui/MergeUI"), "MergeUI");
 const LazySplitUI = lazyNamed(() => import("@/components/tool-ui/SplitUI"), "SplitUI");
+const LazySplitByBookmarksUI = lazyNamed(() => import("@/components/tool-ui/SplitByBookmarksUI"), "SplitByBookmarksUI");
+const LazySplitBySizeUI = lazyNamed(() => import("@/components/tool-ui/SplitBySizeUI"), "SplitBySizeUI");
 const LazyCompressUI = lazyNamed(() => import("@/components/tool-ui/CompressUI"), "CompressUI");
 const LazyProtectUI = lazyNamed(() => import("@/components/tool-ui/ProtectUI"), "ProtectUI");
 const LazyWatermarkUI = lazyNamed(() => import("@/components/tool-ui/WatermarkUI"), "WatermarkUI");
@@ -26,6 +28,8 @@ const LazyCompareUI = lazyNamed(() => import("@/components/tool-ui/CompareUI"), 
 const LazyOcrUI = lazyNamed(() => import("@/components/tool-ui/OcrUI"), "OcrUI");
 const LazyPageNumbersUI = lazyNamed(() => import("@/components/tool-ui/PageNumbersUI"), "PageNumbersUI");
 const LazyOrganizeUI = lazyNamed(() => import("@/components/tool-ui/OrganizeUI"), "OrganizeUI");
+const LazyDeletePagesUI = lazyNamed(() => import("@/components/tool-ui/DeletePagesUI"), "DeletePagesUI");
+const LazyExtractPagesUI = lazyNamed(() => import("@/components/tool-ui/ExtractPagesUI"), "ExtractPagesUI");
 const LazyHeaderFooterUI = lazyNamed(() => import("@/components/tool-ui/HeaderFooterUI"), "HeaderFooterUI");
 const LazyBookmarksUI = lazyNamed(() => import("@/components/tool-ui/BookmarksUI"), "BookmarksUI");
 const LazyBatesUI = lazyNamed(() => import("@/components/tool-ui/BatesUI"), "BatesUI");
@@ -63,6 +67,7 @@ const LazyAnnotateUI = lazyNamed(() => import("@/components/tool-ui/AnnotateUI")
 const LazyShapesUI = lazyNamed(() => import("@/components/tool-ui/ShapesUI"), "ShapesUI");
 const LazyWhiteoutUI = lazyNamed(() => import("@/components/tool-ui/WhiteoutUI"), "WhiteoutUI");
 const LazyOverlayUI = lazyNamed(() => import("@/components/tool-ui/OverlayUI"), "OverlayUI");
+const LazyAlternateMixUI = lazyNamed(() => import("@/components/tool-ui/AlternateMixUI"), "AlternateMixUI");
 const LazyPdfToWordUI = lazyNamed(() => import("@/components/tool-ui/PdfToWordUI"), "PdfToWordUI");
 const LazyPdfToExcelUI = lazyNamed(() => import("@/components/tool-ui/PdfToExcelUI"), "PdfToExcelUI");
 const LazyPdfToPptxUI = lazyNamed(() => import("@/components/tool-ui/PdfToPptxUI"), "PdfToPptxUI");
@@ -101,12 +106,12 @@ function ToolLoadingCard() {
 function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
     case "merge-pdf": return <LazyMergeUI />;
-    case "split-pdf":
-    case "split-by-bookmarks":
-    case "split-by-size": return <LazySplitUI />;
-    case "organize-pages":
-    case "delete-pages":
-    case "extract-pages": return <LazyOrganizeUI />;
+    case "split-pdf": return <LazySplitUI />;
+    case "split-by-bookmarks": return <LazySplitByBookmarksUI />;
+    case "split-by-size": return <LazySplitBySizeUI />;
+    case "organize-pages": return <LazyOrganizeUI />;
+    case "delete-pages": return <LazyDeletePagesUI />;
+    case "extract-pages": return <LazyExtractPagesUI />;
 
     case "edit-pdf": return <LazyEditPdfUI />;
     case "sign-pdf": return <LazySignUI />;
@@ -130,7 +135,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "nup": return <LazyNupUI />;
     case "qr-code": return <LazyQrCodeUI />;
     case "fill-form": return <LazyFillFormUI />;
-    case "alternate-mix": return <LazyMergeUI />;
+    case "alternate-mix": return <LazyAlternateMixUI />;
     case "overlay": return <LazyOverlayUI />;
     case "form-creator": return <LazyFormCreatorUI />;
     case "pdfa-validator": return <LazyPdfaValidatorUI />;
@@ -280,6 +285,11 @@ export default function ToolPage() {
                   <span className={cn("text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary", meta.accent)}>
                     {meta.label}
                   </span>
+                  {tool.clientOnly && (
+                    <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
+                      Client-Side
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground max-w-lg">{tool.longDescription}</p>
               </div>
@@ -293,8 +303,20 @@ export default function ToolPage() {
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">How it works</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
-                  { step: "1", title: "Upload your file", desc: "Drag & drop or click to select. Files are processed on your self-hosted server." },
-                  { step: "2", title: "Configure & process", desc: "Adjust any settings, then process instantly on your server." },
+                  {
+                    step: "1",
+                    title: "Upload your file",
+                    desc: tool.clientOnly
+                      ? "Drag & drop or click to select. Processing happens locally in your browser."
+                      : "Drag & drop or click to select. Files are processed on your self-hosted server.",
+                  },
+                  {
+                    step: "2",
+                    title: "Configure & process",
+                    desc: tool.clientOnly
+                      ? "Adjust settings and process instantly without uploading file contents."
+                      : "Adjust any settings, then process instantly on your server.",
+                  },
                   { step: "3", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email." },
                 ].map((s) => (
                   <div key={s.step} className="rounded-xl border border-border bg-card p-4">
