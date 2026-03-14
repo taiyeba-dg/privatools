@@ -7,6 +7,7 @@ from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.route_helpers import safe_filename, read_upload
 from ..services import unlock_service
 
 router = APIRouter()
@@ -37,9 +38,7 @@ async def unlock_pdf(
         for file in files:
             if not (file.filename or "").lower().endswith(".pdf"):
                 raise HTTPException(status_code=400, detail=f"File {file.filename} is not a PDF")
-            content = await file.read()
-            if not content:
-                raise HTTPException(status_code=400, detail=f"File {file.filename or 'unknown'} is empty")
+            content = await read_upload(file, label=file.filename or "unknown")
             validate_pdf_content(content)
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
             temp_path.write_bytes(content)
@@ -63,7 +62,7 @@ async def unlock_pdf(
         zip_path = str(get_temp_path(f"unlocked_{uuid.uuid4().hex}.zip"))
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
             for i, out in enumerate(output_paths):
-                original_name = files[i].filename or f"file_{i+1}.pdf"
+                original_name = safe_filename(files[i].filename, f"file_{i+1}.pdf")
                 arcname = f"unlocked_{original_name}"
                 zf.write(out, arcname)
 
