@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import {
   Search, X, Shield, Github, Menu, FileText, ImageIcon,
   Video, Code2, Archive, BookOpen, ChevronDown, ArrowRight,
-  Sun, Moon, Star,
+  Sun, Moon, Star, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
 import { useTheme } from "@/hooks/useTheme";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useHistory } from "@/hooks/useHistory";
 import { SmartFileDetector } from "@/components/SmartFileDetector";
 
 // ── Types & config ─────────────────────────────────────────────────────────────
@@ -300,6 +301,8 @@ function Navbar({ query, setQuery, activeTab, setActiveTab }: {
 export default function Index() {
   const [activeTab, setActiveTab] = useState<Suite>("pdf");
   const [query, setQuery] = useState("");
+  const { favorites } = useFavorites();
+  const { history } = useHistory();
   const totalTools = tools.length + nonPdfTools.length;
 
   const allSearchable = [
@@ -420,6 +423,70 @@ export default function Index() {
             <SmartFileDetector />
           </section>
         )}
+
+        {/* ── Recently Used ────────────────────────────────────────────────── */}
+        {!filtered && history.length > 0 && (() => {
+          const recentItems = history.slice(0, 6).map(h => {
+            const pdfTool = tools.find(t => t.slug === h.slug);
+            const nonPdfTool = nonPdfTools.find(t => t.slug === h.slug);
+            if (pdfTool) {
+              const m = categoryMeta[pdfTool.category];
+              return { slug: pdfTool.slug, name: pdfTool.name, description: pdfTool.description, icon: pdfTool.icon, href: `/tool/${pdfTool.slug}`, iconBg: m.iconBg, iconColor: m.iconColor };
+            }
+            if (nonPdfTool) {
+              const m = nonPdfCategoryMeta[nonPdfTool.category];
+              return { slug: nonPdfTool.slug, name: nonPdfTool.name, description: nonPdfTool.description, icon: nonPdfTool.icon, href: `/tools/${nonPdfTool.slug}`, iconBg: m.iconBg, iconColor: m.iconColor };
+            }
+            return null;
+          }).filter(Boolean) as { slug: string; name: string; description: string; icon: React.ElementType; href: string; iconBg: string; iconColor: string }[];
+          if (!recentItems.length) return null;
+          return (
+            <section className="pb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-secondary">
+                  <Clock size={12} className="text-muted-foreground" />
+                </div>
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Recently Used</h2>
+                <div className="flex-1 h-px bg-border/30" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {recentItems.map(t => <ToolCard key={t.slug} {...t} />)}
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* ── Favorites ───────────────────────────────────────────────────────── */}
+        {!filtered && favorites.length > 0 && (() => {
+          const favItems = favorites.map(slug => {
+            const pdfTool = tools.find(t => t.slug === slug);
+            const nonPdfTool = nonPdfTools.find(t => t.slug === slug);
+            if (pdfTool) {
+              const m = categoryMeta[pdfTool.category];
+              return { slug: pdfTool.slug, name: pdfTool.name, description: pdfTool.description, icon: pdfTool.icon, href: `/tool/${pdfTool.slug}`, iconBg: m.iconBg, iconColor: m.iconColor };
+            }
+            if (nonPdfTool) {
+              const m = nonPdfCategoryMeta[nonPdfTool.category];
+              return { slug: nonPdfTool.slug, name: nonPdfTool.name, description: nonPdfTool.description, icon: nonPdfTool.icon, href: `/tools/${nonPdfTool.slug}`, iconBg: m.iconBg, iconColor: m.iconColor };
+            }
+            return null;
+          }).filter(Boolean) as { slug: string; name: string; description: string; icon: React.ElementType; href: string; iconBg: string; iconColor: string }[];
+          if (!favItems.length) return null;
+          return (
+            <section className="pb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-yellow-500/10">
+                  <Star size={12} className="text-yellow-400" />
+                </div>
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-yellow-400/80">Favorites</h2>
+                <div className="flex-1 h-px bg-border/30" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {favItems.map(t => <ToolCard key={t.slug} {...t} />)}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* ── Tools section ──────────────────────────────────────────────────── */}
         {!filtered && (
