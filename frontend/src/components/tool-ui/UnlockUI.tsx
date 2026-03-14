@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 
 type UnlockFile = { id: string; name: string; size: string; raw: File };
 let fileId = 0;
@@ -29,7 +29,9 @@ export function UnlockUI() {
 
     const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
 
-    const process = async () => {
+    const canProcess = files.length > 0 && !!password && state !== "processing";
+
+    const process = useCallback(async () => {
         if (!files.length || !password) return;
         setState("processing"); setError(null);
         try {
@@ -37,13 +39,25 @@ export function UnlockUI() {
             await processFilesAndDownload("/unlock", files.map(f => f.raw), outName, { password });
             setState("done");
         } catch (e: any) { setError(e.message || "Unlock failed"); setState("idle"); }
-    };
+    }, [files, password]);
+
+    // Cmd+Enter / Ctrl+Enter keyboard shortcut
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
+                e.preventDefault();
+                process();
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [canProcess, process]);
 
     if (state === "done") return (
         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
             <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
             <h2 className="text-lg font-bold text-foreground mb-1">Unlocked!</h2>
-            <p className="text-sm text-muted-foreground mb-6">Your {files.length > 1 ? "PDFs have" : "PDF has"} been unlocked and {files.length > 1 ? "are" : "is"} ready to use.</p>
+            <p className="text-sm text-muted-foreground mb-6">Your {files.length > 1 ? "PDFs have" : "PDF has"} been unlocked and downloaded.</p>
             <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFiles([]); setState("idle"); setPassword(""); }}>Unlock more</Button>
         </div>
     );
@@ -64,7 +78,7 @@ export function UnlockUI() {
                     <LockOpen size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
                 </div>
                 <p className="text-sm font-semibold text-foreground">{files.length ? "Add more PDFs" : "Select password-protected PDFs"}</p>
-                <p className="text-xs text-muted-foreground">Drag & drop or click to browse · Multiple files supported</p>
+                <p className="text-xs text-muted-foreground">Drag & drop or click to browse · Multiple files supported · Max {MAX_FILE_SIZE_LABEL} each</p>
             </div>
 
             {files.length > 0 && (
@@ -97,9 +111,14 @@ export function UnlockUI() {
                         </div>
                     )}
 
-                    <Button onClick={process} disabled={state === "processing" || !password} className="glow-primary">
-                        {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Unlocking…</> : `Unlock ${files.length > 1 ? `${files.length} PDFs` : "PDF"}`}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        <Button onClick={process} disabled={!canProcess} className="glow-primary">
+                            {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Unlocking…</> : `Unlock ${files.length > 1 ? `${files.length} PDFs` : "PDF"}`}
+                        </Button>
+                        {canProcess && (
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/40 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        )}
+                    </div>
                 </>
             )}
         </div>

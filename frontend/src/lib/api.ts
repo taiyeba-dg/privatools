@@ -6,7 +6,8 @@
 const API_BASE = "/api";
 
 /** Maximum file size: 100 MB per file (protects 1GB RAM server from OOM) */
-const MAX_FILE_SIZE = 100 * 1024 * 1024;
+export const MAX_FILE_SIZE = 100 * 1024 * 1024;
+export const MAX_FILE_SIZE_LABEL = "100 MB";
 
 function validateFileSize(file: File) {
     if (file.size > MAX_FILE_SIZE) {

@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { uploadFile, downloadBlob, formatFileSize, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 
 type Level = "light" | "recommended" | "extreme";
 
@@ -29,7 +29,15 @@ export function CompressUI() {
     setError(null);
   };
 
-  const process = async () => {
+  const canProcess = !!file && state !== "processing";
+
+  const getFilename = () => {
+    if (!file) return "compressed.pdf";
+    const base = file.name.replace(/\.pdf$/i, "");
+    return `${base}_compressed.pdf`;
+  };
+
+  const process = useCallback(async () => {
     if (!file) return;
     setState("processing");
     setError(null);
@@ -40,17 +48,26 @@ export function CompressUI() {
       setCompressedSize(cSize);
       setResultBlob(blob);
       setState("done");
+      // Auto-download on completion
+      const base = file.name.replace(/\.pdf$/i, "");
+      downloadBlob(blob, `${base}_compressed.pdf`);
     } catch (e: any) {
       setError(e.message || "Compression failed");
       setState("idle");
     }
-  };
+  }, [file, level]);
 
-  const getFilename = () => {
-    if (!file) return "compressed.pdf";
-    const base = file.name.replace(/\.pdf$/i, "");
-    return `${base}_compressed.pdf`;
-  };
+  // Cmd+Enter / Ctrl+Enter keyboard shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
+        e.preventDefault();
+        process();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [canProcess, process]);
 
   const handleDownload = () => {
     if (resultBlob) downloadBlob(resultBlob, getFilename());
@@ -61,7 +78,7 @@ export function CompressUI() {
     return (
       <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
         <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
-        <h2 className="text-lg font-bold text-foreground mb-1">Compressed!</h2>
+        <h2 className="text-lg font-bold text-foreground mb-1">Compressed & Downloaded!</h2>
         <div className="flex items-center justify-center gap-4 text-sm mb-6">
           <span className="text-muted-foreground">{file?.size}</span>
           <span className="text-muted-foreground">→</span>
@@ -71,7 +88,7 @@ export function CompressUI() {
           </span>
         </div>
         <div className="flex justify-center gap-3 flex-wrap">
-          <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download {getFilename()}</Button>
+          <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download again</Button>
           <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFile(null); setState("idle"); setResultBlob(null); }}>Compress another</Button>
         </div>
       </div>
@@ -99,7 +116,7 @@ export function CompressUI() {
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">Select a PDF to compress</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Drag & drop or click to browse</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Drag & drop or click to browse · Max {MAX_FILE_SIZE_LABEL}</p>
           </div>
         </div>
       ) : (
@@ -149,9 +166,14 @@ export function CompressUI() {
             </div>
           )}
 
-          <Button onClick={process} disabled={state === "processing"} className="glow-primary">
-            {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Compressing…</> : "Compress PDF"}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={process} disabled={!canProcess} className="glow-primary">
+              {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Compressing…</> : "Compress PDF"}
+            </Button>
+            {canProcess && (
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/40 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+            )}
+          </div>
         </>
       )}
     </div>

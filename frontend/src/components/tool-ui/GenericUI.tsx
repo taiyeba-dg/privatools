@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { uploadFile, downloadBlob, formatFileSize, MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { ProcessingBar } from "./FileUploadZone";
@@ -37,21 +37,19 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
   const timeEstimate = files.length > 0 ? estimateTime(files[0].file.size) : null;
   const canProcess = files.length > 0 && state !== "processing";
 
-  const process = async () => {
-    if (!files.length) return;
-    setState("processing");
-    setError(null);
-    try {
-      const endpoint = apiEndpoint || getToolEndpoint(slug);
-      const res = await uploadFile(endpoint, files[0].file, params);
-      const blob = await res.blob();
-      setResultBlob(blob);
-      setState("done");
-    } catch (e: any) {
-      setError(e.message || "Processing failed");
-      setState("idle");
-    }
-  };
+  const processRef = useRef<() => void>();
+
+  // Cmd+Enter / Ctrl+Enter keyboard shortcut to process
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
+        e.preventDefault();
+        processRef.current?.();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [canProcess]);
 
   const getOutputFilename = () => {
     if (!files.length) return outputLabel;
@@ -66,6 +64,26 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
     return `${baseName}${suffix}${ext}`;
   };
 
+  const process = useCallback(async () => {
+    if (!files.length) return;
+    setState("processing");
+    setError(null);
+    try {
+      const endpoint = apiEndpoint || getToolEndpoint(slug);
+      const res = await uploadFile(endpoint, files[0].file, params);
+      const blob = await res.blob();
+      setResultBlob(blob);
+      setState("done");
+      // Auto-download on completion
+      downloadBlob(blob, getOutputFilename());
+    } catch (e: any) {
+      setError(e.message || "Processing failed");
+      setState("idle");
+    }
+  }, [files, apiEndpoint, slug, params]);
+
+  processRef.current = process;
+
   const handleDownload = () => {
     if (resultBlob) downloadBlob(resultBlob, getOutputFilename());
   };
@@ -74,9 +92,9 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
     <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
       <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
       <h2 className="text-lg font-bold text-foreground mb-1">Done!</h2>
-      <p className="text-sm text-muted-foreground mb-6">Your file is ready — <span className="text-foreground font-medium">{getOutputFilename()}</span></p>
+      <p className="text-sm text-muted-foreground mb-6">Your file has been downloaded — <span className="text-foreground font-medium">{getOutputFilename()}</span></p>
       <div className="flex justify-center gap-3 flex-wrap">
-        <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download</Button>
+        <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download again</Button>
         <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}>Process another</Button>
       </div>
     </div>
@@ -107,7 +125,7 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">{drag ? "Drop files here" : "Click to select or drag & drop"}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Accepts: {accepts.split(",").join(", ")}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Accepts: {accepts.split(",").join(", ")} · Max {MAX_FILE_SIZE_LABEL}</p>
         </div>
         <p className="text-[11px] text-muted-foreground/60">Free · No sign-up · Processed locally on your server</p>
       </div>
@@ -149,9 +167,10 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
               {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Processing…</> : (actionLabel || toolName)}
             </Button>
             <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setFiles([])}>Clear</Button>
-            {timeEstimate && state === "idle" && (
-              <span className="flex items-center gap-1 text-[11px] text-muted-foreground/40 ml-auto">
-                <Clock size={10} /> {timeEstimate}
+            {state === "idle" && (
+              <span className="flex items-center gap-2 text-[11px] text-muted-foreground/40 ml-auto">
+                {timeEstimate && <span className="flex items-center gap-1"><Clock size={10} /> {timeEstimate}</span>}
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono bg-secondary/30 rounded px-1.5 py-0.5 text-[10px]">⌘↵</kbd>
               </span>
             )}
           </div>
