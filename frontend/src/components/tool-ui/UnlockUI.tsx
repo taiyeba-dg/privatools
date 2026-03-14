@@ -1,11 +1,14 @@
 import { useState, useRef } from "react";
-import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen } from "lucide-react";
+import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize } from "@/lib/api";
+
+type UnlockFile = { id: string; name: string; size: string; raw: File };
+let fileId = 0;
 
 export function UnlockUI() {
-    const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
+    const [files, setFiles] = useState<UnlockFile[]>([]);
     const [password, setPassword] = useState("");
     const [showPw, setShowPw] = useState(false);
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
@@ -13,13 +16,25 @@ export function UnlockUI() {
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
-    const pick = (fl: FileList) => { const f = fl[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); setState("idle"); setError(null); };
+    const addFiles = (fl: FileList) => {
+        const newFiles: UnlockFile[] = Array.from(fl)
+            .filter(f => f.name.toLowerCase().endsWith(".pdf"))
+            .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), raw: f }));
+        if (newFiles.length) {
+            setFiles(prev => [...prev, ...newFiles]);
+            setState("idle");
+            setError(null);
+        }
+    };
+
+    const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
 
     const process = async () => {
-        if (!file || !password) return;
+        if (!files.length || !password) return;
         setState("processing"); setError(null);
         try {
-            await processAndDownload("/unlock", file.raw, "unlocked.pdf", { password });
+            const outName = files.length === 1 ? "unlocked.pdf" : "unlocked_pdfs.zip";
+            await processFilesAndDownload("/unlock", files.map(f => f.raw), outName, { password });
             setState("done");
         } catch (e: any) { setError(e.message || "Unlock failed"); setState("idle"); }
     };
@@ -28,36 +43,40 @@ export function UnlockUI() {
         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
             <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
             <h2 className="text-lg font-bold text-foreground mb-1">Unlocked!</h2>
-            <p className="text-sm text-muted-foreground mb-6">Your PDF has been unlocked and is ready to use.</p>
-            <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFile(null); setState("idle"); setPassword(""); }}>Unlock another</Button>
+            <p className="text-sm text-muted-foreground mb-6">Your {files.length > 1 ? "PDFs have" : "PDF has"} been unlocked and {files.length > 1 ? "are" : "is"} ready to use.</p>
+            <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFiles([]); setState("idle"); setPassword(""); }}>Unlock more</Button>
         </div>
     );
 
     return (
         <div className="space-y-4">
-            {!file ? (
-                <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                    onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
-                    onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-                    className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-                        drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
-                    <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
-                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
-                        <LockOpen size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
-                    </div>
-                    <p className="text-sm font-semibold text-foreground">Select a password-protected PDF</p>
-                    <p className="text-xs text-muted-foreground">Drag & drop or click to browse</p>
+            <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
+                onClick={() => ref.current?.click()}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload files"
+                className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
+                    drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-secondary/40 bg-secondary/20")}>
+                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+                <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-primary/20" : "bg-secondary")}>
+                    <LockOpen size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
                 </div>
-            ) : (
+                <p className="text-sm font-semibold text-foreground">{files.length ? "Add more PDFs" : "Select password-protected PDFs"}</p>
+                <p className="text-xs text-muted-foreground">Drag & drop or click to browse · Multiple files supported</p>
+            </div>
+
+            {files.length > 0 && (
                 <>
-                    <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary"><FileText size={14} className="text-muted-foreground" /></div>
-                        <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{file.name}</p><p className="text-xs text-muted-foreground">{file.size}</p></div>
-                        <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
+                    <div className="space-y-2">
+                        {files.map(f => (
+                            <div key={f.id} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary"><FileText size={14} className="text-muted-foreground" /></div>
+                                <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{f.name}</p><p className="text-xs text-muted-foreground">{f.size}</p></div>
+                                <button onClick={() => removeFile(f.id)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
+                            </div>
+                        ))}
                     </div>
 
                     <div className="rounded-xl border border-border bg-card p-5 space-y-3">
@@ -69,7 +88,7 @@ export function UnlockUI() {
                                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                             </button>
                         </div>
-                        <p className="text-xs text-muted-foreground">Enter the password used to protect this PDF.</p>
+                        <p className="text-xs text-muted-foreground">{files.length > 1 ? "The same password will be used for all PDFs." : "Enter the password used to protect this PDF."}</p>
                     </div>
 
                     {error && (
@@ -79,7 +98,7 @@ export function UnlockUI() {
                     )}
 
                     <Button onClick={process} disabled={state === "processing" || !password} className="glow-primary">
-                        {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Unlocking…</> : "Unlock PDF"}
+                        {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Unlocking…</> : `Unlock ${files.length > 1 ? `${files.length} PDFs` : "PDF"}`}
                     </Button>
                 </>
             )}
