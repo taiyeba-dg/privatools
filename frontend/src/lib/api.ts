@@ -5,12 +5,23 @@
 
 const API_BASE = "/api";
 
+/** Maximum file size: 100 MB per file (protects 1GB RAM server from OOM) */
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+function validateFileSize(file: File) {
+    if (file.size > MAX_FILE_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        throw new Error(`File "${file.name}" is ${sizeMB} MB — max allowed is 100 MB`);
+    }
+}
+
 /** Upload a single file with optional form-data parameters. Returns the response. */
 export async function uploadFile(
     endpoint: string,
     file: File,
     params?: Record<string, string | number | boolean>,
 ): Promise<Response> {
+    validateFileSize(file);
     const fd = new FormData();
     fd.append("file", file);
     if (params) {
@@ -32,6 +43,7 @@ export async function uploadFiles(
     files: File[],
     params?: Record<string, string | number | boolean>,
 ): Promise<Response> {
+    for (const f of files) validateFileSize(f);
     const fd = new FormData();
     for (const f of files) fd.append("files", f);
     if (params) {
