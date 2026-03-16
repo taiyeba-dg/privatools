@@ -18,6 +18,7 @@ router = APIRouter()
 
 MAX_IMAGE_SIZE = 2 * 1024 * 1024 * 1024  # effectively unlimited
 MAX_MEDIA_SIZE = 2 * 1024 * 1024 * 1024
+MAX_VIDEO_SIZE = 30 * 1024 * 1024  # 30 MB – protects the 1 GB RAM server
 MAX_ARCHIVE_SIZE = 2 * 1024 * 1024 * 1024
 MAX_ARCHIVE_FILES = 5000
 TIMESTAMP_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(?:\.\d+)?$")
@@ -81,6 +82,12 @@ async def _read_upload(file: UploadFile, max_size: int = 0, label: str = "File")
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail=f"{label} is empty")
+    if max_size and len(data) > max_size:
+        limit_mb = max_size / (1024 * 1024)
+        raise HTTPException(
+            status_code=413,
+            detail=f"{label} exceeds the {limit_mb:.0f} MB size limit",
+        )
     return data
 
 
@@ -392,7 +399,7 @@ async def video_to_gif(
     width: int = Form(480, ge=120, le=1920),
 ):
     input_ext = os.path.splitext(_safe_filename(file.filename, "video.mp4"))[1] or ".mp4"
-    data = await _read_upload(file, MAX_MEDIA_SIZE, label="Video")
+    data = await _read_upload(file, MAX_VIDEO_SIZE, label="Video")
     input_path = _write_temp_file(data, input_ext)
     output_path = _new_temp_file(".gif")
 
@@ -433,7 +440,7 @@ async def extract_audio(file: UploadFile = File(...), format: str = Form("mp3"))
         raise HTTPException(status_code=400, detail="Unsupported output audio format")
 
     input_ext = os.path.splitext(_safe_filename(file.filename, "video.mp4"))[1] or ".mp4"
-    data = await _read_upload(file, MAX_MEDIA_SIZE, label="Media file")
+    data = await _read_upload(file, MAX_VIDEO_SIZE, label="Media file")
     input_path = _write_temp_file(data, input_ext)
     output_path = _new_temp_file(f".{audio_format}")
 
@@ -476,7 +483,7 @@ async def trim_media(
         raise HTTPException(status_code=400, detail="end timestamp must be greater than start timestamp")
 
     ext = os.path.splitext(_safe_filename(file.filename, "media.mp4"))[1] or ".mp4"
-    data = await _read_upload(file, MAX_MEDIA_SIZE, label="Media file")
+    data = await _read_upload(file, MAX_VIDEO_SIZE, label="Media file")
     input_path = _write_temp_file(data, ext)
     output_path = _new_temp_file(ext)
 

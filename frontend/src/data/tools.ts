@@ -80,8 +80,8 @@ export const tools: Tool[] = [
   },
   {
     slug: "sign-pdf", icon: Stamp, name: "Sign PDF",
-    description: "Add a signature to a PDF document",
-    longDescription: "Draw, type, or upload your signature and place it anywhere on the document. Supports multiple signers.",
+    description: "Add a visual signature image to a PDF",
+    longDescription: "Draw, type, or upload your signature image and place it anywhere on the document. For a simpler draw-and-place experience, use E-Sign PDF instead.",
     category: "edit", accepts: ".pdf", outputLabel: "signed.pdf",
   },
   {
@@ -181,7 +181,7 @@ export const tools: Tool[] = [
   {
     slug: "redact-pdf", icon: EyeOff, name: "Redact PDF",
     description: "Permanently black out sensitive content",
-    longDescription: "Select and permanently remove sensitive text, images, or areas. Content is fully erased, not just hidden.",
+    longDescription: "Select and permanently remove sensitive text, images, or areas. WARNING: Redaction is irreversible — content is fully erased from the file, not just visually hidden.",
     category: "security", accepts: ".pdf", outputLabel: "redacted.pdf",
   },
   {
@@ -251,7 +251,7 @@ export const tools: Tool[] = [
   {
     slug: "pdf-to-word", icon: FileOutput, name: "PDF to Word",
     description: "Convert PDF content to an editable Word draft",
-    longDescription: "Extract text and images into a DOCX document. Complex columns, forms, and tables may require post-conversion editing.",
+    longDescription: "Extract text and images into a DOCX document. Note: layout may differ from the original PDF — complex columns, forms, and tables may require manual cleanup after conversion.",
     category: "from-pdf", accepts: ".pdf", outputLabel: "document.docx",
   },
 
@@ -277,7 +277,7 @@ export const tools: Tool[] = [
   {
     slug: "fill-form", icon: FormInput, name: "Fill Form",
     description: "Fill out interactive PDF forms and save them",
-    longDescription: "Open a fillable PDF form, fill in all fields interactively, and export the completed document.",
+    longDescription: "Open a fillable PDF form, fill in all fields interactively, and export the completed document. Your PDF must already have form fields — use Form Creator first to add them if needed.",
     category: "advanced", accepts: ".pdf", outputLabel: "filled.pdf",
   },
   {
@@ -376,8 +376,8 @@ export const tools: Tool[] = [
   },
   {
     slug: "esign-pdf", icon: PenLine, name: "E-Sign PDF",
-    description: "Add your signature to any PDF document",
-    longDescription: "Draw or upload your signature and place it on any page of your PDF. Position and resize freely — all processed locally with zero data leaving your device.",
+    description: "Quick draw-and-place signature on any PDF",
+    longDescription: "The simplest way to sign a PDF — draw your signature with your mouse or finger, then place it on any page. For advanced multi-signer workflows, use Sign PDF instead.",
     category: "edit", accepts: ".pdf", outputLabel: "signed.pdf",
   },
   {
