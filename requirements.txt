@@ -20,3 +20,4 @@ rembg
 cairosvg
 python-barcode
 qrcode
+pyzbar

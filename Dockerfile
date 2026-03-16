@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     colord \
     ffmpeg \
+    libzbar0 \
     libreoffice-writer-nogui \
     libreoffice-calc-nogui \
     libreoffice-impress-nogui \
