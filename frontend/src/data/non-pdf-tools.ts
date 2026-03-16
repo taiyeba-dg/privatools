@@ -5,6 +5,7 @@ import {
   Archive, Lock,
   ArrowLeftRight, Code2, ScanText,
   Stamp, Globe, LayoutGrid, ScanLine, Link,
+  QrCode, Merge,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -184,8 +185,20 @@ export const nonPdfTools: NonPdfTool[] = [
   {
     slug: "url-to-pdf", icon: Link, name: "URL to PDF",
     description: "Save any webpage as a PDF document",
-    longDescription: "Enter a URL and convert any webpage to a high-quality PDF — rendered locally on your server using WeasyPrint. No external services used.",
+    longDescription: "Enter a URL and convert any webpage to a high-quality PDF — rendered locally on your server using WeasyPrint. Note: results vary by site — JavaScript-heavy pages may not render fully.",
     category: "developer", accepts: "", outputLabel: "webpage.pdf",
+  },
+  {
+    slug: "qr-reader", icon: QrCode, name: "QR Code Reader",
+    description: "Decode QR codes and barcodes from images",
+    longDescription: "Upload any image containing a QR code or barcode and instantly decode its contents. Supports QR, Code128, EAN, and other formats.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "decoded text",
+  },
+  {
+    slug: "merge-images", icon: Merge, name: "Merge Images",
+    description: "Combine images side-by-side or top-to-bottom",
+    longDescription: "Upload multiple images and merge them into a single image — horizontally (side by side) or vertically (stacked). Images are automatically scaled to match.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "merged.png",
   },
 ];
 

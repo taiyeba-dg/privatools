@@ -291,57 +291,72 @@ async def image_converter(file: UploadFile = File(...), target_format: str = For
 
 
 @router.post("/remove-exif")
-async def remove_exif(file: UploadFile = File(...)):
+async def remove_exif(files: list[UploadFile] = File(...)):
     from PIL import Image
 
-    data = await _read_upload(file, MAX_IMAGE_SIZE, label="Image")
-    img = Image.open(io.BytesIO(data))
+    if len(files) > 100:
+        raise HTTPException(status_code=400, detail="Please upload at most 100 images")
 
-    # Strip EXIF data while preserving ICC profiles and other non-EXIF metadata
-    if hasattr(img, "getexif"):
-        img.getexif().clear()
-    # Remove exif from info dict (used during save)
-    img.info.pop("exif", None)
+    output_paths: list[str] = []
+    original_names: list[str] = []
 
-    ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
-    if ext in (".jpg", ".jpeg"):
-        fmt = "JPEG"
-        mime_type = "image/jpeg"
-        suffix = ".jpg"
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-    elif ext == ".webp":
-        fmt = "WEBP"
-        mime_type = "image/webp"
-        suffix = ".webp"
-    elif ext == ".bmp":
-        fmt = "BMP"
-        mime_type = "image/bmp"
-        suffix = ".bmp"
-    elif ext in (".tif", ".tiff"):
-        fmt = "TIFF"
-        mime_type = "image/tiff"
-        suffix = ".tiff"
-    else:
-        fmt = "PNG"
-        mime_type = "image/png"
-        suffix = ".png"
+    try:
+        for file in files:
+            data = await _read_upload(file, MAX_IMAGE_SIZE, label=file.filename or "Image")
+            img = Image.open(io.BytesIO(data))
 
-    out_path = _new_temp_file(suffix)
-    # Preserve ICC profile if present
-    icc = img.info.get("icc_profile")
-    save_kwargs = {}
-    if icc and fmt in ("JPEG", "PNG", "TIFF", "WEBP"):
-        save_kwargs["icc_profile"] = icc
-    img.save(out_path, fmt, **save_kwargs)
+            if hasattr(img, "getexif"):
+                img.getexif().clear()
+            img.info.pop("exif", None)
 
-    cleanup = BackgroundTask(_cleanup_paths, out_path)
-    return FileResponse(
-        out_path,
-        media_type=mime_type,
-        filename=f"clean{suffix}",
-        background=cleanup,
-    )
+            ext = os.path.splitext(_safe_filename(file.filename, "image.jpg"))[1].lower()
+            if ext in (".jpg", ".jpeg"):
+                fmt, suffix = "JPEG", ".jpg"
+                if img.mode in ("RGBA", "P"):
+                    img = img.convert("RGB")
+            elif ext == ".webp":
+                fmt, suffix = "WEBP", ".webp"
+            elif ext == ".bmp":
+                fmt, suffix = "BMP", ".bmp"
+            elif ext in (".tif", ".tiff"):
+                fmt, suffix = "TIFF", ".tiff"
+            else:
+                fmt, suffix = "PNG", ".png"
+
+            out_path = _new_temp_file(suffix)
+            icc = img.info.get("icc_profile")
+            save_kwargs = {}
+            if icc and fmt in ("JPEG", "PNG", "TIFF", "WEBP"):
+                save_kwargs["icc_profile"] = icc
+            img.save(out_path, fmt, **save_kwargs)
+            output_paths.append(out_path)
+            original_names.append(_safe_filename(file.filename, f"image{suffix}"))
+
+        # Single file: return directly
+        if len(output_paths) == 1:
+            mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+                        ".webp": "image/webp", ".bmp": "image/bmp", ".tiff": "image/tiff"}
+            ext = os.path.splitext(output_paths[0])[1]
+            cleanup = BackgroundTask(_cleanup_paths, *output_paths)
+            return FileResponse(output_paths[0], media_type=mime_map.get(ext, "image/png"),
+                                filename=f"clean_{original_names[0]}", background=cleanup)
+
+        # Multiple files: return ZIP
+        zip_path = _new_temp_file(".zip")
+        import zipfile as zf_mod
+        with zf_mod.ZipFile(zip_path, "w", zf_mod.ZIP_DEFLATED) as zf:
+            for i, out in enumerate(output_paths):
+                zf.write(out, f"clean_{original_names[i]}")
+        cleanup = BackgroundTask(_cleanup_paths, *output_paths, zip_path)
+        return FileResponse(zip_path, media_type="application/zip",
+                            filename="clean_images.zip", background=cleanup)
+    except HTTPException:
+        _cleanup_paths(*output_paths)
+        raise
+    except Exception:
+        _cleanup_paths(*output_paths)
+        logger.exception("remove-exif error")
+        raise HTTPException(status_code=500, detail="Failed to remove EXIF data")
 
 
 @router.post("/resize-crop-image")

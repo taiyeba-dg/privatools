@@ -89,9 +89,11 @@ const LazyFlattenUI = lazyNamed(loadSimpleConvertUI, "FlattenUI");
 const LazyDeskewUI = lazyNamed(loadSimpleConvertUI, "DeskewUI");
 const LazyRepairUI = lazyNamed(loadSimpleConvertUI, "RepairUI");
 const LazyGrayscaleUI = lazyNamed(loadSimpleConvertUI, "GrayscaleUI");
-const LazyStripMetadataUI = lazyNamed(loadSimpleConvertUI, "StripMetadataUI");
+const LazyStripMetadataUI = lazyNamed(() => import("@/components/tool-ui/StripMetadataUI"), "StripMetadataUI");
 const LazyDeleteAnnotationsUI = lazyNamed(loadSimpleConvertUI, "DeleteAnnotationsUI");
 const LazyOfficeToPdfUI = lazyNamed(loadSimpleConvertUI, "OfficeToPdfUI");
+const LazyReversePdfUI = lazyNamed(loadSimpleConvertUI, "ReversePdfUI");
+const LazyBookletUI = lazyNamed(loadSimpleConvertUI, "BookletUI");
 
 function ToolLoadingCard() {
   return (
@@ -189,6 +191,9 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "grayscale-pdf": return <LazyGrayscaleUI />;
     case "strip-metadata": return <LazyStripMetadataUI />;
     case "delete-annotations": return <LazyDeleteAnnotationsUI />;
+
+    case "reverse-pdf": return <LazyReversePdfUI />;
+    case "booklet-pdf": return <LazyBookletUI />;
 
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;

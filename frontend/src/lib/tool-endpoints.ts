@@ -15,6 +15,8 @@ const TOOL_ENDPOINT_OVERRIDES: Record<string, string> = {
   "ocr-pdf": "/ocr",
   "compare-pdf": "/compare",
   "sanitize-pdf": "/sanitize",
+  "booklet-pdf": "/booklet",
+  "qr-reader": "/read-qr",
 };
 
 const CONTENT_TYPE_EXTENSION_MAP: Record<string, string> = {

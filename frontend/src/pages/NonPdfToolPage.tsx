@@ -40,6 +40,8 @@ const LazyBackgroundRemoverUI = lazyNamed(() => import("@/components/tool-ui/Bac
 const LazySvgToPngUI = lazyNamed(() => import("@/components/tool-ui/SvgToPngUI"), "SvgToPngUI");
 const LazyHeicToJpgUI = lazyNamed(() => import("@/components/tool-ui/HeicToJpgUI"), "HeicToJpgUI");
 const LazyFaviconUI = lazyNamed(() => import("@/components/tool-ui/FaviconUI"), "FaviconUI");
+const LazyQrReaderUI = lazyNamed(() => import("@/components/tool-ui/QrReaderUI"), "QrReaderUI");
+const LazyMergeImagesUI = lazyNamed(() => import("@/components/tool-ui/MergeImagesUI"), "MergeImagesUI");
 
 function ToolLoadingCard() {
   return (
@@ -78,6 +80,8 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "svg-to-png": return <LazySvgToPngUI />;
     case "heic-to-jpg": return <LazyHeicToJpgUI />;
     case "generate-favicon": return <LazyFaviconUI />;
+    case "qr-reader": return <LazyQrReaderUI />;
+    case "merge-images": return <LazyMergeImagesUI />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }

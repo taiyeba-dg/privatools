@@ -9,6 +9,7 @@ import {
   FileX2, ScissorsSquare, BookMarked, Link2, ClipboardList, Eraser, Moon,
   BadgeCheck, ShieldCheck, Sparkles, Code2, FileSpreadsheet,
   Highlighter, PenLine, Shapes, Braces, FileCode, GalleryVerticalEnd, Droplets,
+  ArrowDownUp, BookOpenCheck,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -155,7 +156,7 @@ export const tools: Tool[] = [
   {
     slug: "grayscale-pdf", icon: Palette, name: "Grayscale PDF",
     description: "Convert a colorful PDF to black and white",
-    longDescription: "Convert all color content in the PDF to grayscale or pure black and white. Useful for printing.",
+    longDescription: "Convert all color content in the PDF to grayscale or pure black and white. Great for saving ink when printing.",
     category: "optimize", accepts: ".pdf", outputLabel: "grayscale.pdf",
   },
   {
@@ -289,7 +290,7 @@ export const tools: Tool[] = [
   {
     slug: "ocr-pdf", icon: ScanText, name: "OCR PDF",
     description: "Extract text or create a searchable PDF using OCR",
-    longDescription: "Run OCR on scanned PDFs and choose output as on-screen text, downloadable TXT, or a searchable PDF with an OCR text layer.",
+    longDescription: "Run OCR on scanned PDFs and choose output as on-screen text, downloadable TXT, or a searchable PDF with an OCR text layer. Supports English, Hindi, and 100+ languages via Tesseract.",
     category: "advanced", accepts: ".pdf", outputLabel: "searchable.pdf",
   },
   {
@@ -491,6 +492,20 @@ export const tools: Tool[] = [
     description: "Aggressively clean hidden data, JS, and layers",
     longDescription: "Permanently flatten layers, remove hidden OCR text, strip embedded JavaScript, and erase all metadata for maximum safety before sharing.",
     category: "security", accepts: ".pdf", outputLabel: "sanitized.pdf",
+  },
+
+  // ── Page Order ─────────────────────────────────────────────────────────────
+  {
+    slug: "reverse-pdf", icon: ArrowDownUp, name: "Reverse PDF",
+    description: "Reverse the page order of a PDF document",
+    longDescription: "Flip the page order of your PDF so the last page becomes the first. Useful for reversing scan order or preparing documents for specific workflows.",
+    category: "organize", accepts: ".pdf", outputLabel: "reversed.pdf",
+  },
+  {
+    slug: "booklet-pdf", icon: BookOpenCheck, name: "PDF Booklet",
+    description: "Rearrange pages for booklet printing",
+    longDescription: "Reorder pages for saddle-stitch booklet printing. Pages are arranged so that when printed double-sided and folded in half, they form a booklet.",
+    category: "organize", accepts: ".pdf", outputLabel: "booklet.pdf",
   },
 ];
 

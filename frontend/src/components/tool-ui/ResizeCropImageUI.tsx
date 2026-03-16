@@ -4,6 +4,19 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { processAndDownload } from "@/lib/api";
 
+const presets = [
+  { label: "WhatsApp DP", w: 500, h: 500 },
+  { label: "Instagram Post", w: 1080, h: 1080 },
+  { label: "Instagram Story", w: 1080, h: 1920 },
+  { label: "Facebook Cover", w: 820, h: 312 },
+  { label: "Twitter Header", w: 1500, h: 500 },
+  { label: "LinkedIn Banner", w: 1584, h: 396 },
+  { label: "YouTube Thumbnail", w: 1280, h: 720 },
+  { label: "Passport Photo", w: 413, h: 531 },
+  { label: "HD (1920x1080)", w: 1920, h: 1080 },
+  { label: "4K (3840x2160)", w: 3840, h: 2160 },
+];
+
 export function ResizeCropImageUI() {
   const [file, setFile] = useState<File | null>(null);
   const [width, setWidth] = useState(800);
@@ -11,6 +24,8 @@ export function ResizeCropImageUI() {
   const [mode, setMode] = useState<"resize" | "crop">("resize");
   const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const applyPreset = (w: number, h: number) => { setWidth(w); setHeight(h); };
 
   const process = async () => {
     if (!file) return;
@@ -33,6 +48,20 @@ export function ResizeCropImageUI() {
               mode === m ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>{m}</button>
           ))}
         </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Presets</p>
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map(p => (
+              <button key={p.label} onClick={() => applyPreset(p.w, p.h)}
+                className={cn("px-2.5 py-1 rounded-lg text-xs border transition-all",
+                  width === p.w && height === p.h ? "border-primary bg-primary/10 text-primary font-medium" : "border-border text-muted-foreground hover:border-primary/40")}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div><label className="text-xs font-medium text-muted-foreground">Width (px)</label>
             <input type="number" value={width} onChange={e => setWidth(parseInt(e.target.value) || 800)} min={1}

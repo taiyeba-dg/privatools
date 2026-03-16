@@ -29,6 +29,7 @@ PDF_TOOLS = [
     "whiteout-pdf", "annotate-pdf", "add-shapes",
     "set-permissions", "add-attachment",
     "json-to-pdf", "xml-to-pdf", "epub-to-pdf", "rtf-to-pdf",
+    "reverse-pdf", "booklet-pdf",
 ]
 
 NON_PDF_TOOLS = [
@@ -36,6 +37,7 @@ NON_PDF_TOOLS = [
     "video-to-gif", "extract-audio", "trim-media", "compress-video",
     "extract-archive", "create-zip", "json-xml-formatter", "text-diff",
     "base64", "hash-generator", "csv-json", "markdown-html", "image-ocr",
+    "qr-reader", "merge-images",
 ]
 
 BASE_URL = "https://privatools.me"
