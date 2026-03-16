@@ -1,9 +1,9 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect, Suspense, lazy, type ComponentType } from "react";
-import { toolBySlug, tools, categoryMeta } from "@/data/tools";
+import { useEffect, useRef, Suspense, lazy, type ComponentType } from "react";
+import { toolBySlug, tools, categoryMeta, type Category } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Shield, ChevronRight, Github, ExternalLink } from "lucide-react";
+import { Shield, ChevronRight, Github, ExternalLink, ArrowUpRight } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
@@ -95,12 +95,54 @@ const LazyOfficeToPdfUI = lazyNamed(loadSimpleConvertUI, "OfficeToPdfUI");
 const LazyReversePdfUI = lazyNamed(loadSimpleConvertUI, "ReversePdfUI");
 const LazyBookletUI = lazyNamed(loadSimpleConvertUI, "BookletUI");
 
+function CategoryToolNav({ currentSlug, category }: { currentSlug: string; category: Category }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const categoryTools = tools.filter(t => t.category === category);
+  const meta = categoryMeta[category];
+
+  useEffect(() => {
+    const el = scrollRef.current?.querySelector('[data-active="true"]');
+    if (el) el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [currentSlug]);
+
+  return (
+    <div className="mb-8 -mx-4 sm:-mx-6">
+      <div className="px-4 sm:px-6 mb-2">
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50 font-heading">
+          {meta.label} — {categoryTools.length} tools
+        </p>
+      </div>
+      <div ref={scrollRef} className="flex items-center gap-1 overflow-x-auto no-scrollbar px-4 sm:px-6 pb-1">
+        {categoryTools.map(t => {
+          const TIcon = t.icon;
+          const isActive = t.slug === currentSlug;
+          return (
+            <Link
+              key={t.slug}
+              to={`/tool/${t.slug}`}
+              data-active={isActive}
+              className={cn(
+                "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-all shrink-0",
+                isActive
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40 border border-transparent"
+              )}
+            >
+              <TIcon size={12} strokeWidth={1.75} />
+              {t.name}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ToolLoadingCard() {
   return (
-    <div className="space-y-3">
-      <div className="h-36 animate-pulse rounded-2xl border border-border bg-card/70" />
-      <div className="h-14 animate-pulse rounded-xl border border-border bg-card/60" />
-      <div className="h-14 animate-pulse rounded-xl border border-border bg-card/60" />
+    <div className="space-y-4">
+      <div className="h-40 animate-pulse rounded-2xl border border-border/60 bg-card/50" />
+      <div className="h-14 animate-pulse rounded-xl border border-border/60 bg-card/40" />
     </div>
   );
 }
@@ -114,7 +156,6 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "organize-pages": return <LazyOrganizeUI />;
     case "delete-pages": return <LazyDeletePagesUI />;
     case "extract-pages": return <LazyExtractPagesUI />;
-
     case "edit-pdf": return <LazyEditPdfUI />;
     case "sign-pdf": return <LazySignUI />;
     case "watermark": return <LazyWatermarkUI />;
@@ -122,16 +163,13 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "page-numbers": return <LazyPageNumbersUI />;
     case "bates-numbering": return <LazyBatesUI />;
     case "bookmarks": return <LazyBookmarksUI />;
-
     case "compress-pdf": return <LazyCompressUI />;
     case "resize-pdf": return <LazyResizeUI />;
     case "rotate-pdf": return <LazyRotateUI />;
-
     case "protect-pdf": return <LazyProtectUI />;
     case "unlock-pdf": return <LazyUnlockUI />;
     case "redact-pdf": return <LazyRedactUI />;
     case "metadata": return <LazyMetadataUI />;
-
     case "compare-pdf": return <LazyCompareUI />;
     case "ocr-pdf": return <LazyOcrUI />;
     case "nup": return <LazyNupUI />;
@@ -142,12 +180,10 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "form-creator": return <LazyFormCreatorUI />;
     case "pdfa-validator": return <LazyPdfaValidatorUI />;
     case "verify-signature": return <LazyVerifySignatureUI />;
-
     case "remove-blank-pages": return <LazyRemoveBlankPagesUI />;
     case "auto-crop": return <LazyAutoCropUI />;
     case "invert-colors": return <LazyInvertColorsUI />;
     case "crop-pdf": return <LazyCropUI />;
-
     case "pdf-to-epub": return <LazyPdfToEpubUI />;
     case "pdf-to-image": return <LazyPdfToImageUI />;
     case "pdf-to-text": return <LazyPdfToTextUI />;
@@ -155,7 +191,6 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "html-to-pdf": return <LazyHtmlToPdfUI />;
     case "markdown-to-pdf": return <LazyMarkdownToPdfUI />;
     case "csv-to-pdf": return <LazyCsvToPdfUI />;
-
     case "add-hyperlinks": return <LazyAddHyperlinksUI />;
     case "transparent-background": return <LazyTransparentBackgroundUI />;
     case "stamp-pdf": return <LazyStampUI />;
@@ -165,9 +200,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "annotate-pdf": return <LazyAnnotateUI />;
     case "add-shapes": return <LazyShapesUI />;
     case "whiteout-pdf": return <LazyWhiteoutUI />;
-
     case "sanitize-pdf": return <LazySanitizeUI />;
-
     case "pdf-to-word": return <LazyPdfToWordUI />;
     case "pdf-to-excel": return <LazyPdfToExcelUI />;
     case "pdf-to-pptx": return <LazyPdfToPptxUI />;
@@ -184,17 +217,14 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "epub-to-pdf": return <LazyEpubToPdfUI />;
     case "rtf-to-pdf": return <LazyRtfToPdfUI />;
     case "office-to-pdf": return <LazyOfficeToPdfUI />;
-
     case "flatten-pdf": return <LazyFlattenUI />;
     case "deskew-pdf": return <LazyDeskewUI />;
     case "repair-pdf": return <LazyRepairUI />;
     case "grayscale-pdf": return <LazyGrayscaleUI />;
     case "strip-metadata": return <LazyStripMetadataUI />;
     case "delete-annotations": return <LazyDeleteAnnotationsUI />;
-
     case "reverse-pdf": return <LazyReversePdfUI />;
     case "booklet-pdf": return <LazyBookletUI />;
-
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }
@@ -247,23 +277,24 @@ export default function ToolPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/70 backdrop-blur-xl">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-border/30 bg-background/75 backdrop-blur-2xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex h-14 items-center gap-3">
-            <Link to="/" className="flex items-center gap-2.5 shrink-0">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary glow-primary">
-                <Shield size={14} className="text-primary-foreground" strokeWidth={2.25} />
+            <Link to="/" className="flex items-center gap-2.5 shrink-0 logo-animated">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/25">
+                <Shield size={14} className="text-primary-foreground logo-shield" strokeWidth={2.5} />
               </div>
-              <span className="text-sm font-bold text-foreground">PrivaTools</span>
+              <span className="text-[15px] font-bold text-foreground font-heading">PrivaTools</span>
             </Link>
-            <span className="text-muted-foreground text-sm">/</span>
-            <span className="text-sm text-muted-foreground truncate max-w-[160px] sm:max-w-none">{tool.name}</span>
+            <span className="text-muted-foreground/30 text-sm">/</span>
+            <span className="text-sm text-muted-foreground truncate max-w-[180px] sm:max-w-none">{tool.name}</span>
             <div className="flex-1" />
             <a
               href="https://github.com/taiyeba-dg/privatools"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 rounded-xl border border-border/40 bg-secondary/25 px-3.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
             >
               <Github size={13} />
               <span className="hidden sm:inline">Open Source</span>
@@ -278,55 +309,60 @@ export default function ToolPage() {
           { label: tool.name },
         ]} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8">
+        <CategoryToolNav currentSlug={slug!} category={tool.category} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-10">
           <div>
+            {/* Tool header */}
             <div className="flex items-start gap-4 mb-8">
-              <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl", meta.iconBg)}>
-                <Icon size={22} strokeWidth={1.75} className={meta.iconColor} />
+              <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl", meta.iconBg)}>
+                <Icon size={26} strokeWidth={1.5} className={meta.iconColor} />
               </div>
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl font-bold text-foreground">{tool.name}</h1>
-                  <span className={cn("text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary", meta.accent)}>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-heading tracking-tight">{tool.name}</h1>
+                  <span className={cn("text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-secondary", meta.accent)}>
                     {meta.label}
                   </span>
                   {tool.clientOnly && (
-                    <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
+                    <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400">
                       Client-Side
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground max-w-lg">{tool.longDescription}</p>
+                <p className="mt-2 text-sm text-muted-foreground max-w-lg leading-relaxed">{tool.longDescription}</p>
               </div>
             </div>
 
+            {/* Tool UI */}
             <Suspense fallback={<ToolLoadingCard />}>
               <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
             </Suspense>
 
-            <div className="mt-10">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">How it works</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* How it works */}
+            <div className="mt-12">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-5 font-heading">How it works</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   {
-                    step: "1",
+                    step: "01",
                     title: "Upload your file",
                     desc: tool.clientOnly
                       ? "Drag & drop or click to select. Processing happens locally in your browser."
                       : "Drag & drop or click to select. Files are processed on your self-hosted server.",
                   },
                   {
-                    step: "2",
+                    step: "02",
                     title: "Configure & process",
                     desc: tool.clientOnly
                       ? "Adjust settings and process instantly without uploading file contents."
                       : "Adjust any settings, then process instantly on your server.",
                   },
-                  { step: "3", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email." },
+                  { step: "03", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email." },
                 ].map((s) => (
-                  <div key={s.step} className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-bold text-primary mb-2">Step {s.step}</div>
-                    <p className="text-sm font-semibold text-foreground mb-1">{s.title}</p>
+                  <div key={s.step} className="rounded-xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm">
+                    <div className="text-lg font-black text-primary/30 font-heading mb-2">{s.step}</div>
+                    <p className="text-sm font-bold text-foreground mb-1.5 font-heading">{s.title}</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
                   </div>
                 ))}
@@ -334,9 +370,10 @@ export default function ToolPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Related tools</h3>
+          {/* Sidebar */}
+          <div className="space-y-5">
+            <div className="rounded-xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 font-heading">Related tools</h3>
               <div className="space-y-0.5">
                 {relatedTools.map((t) => {
                   const TIcon = t.icon;
@@ -345,54 +382,55 @@ export default function ToolPage() {
                     <Link
                       key={t.slug}
                       to={`/tool/${t.slug}`}
-                      className="flex items-center gap-3 rounded-lg px-2.5 py-2 hover:bg-secondary/60 transition-colors group"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-primary/6 transition-colors group"
                     >
-                      <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", m.iconBg)}>
+                      <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", m.iconBg)}>
                         <TIcon size={14} strokeWidth={1.75} className={m.iconColor} />
                       </div>
                       <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors flex-1 truncate">{t.name}</span>
-                      <ChevronRight size={12} className="text-muted-foreground/40 shrink-0" />
+                      <ChevronRight size={12} className="text-muted-foreground/25 group-hover:text-primary/50 shrink-0 transition-colors" />
                     </Link>
                   );
                 })}
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Github size={14} className="text-foreground" />
-                <span className="text-sm font-semibold text-foreground">Open Source</span>
+                <span className="text-sm font-bold text-foreground font-heading">Open Source</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no tracking. Forever.</p>
               <a
                 href="https://github.com/taiyeba-dg/privatools"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
               >
-                View on GitHub <ExternalLink size={11} />
+                View on GitHub <ArrowUpRight size={11} />
               </a>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-xl border border-primary/15 bg-primary/5 p-5">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                🔒 <span className="text-foreground font-medium">Your files stay private.</span> All processing happens locally on your self-hosted server — files are never sent to third parties.
+                <Shield size={12} className="inline-block mr-1 text-primary" />
+                <span className="text-foreground font-semibold">Your files stay private.</span> All processing happens locally on your self-hosted server — files are never sent to third parties.
               </p>
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="mt-10 border-t border-border bg-card/30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-primary">
+      <footer className="mt-12 border-t border-border/30 bg-card/20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
               <Shield size={11} className="text-primary-foreground" />
             </div>
-            <span className="font-semibold text-foreground">PrivaTools</span>
-            <span>· Free forever · MIT License</span>
+            <span className="font-bold text-foreground font-heading">PrivaTools</span>
+            <span className="text-muted-foreground/40">· Free forever · MIT License</span>
           </div>
-          <p>No cookies · No tracking · No sign-up</p>
+          <p className="text-muted-foreground/40">No cookies · No tracking · No sign-up</p>
         </div>
       </footer>
     </div>

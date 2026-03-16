@@ -108,34 +108,37 @@ export default function CommandPalette() {
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-150"
+                className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md animate-in fade-in-0 duration-150"
                 onClick={() => setOpen(false)}
             />
 
             {/* Palette */}
-            <div className="fixed inset-x-0 top-[15vh] z-[101] mx-auto w-full max-w-lg px-4 animate-in fade-in-0 slide-in-from-top-4 duration-200">
-                <div className="rounded-2xl border border-border/60 bg-card/95 backdrop-blur-2xl shadow-2xl shadow-black/50 overflow-hidden">
+            <div className="fixed inset-x-0 top-[12vh] z-[101] mx-auto w-full max-w-xl px-4 animate-in fade-in-0 slide-in-from-top-4 duration-200">
+                <div className="rounded-2xl border border-border/50 bg-card/95 backdrop-blur-2xl shadow-2xl shadow-black/60 overflow-hidden">
+
+                    {/* Animated gradient line */}
+                    <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-60 animate-pulse" />
 
                     {/* Search input */}
-                    <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40">
-                        <Search size={16} strokeWidth={2} className="shrink-0 text-muted-foreground/50" />
+                    <div className="flex items-center gap-3.5 px-5 py-4 border-b border-border/40">
+                        <Search size={20} strokeWidth={2} className="shrink-0 text-muted-foreground/50" />
                         <input
                             ref={inputRef}
-                            className="flex-1 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground/40"
+                            className="flex-1 bg-transparent outline-none text-base text-foreground placeholder:text-muted-foreground/40"
                             placeholder="Search tools…"
                             value={query}
                             onChange={e => { setQuery(e.target.value); setSelected(0); }}
                         />
-                        <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground/40 font-mono bg-secondary/40 rounded px-1.5 py-0.5">
+                        <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground/40 font-mono bg-secondary/40 rounded-md px-2 py-1">
                             ESC
                         </kbd>
                     </div>
 
                     {/* Results */}
-                    <div ref={listRef} className="max-h-[50vh] overflow-y-auto py-1.5 px-1.5">
+                    <div ref={listRef} className="max-h-[55vh] overflow-y-auto py-2 px-2">
                         {!query.trim() && history.length > 0 && (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5">
-                                <Clock size={10} className="text-muted-foreground/40" />
+                            <div className="flex items-center gap-1.5 px-3 py-2">
+                                <Clock size={11} className="text-muted-foreground/40" />
                                 <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">Recent</span>
                             </div>
                         )}
@@ -149,38 +152,38 @@ export default function CommandPalette() {
                                         onClick={() => go(tool.href)}
                                         onMouseEnter={() => setSelected(i)}
                                         className={cn(
-                                            "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors",
-                                            i === selected ? "bg-primary/10" : "hover:bg-secondary/50"
+                                            "flex items-center gap-3.5 w-full px-3.5 py-3 rounded-xl text-left transition-colors",
+                                            i === selected ? "bg-primary/8" : "hover:bg-secondary/50"
                                         )}
                                     >
-                                        <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", tool.iconBg)}>
-                                            <Ic size={13} strokeWidth={1.75} className={tool.iconColor} />
+                                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", tool.iconBg)}>
+                                            <Ic size={15} strokeWidth={1.75} className={tool.iconColor} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-[13px] font-semibold text-foreground truncate">{tool.name}</p>
-                                            <p className="text-[11px] text-muted-foreground/60 truncate">{tool.description}</p>
+                                            <p className="text-sm font-heading font-semibold text-foreground truncate">{tool.name}</p>
+                                            <p className="text-[11px] text-muted-foreground/50 truncate">{tool.description}</p>
                                         </div>
-                                        {i === selected && <ArrowRight size={12} className="shrink-0 text-primary/60" />}
+                                        {i === selected && <ArrowRight size={13} className="shrink-0 text-primary/60" />}
                                     </button>
                                 );
                             })
                         ) : (
-                            <div className="py-10 text-center">
+                            <div className="py-12 text-center">
                                 <p className="text-sm text-muted-foreground/50">No tools found</p>
                             </div>
                         )}
                     </div>
 
                     {/* Footer hint */}
-                    <div className="px-4 py-2 border-t border-border/30 flex items-center gap-4">
-                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground/30">
-                            <kbd className="font-mono bg-secondary/30 rounded px-1 py-px">↑↓</kbd> navigate
+                    <div className="px-5 py-2.5 border-t border-border/30 flex items-center gap-5">
+                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/35">
+                            <kbd className="font-mono bg-secondary/40 rounded-md px-1.5 py-0.5">↑↓</kbd> navigate
                         </span>
-                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground/30">
-                            <kbd className="font-mono bg-secondary/30 rounded px-1 py-px">↵</kbd> open
+                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/35">
+                            <kbd className="font-mono bg-secondary/40 rounded-md px-1.5 py-0.5">↵</kbd> open
                         </span>
-                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground/30">
-                            <kbd className="font-mono bg-secondary/30 rounded px-1 py-px">esc</kbd> close
+                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/35">
+                            <kbd className="font-mono bg-secondary/40 rounded-md px-1.5 py-0.5">esc</kbd> close
                         </span>
                     </div>
                 </div>

@@ -207,18 +207,21 @@ export default function BatchPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/40">
+      <header className="sticky top-0 z-50 bg-background/75 backdrop-blur-2xl border-b border-border/30">
         <div className="mx-auto max-w-[900px] px-5">
           <div className="flex h-[52px] items-center gap-3">
             <Link to="/" className="flex items-center gap-2.5 shrink-0">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary shadow-md shadow-primary/40">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/25">
                 <Shield size={13} strokeWidth={2.5} className="text-primary-foreground" />
               </div>
-              <span className="text-[15px] font-extrabold text-foreground tracking-tight">PrivaTools</span>
+              <span className="text-[15px] font-extrabold text-foreground tracking-tight font-heading">PrivaTools</span>
             </Link>
-            <div className="hidden lg:block h-4 w-px bg-border/50" />
+            <div className="hidden lg:block h-4 w-px bg-border/40" />
             <span className="text-[13px] font-medium text-muted-foreground">Batch Process</span>
-            <Link to="/" className="ml-auto flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              to="/"
+              className="ml-auto flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground rounded-xl px-3 py-1.5 hover:bg-card/60 transition-all"
+            >
               <ArrowLeft size={13} /> Back
             </Link>
           </div>
@@ -226,20 +229,22 @@ export default function BatchPage() {
       </header>
 
       <main className="mx-auto max-w-[900px] px-5 py-10">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Batch Process</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2 font-heading">Batch Process</h1>
         <p className="text-sm text-muted-foreground mb-8">Upload multiple files and apply the same tool to all of them at once.</p>
 
+        {/* Tool Selector */}
         <div className="mb-6">
-          <label className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2 block">Select Tool</label>
+          <label className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2 block font-heading">Select Tool</label>
           <input
-            className="w-full h-10 rounded-xl border border-border/50 bg-card/60 px-4 text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/40 mb-2"
-            placeholder="Search tools…"
+            className="w-full h-10 rounded-xl border border-border/60 bg-card/60 px-4 text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all mb-3"
+            placeholder="Search tools..."
             value={toolSearch}
             onChange={(e) => setToolSearch(e.target.value)}
           />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 max-h-[200px] overflow-y-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[220px] overflow-y-auto pr-1">
             {filteredTools.map((t) => {
               const Ic = t.icon;
+              const isActive = selectedTool.slug === t.slug;
               return (
                 <button
                   key={t.slug}
@@ -248,13 +253,13 @@ export default function BatchPage() {
                     setSelectedTool(t);
                   }}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-left text-[12px] transition-colors",
-                    selectedTool.slug === t.slug
-                      ? "bg-primary/10 border border-primary/30 text-primary font-semibold"
-                      : "border border-transparent text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                    "flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-[12px] transition-all border",
+                    isActive
+                      ? "bg-primary/10 border-primary/25 text-primary font-semibold shadow-sm"
+                      : "border-border/40 text-muted-foreground hover:bg-card/60 hover:text-foreground hover:border-border/60",
                   )}
                 >
-                  <Ic size={12} className="shrink-0" />
+                  <Ic size={13} className="shrink-0" />
                   <span className="truncate">{t.name}</span>
                 </button>
               );
@@ -262,8 +267,9 @@ export default function BatchPage() {
           </div>
         </div>
 
+        {/* Upload Zone */}
         <div
-          className="relative border-2 border-dashed border-border/50 rounded-2xl p-10 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all mb-6"
+          className="relative border-2 border-dashed border-border/50 rounded-2xl p-10 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all mb-6 group"
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
@@ -274,7 +280,9 @@ export default function BatchPage() {
             addFiles(e.dataTransfer.files);
           }}
         >
-          <Upload size={28} className="mx-auto text-muted-foreground/30 mb-3" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 mx-auto mb-4 group-hover:bg-primary/15 transition-colors">
+            <Upload size={22} className="text-primary/60 group-hover:text-primary/80 transition-colors" />
+          </div>
           <p className="text-[14px] font-semibold text-foreground mb-1">Drop files here or click to browse</p>
           <p className="text-[12px] text-muted-foreground/60">Accepts: {selectedTool.accepts || "any"}</p>
           <input
@@ -287,10 +295,11 @@ export default function BatchPage() {
           />
         </div>
 
+        {/* File List */}
         {files.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[13px] font-semibold text-foreground">{files.length} file{files.length !== 1 ? "s" : ""}</span>
+              <span className="text-[13px] font-semibold text-foreground font-heading">{files.length} file{files.length !== 1 ? "s" : ""}</span>
               {doneCount > 0 && (
                 <button
                   onClick={downloadAll}
@@ -300,21 +309,37 @@ export default function BatchPage() {
                 </button>
               )}
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {files.map((f, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/50 bg-card/40">
-                  <FileText size={14} className="shrink-0 text-muted-foreground/40" />
+                <div
+                  key={i}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-sm transition-all",
+                    f.status === "processing"
+                      ? "border-primary/30 bg-primary/5"
+                      : f.status === "done"
+                        ? "border-green-500/20 bg-green-500/5"
+                        : f.status === "error"
+                          ? "border-red-400/20 bg-red-500/5"
+                          : "border-border/60 bg-card/60",
+                  )}
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/80 border border-border/40 shrink-0">
+                    <FileText size={14} className="text-muted-foreground/50" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium text-foreground truncate">{f.file.name}</p>
                     <p className="text-[11px] text-muted-foreground/50">{(f.file.size / 1024).toFixed(0)} KB</p>
                   </div>
-                  {f.status === "pending" && <span className="text-[11px] text-muted-foreground/40">Pending</span>}
+                  {f.status === "pending" && (
+                    <span className="text-[11px] text-muted-foreground/40 px-2 py-0.5 rounded-lg bg-card/40">Pending</span>
+                  )}
                   {f.status === "processing" && <Loader2 size={14} className="shrink-0 text-primary animate-spin" />}
                   {f.status === "done" && (
                     <div className="flex items-center gap-2">
                       <CheckCircle size={14} className="shrink-0 text-green-400" />
                       {f.resultUrl && (
-                        <a href={f.resultUrl} download={f.downloadName || f.file.name} className="text-[11px] text-primary hover:underline">
+                        <a href={f.resultUrl} download={f.downloadName || f.file.name} className="text-[11px] font-medium text-primary hover:underline">
                           Download
                         </a>
                       )}
@@ -327,7 +352,7 @@ export default function BatchPage() {
                     </div>
                   )}
                   {!processing && (
-                    <button onClick={() => removeFile(i)} className="shrink-0 text-muted-foreground/30 hover:text-muted-foreground">
+                    <button onClick={() => removeFile(i)} className="shrink-0 text-muted-foreground/30 hover:text-muted-foreground transition-colors">
                       <X size={12} />
                     </button>
                   )}
@@ -337,6 +362,7 @@ export default function BatchPage() {
           </div>
         )}
 
+        {/* Actions */}
         {files.length > 0 && (
           <div className="flex items-center gap-3">
             <button
@@ -346,14 +372,14 @@ export default function BatchPage() {
                 "flex items-center gap-2 h-10 px-6 rounded-xl text-[14px] font-semibold transition-all",
                 processing || files.every((f) => f.status === "done")
                   ? "bg-secondary/50 text-muted-foreground cursor-not-allowed"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/30",
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25",
               )}
             >
               {processing ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-              {processing ? "Processing…" : `Process ${files.filter((f) => f.status !== "done").length} Files`}
+              {processing ? "Processing..." : `Process ${files.filter((f) => f.status !== "done").length} Files`}
             </button>
             {!processing && (
-              <button onClick={clearAllFiles} className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={clearAllFiles} className="text-[13px] text-muted-foreground hover:text-foreground transition-colors rounded-xl px-3 py-1.5 hover:bg-card/60">
                 Clear all
               </button>
             )}

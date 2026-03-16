@@ -74,17 +74,28 @@ export function SmartFileDetector() {
                 onClick={() => inputRef.current?.click()}
                 onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={e => { e.preventDefault(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
-                className="relative group cursor-pointer rounded-2xl border-2 border-dashed border-border/40 hover:border-primary/40 bg-card/30 hover:bg-primary/5 transition-all p-6 text-center"
+                className="relative group cursor-pointer rounded-2xl border-2 border-dashed border-border/40 hover:border-primary/40 bg-card/30 hover:bg-primary/5 transition-all p-8 text-center overflow-hidden"
             >
+                {/* Subtle grid background pattern */}
+                <div
+                    className="absolute inset-0 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity pointer-events-none"
+                    style={{
+                        backgroundImage: "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+                        backgroundSize: "24px 24px",
+                    }}
+                />
+
                 <input
                     ref={inputRef}
                     type="file"
                     className="hidden"
                     onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
                 />
-                <Upload size={20} className="mx-auto text-muted-foreground/30 group-hover:text-primary/50 mb-2 transition-colors" />
-                <p className="text-[13px] font-semibold text-foreground/80">Drop any file to find compatible tools</p>
-                <p className="text-[11px] text-muted-foreground/40 mt-0.5">PDF, images, video, archives, documents…</p>
+                <div className="relative">
+                    <Upload size={28} className="mx-auto text-muted-foreground/25 group-hover:text-primary/50 mb-3 transition-all group-hover:-translate-y-0.5 duration-300" />
+                    <p className="text-sm font-heading font-semibold text-foreground/80">Drop any file to find compatible tools</p>
+                    <p className="text-xs text-muted-foreground/40 mt-1">PDF, images, video, archives, documents…</p>
+                </div>
             </div>
         );
     }
@@ -92,36 +103,43 @@ export function SmartFileDetector() {
     const Icon = getIcon();
 
     return (
-        <div className="rounded-2xl border border-border/50 bg-card/40 overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-border/30">
-                <Icon size={16} className="text-primary/60 shrink-0" />
-                <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground truncate">{fileName}</p>
-                    <p className="text-[11px] text-muted-foreground/50">{detectedTools.length} compatible tool{detectedTools.length !== 1 ? "s" : ""} found</p>
-                </div>
-                <button onClick={() => { setShow(false); setDetectedTools([]); }} className="text-muted-foreground/30 hover:text-muted-foreground">
-                    <X size={14} />
-                </button>
-            </div>
+        <div className="rounded-2xl border border-border/50 bg-card/40 overflow-hidden relative">
+            {/* Subtle glow effect when file is detected */}
+            <div className="absolute -inset-px rounded-2xl bg-primary/5 blur-sm pointer-events-none" />
 
-            {detectedTools.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 p-2">
-                    {detectedTools.map(t => (
-                        <Link
-                            key={t.slug}
-                            to={t.path}
-                            className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-medium text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-colors"
-                        >
-                            <span className="flex-1 truncate">{t.name}</span>
-                            <ArrowRight size={10} className="shrink-0 opacity-0 group-hover:opacity-100" />
-                        </Link>
-                    ))}
+            <div className="relative">
+                <div className="flex items-center gap-3.5 px-5 py-4 border-b border-border/30">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                        <Icon size={18} className="text-primary/70" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-heading font-semibold text-foreground truncate">{fileName}</p>
+                        <p className="text-[11px] text-muted-foreground/50">{detectedTools.length} compatible tool{detectedTools.length !== 1 ? "s" : ""} found</p>
+                    </div>
+                    <button onClick={() => { setShow(false); setDetectedTools([]); }} className="text-muted-foreground/30 hover:text-muted-foreground transition-colors">
+                        <X size={15} />
+                    </button>
                 </div>
-            ) : (
-                <div className="p-6 text-center">
-                    <p className="text-[13px] text-muted-foreground/50">No compatible tools found for this file type</p>
-                </div>
-            )}
+
+                {detectedTools.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-2.5">
+                        {detectedTools.map(t => (
+                            <Link
+                                key={t.slug}
+                                to={t.path}
+                                className="group/item flex items-center gap-2 px-3 py-3 rounded-xl text-[12px] font-medium text-muted-foreground hover:bg-primary/8 hover:text-foreground transition-colors"
+                            >
+                                <span className="flex-1 truncate">{t.name}</span>
+                                <ArrowRight size={11} className="shrink-0 opacity-0 group-hover/item:opacity-60 transition-opacity text-primary" />
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="p-8 text-center">
+                        <p className="text-[13px] text-muted-foreground/50">No compatible tools found for this file type</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
