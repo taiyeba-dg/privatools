@@ -1,8 +1,24 @@
 import uuid
-import xml.etree.ElementTree as ET
+import re
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+
+def _safe_pretty_xml(content: str) -> str:
+    """Parse and pretty-print XML safely, blocking XXE attacks."""
+    try:
+        from defusedxml.minidom import parseString
+        dom = parseString(content)
+        return dom.toprettyxml(indent="  ")
+    except ImportError:
+        # Fallback: strip DOCTYPE to prevent entity injection
+        sanitized = re.sub(r'<!DOCTYPE[^>]*>', '', content, flags=re.IGNORECASE | re.DOTALL)
+        import xml.dom.minidom
+        dom = xml.dom.minidom.parseString(sanitized)
+        return dom.toprettyxml(indent="  ")
+    except Exception:
+        return content
 
 
 def xml_to_pdf(input_path: str) -> str:
@@ -22,16 +38,7 @@ def xml_to_pdf(input_path: str) -> str:
 
     c.setFont("Courier", font_size)
 
-    # Try to pretty-print if valid XML
-    try:
-        root = ET.fromstring(content)
-        formatted = ET.tostring(root, encoding="unicode")
-        # Simple indentation
-        import xml.dom.minidom
-        dom = xml.dom.minidom.parseString(content)
-        formatted = dom.toprettyxml(indent="  ")
-    except Exception:
-        formatted = content
+    formatted = _safe_pretty_xml(content)
 
     for line in formatted.split("\n"):
         if y < margin:

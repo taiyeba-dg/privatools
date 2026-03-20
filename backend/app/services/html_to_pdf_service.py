@@ -21,7 +21,10 @@ _BLOCKED_HOSTNAMES = {"localhost", "0.0.0.0", "127.0.0.1", "::1", "169.254.169.2
 
 
 def _validate_url(url: str) -> None:
-    """Raise HTTPException(400) for URLs that could cause SSRF."""
+    """Raise HTTPException(400) for URLs that could cause SSRF.
+
+    Performs DNS resolution to prevent DNS rebinding attacks.
+    """
     try:
         parsed = urlparse(url)
     except Exception:
@@ -34,6 +37,7 @@ def _validate_url(url: str) -> None:
     if hostname.lower() in _BLOCKED_HOSTNAMES:
         raise HTTPException(status_code=400, detail="URL points to a blocked host")
 
+    # Check if hostname is a literal IP
     try:
         addr = ipaddress.ip_address(hostname)
         for network in _PRIVATE_NETWORKS:
@@ -41,6 +45,25 @@ def _validate_url(url: str) -> None:
                 raise HTTPException(status_code=400, detail="URL points to a private or reserved IP address")
     except ValueError:
         pass
+
+    # Resolve hostname to prevent DNS rebinding attacks
+    import socket
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+        for family, _type, _proto, _canonname, sockaddr in resolved:
+            ip_str = sockaddr[0]
+            try:
+                addr = ipaddress.ip_address(ip_str)
+                for network in _PRIVATE_NETWORKS:
+                    if addr in network:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="URL resolves to a private or reserved IP address",
+                        )
+            except ValueError:
+                continue
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail="Could not resolve hostname")
 
 
 def _fitz_html_to_pdf(html_content: str, output_path: str) -> None:

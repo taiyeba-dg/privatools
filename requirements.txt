@@ -21,3 +21,4 @@ cairosvg
 python-barcode
 qrcode
 pyzbar
+defusedxml

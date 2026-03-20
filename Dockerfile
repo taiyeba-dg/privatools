@@ -44,11 +44,17 @@ COPY backend/ backend/
 # Copy built frontend from stage 1
 COPY --from=frontend-build /app/frontend/dist frontend/dist/
 
-# Create temp directory
-RUN mkdir -p temp
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser
+
+# Create temp directory with proper ownership
+RUN mkdir -p temp && chown -R appuser:appuser temp
 
 ENV ENVIRONMENT=production
-ENV ALLOWED_ORIGINS=*
+ENV ALLOWED_ORIGINS=https://privatools.me
+
+# Switch to non-root user
+USER appuser
 
 EXPOSE 8000
 
