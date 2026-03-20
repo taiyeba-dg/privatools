@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://privatools.me/api/sitemap.xml
+Sitemap: https://privatools.me/sitemap.xml
