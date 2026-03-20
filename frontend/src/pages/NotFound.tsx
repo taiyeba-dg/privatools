@@ -1,63 +1,53 @@
 import { Link } from "react-router-dom";
-import { Shield, Home, Search } from "lucide-react";
+import { Home, Search } from "lucide-react";
+import { EditorialMasthead } from "@/components/EditorialMasthead";
+import { EditorialFooter } from "@/components/EditorialFooter";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6 relative overflow-hidden">
-      {/* Animated mesh orb backgrounds */}
-      <div className="mesh-orb absolute top-[-20%] left-[-15%] w-[500px] h-[500px] opacity-25" />
-      <div className="mesh-orb-2 absolute bottom-[-15%] right-[-10%] w-[450px] h-[450px] opacity-20" />
-      <div className="mesh-orb-3 absolute top-[20%] right-[10%] w-[250px] h-[250px] opacity-15" />
+    <div className="min-h-screen bg-background">
+      <EditorialMasthead />
 
-      {/* Background glow */}
-      <div className="absolute inset-0 hero-glow" />
-
-      <div className="relative text-center max-w-md">
-        {/* Big 404 */}
-        <div className="relative mb-8">
-          <p
-            className="text-[140px] sm:text-[180px] font-black font-heading leading-none select-none text-gradient"
-            style={{
-              backgroundImage: "linear-gradient(135deg, hsl(158 64% 48%), hsl(168 60% 45%), hsl(178 55% 50%))",
-            }}
-          >
-            404
-          </p>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 glow-primary">
-              <Shield size={34} className="text-primary" strokeWidth={2} />
-            </div>
-          </div>
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-32 text-center">
+        {/* Newspaper "EXTRA!" header */}
+        <div className="mb-8">
+          <span className="section-flag text-lg tracking-[0.2em] px-4 py-2">EXTRA! EXTRA!</span>
         </div>
 
-        <h1 className="text-3xl font-bold font-heading text-foreground mb-3">Page not found</h1>
-        <p className="text-sm text-muted-foreground mb-10 leading-relaxed">
+        {/* Big 404 */}
+        <p className="font-heading text-[120px] sm:text-[180px] font-black leading-none select-none text-foreground/5 mb-[-2rem] sm:mb-[-3rem]">
+          404
+        </p>
+
+        <h1 className="font-heading text-3xl sm:text-4xl font-bold text-foreground mb-4">
+          Page Not Found
+        </h1>
+
+        <div className="rule-accent mx-auto w-12 mb-6" />
+
+        <p className="font-serif-body text-base text-muted-foreground max-w-sm mx-auto leading-relaxed mb-10">
           The page you're looking for doesn't exist or has been moved.
-          <br />But your files are still safe — they never left your computer.
+          But rest assured — your files are still safe. They never left your computer.
         </p>
 
         <div className="flex items-center justify-center gap-3">
+          <Link to="/" className="btn-editorial inline-flex items-center gap-2">
+            <Home size={14} /> GO HOME
+          </Link>
           <Link
             to="/"
-            className="flex items-center gap-2 h-11 px-6 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold glow-primary hover:bg-primary/90 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3 font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground border border-border hover:text-foreground hover:border-foreground/30 transition-all"
           >
-            <Home size={15} /> Go Home
+            <Search size={14} /> SEARCH TOOLS
           </Link>
-          <button
-            onClick={() => {
-              const event = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
-              window.dispatchEvent(event);
-            }}
-            className="flex items-center gap-2 h-11 px-6 rounded-xl border border-border/50 bg-secondary/30 text-[14px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
-          >
-            <Search size={15} /> Search Tools
-          </button>
         </div>
 
-        <p className="mt-12 text-[11px] text-muted-foreground/30">
-          PrivaTools • 90+ privacy-first file tools
+        <p className="mt-16 font-mono-meta text-[10px] text-muted-foreground/30 uppercase tracking-widest">
+          PrivaTools · 99+ Privacy-First File Tools
         </p>
-      </div>
+      </main>
+
+      <EditorialFooter />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Shield, ArrowLeft, Upload, Play, Download, X, CheckCircle, AlertCircle, Loader2, FileText } from "lucide-react";
+import { Upload, Play, Download, X, CheckCircle, AlertCircle, Loader2, FileText } from "lucide-react";
+import { EditorialMasthead } from "@/components/EditorialMasthead";
+import { EditorialFooter } from "@/components/EditorialFooter";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
@@ -207,30 +209,15 @@ export default function BatchPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/75 backdrop-blur-2xl border-b border-border/30">
-        <div className="mx-auto max-w-[900px] px-5">
-          <div className="flex h-[52px] items-center gap-3">
-            <Link to="/" className="flex items-center gap-2.5 shrink-0">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/25">
-                <Shield size={13} strokeWidth={2.5} className="text-primary-foreground" />
-              </div>
-              <span className="text-[15px] font-extrabold text-foreground tracking-tight font-heading">PrivaTools</span>
-            </Link>
-            <div className="hidden lg:block h-4 w-px bg-border/40" />
-            <span className="text-[13px] font-medium text-muted-foreground">Batch Process</span>
-            <Link
-              to="/"
-              className="ml-auto flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground rounded-xl px-3 py-1.5 hover:bg-card/60 transition-all"
-            >
-              <ArrowLeft size={13} /> Back
-            </Link>
-          </div>
-        </div>
-      </header>
+      <EditorialMasthead />
 
-      <main className="mx-auto max-w-[900px] px-5 py-10">
-        <h1 className="text-2xl font-bold text-foreground mb-2 font-heading">Batch Process</h1>
-        <p className="text-sm text-muted-foreground mb-8">Upload multiple files and apply the same tool to all of them at once.</p>
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
+        <div className="mb-8">
+          <span className="section-flag">BATCH PROCESS</span>
+          <h1 className="font-heading text-3xl sm:text-4xl font-bold text-foreground mt-4 tracking-tight">Batch Process</h1>
+          <div className="rule-accent mt-3 mb-3 w-12" />
+          <p className="font-serif-body text-base text-foreground/75 max-w-lg">Upload multiple files and apply the same tool to all of them at once.</p>
+        </div>
 
         {/* Tool Selector */}
         <div className="mb-6">
@@ -386,6 +373,7 @@ export default function BatchPage() {
           </div>
         )}
       </main>
+      <EditorialFooter />
     </div>
   );
 }

@@ -9,16 +9,18 @@ function getInitialTheme(): Theme {
         const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
         if (stored === "light" || stored === "dark") return stored;
     } catch { }
-    // Default to dark
-    return "dark";
+    // Default to light (newspaper editorial default)
+    return "light";
 }
 
 function applyTheme(theme: Theme) {
     const root = document.documentElement;
-    if (theme === "light") {
-        root.classList.add("light");
-    } else {
+    if (theme === "dark") {
+        root.classList.add("dark");
         root.classList.remove("light");
+    } else {
+        root.classList.add("light");
+        root.classList.remove("dark");
     }
 }
 

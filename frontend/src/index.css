@@ -1,93 +1,96 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@400..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=JetBrains+Mono:wght@300..800&family=Inter:wght@300..800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  /* ── Dark theme (default) — "Haven" palette ──────────────────────── */
+  /* ── Light theme (default) — Newspaper Editorial ───────────────── */
   :root {
-    --font-heading: 'Syne', system-ui, sans-serif;
-    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-heading: 'Playfair Display', 'Georgia', serif;
+    --font-body: 'Source Serif 4', 'Georgia', serif;
+    --font-mono: 'JetBrains Mono', 'Menlo', monospace;
+    --font-sans: 'Inter', system-ui, sans-serif;
 
-    --background: 200 12% 5%;
-    --foreground: 40 15% 93%;
+    --background: 38 33% 96%;
+    --foreground: 220 20% 10%;
 
-    --card: 200 10% 8%;
-    --card-foreground: 40 15% 93%;
+    --card: 40 30% 98%;
+    --card-foreground: 220 20% 10%;
 
-    --popover: 200 10% 8%;
-    --popover-foreground: 40 15% 93%;
+    --popover: 40 30% 98%;
+    --popover-foreground: 220 20% 10%;
 
-    --primary: 158 64% 48%;
-    --primary-foreground: 200 20% 4%;
-
-    --secondary: 200 8% 12%;
-    --secondary-foreground: 40 10% 70%;
-
-    --muted: 200 8% 10%;
-    --muted-foreground: 200 6% 44%;
-
-    --accent: 158 64% 48%;
-    --accent-foreground: 200 20% 4%;
-
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 200 8% 14%;
-    --input: 200 8% 14%;
-    --ring: 158 64% 48%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 200 12% 5%;
-    --sidebar-foreground: 40 15% 93%;
-    --sidebar-primary: 158 64% 48%;
-    --sidebar-primary-foreground: 200 20% 4%;
-    --sidebar-accent: 200 8% 12%;
-    --sidebar-accent-foreground: 40 15% 93%;
-    --sidebar-border: 200 8% 14%;
-    --sidebar-ring: 158 64% 48%;
-  }
-
-  /* ── Light theme ────────────────────────────────────────────────── */
-  .light {
-    --background: 48 33% 97%;
-    --foreground: 200 15% 10%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 200 15% 10%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 200 15% 10%;
-
-    --primary: 158 64% 38%;
+    --primary: 0 70% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 48 18% 92%;
-    --secondary-foreground: 200 10% 30%;
+    --secondary: 38 18% 91%;
+    --secondary-foreground: 220 10% 30%;
 
-    --muted: 48 14% 94%;
-    --muted-foreground: 200 6% 45%;
+    --muted: 38 14% 93%;
+    --muted-foreground: 220 6% 45%;
 
-    --accent: 158 64% 38%;
+    --accent: 30 75% 35%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 48 12% 87%;
-    --input: 48 12% 87%;
-    --ring: 158 64% 38%;
+    --border: 38 16% 82%;
+    --input: 38 16% 82%;
+    --ring: 0 70% 40%;
 
-    --sidebar-background: 48 33% 97%;
-    --sidebar-foreground: 200 15% 10%;
-    --sidebar-primary: 158 64% 38%;
+    --radius: 0.25rem;
+
+    --sidebar-background: 38 33% 96%;
+    --sidebar-foreground: 220 20% 10%;
+    --sidebar-primary: 0 70% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 48 18% 92%;
-    --sidebar-accent-foreground: 200 15% 10%;
-    --sidebar-border: 48 12% 87%;
-    --sidebar-ring: 158 64% 38%;
+    --sidebar-accent: 38 18% 91%;
+    --sidebar-accent-foreground: 220 20% 10%;
+    --sidebar-border: 38 16% 82%;
+    --sidebar-ring: 0 70% 40%;
+
+    --rule-color: rgba(17, 24, 39, 0.15);
+    --rule-accent: rgba(185, 28, 28, 0.6);
+    --drop-cap-color: #b91c1c;
+    --gold: #b45309;
+  }
+
+  /* ── Dark theme — Warm Lamplight Editorial ─────────────────────── */
+  .dark {
+    --background: 30 10% 8%;
+    --foreground: 35 20% 88%;
+
+    --card: 30 8% 11%;
+    --card-foreground: 35 20% 88%;
+
+    --popover: 30 8% 11%;
+    --popover-foreground: 35 20% 88%;
+
+    --primary: 32 80% 45%;
+    --primary-foreground: 30 10% 6%;
+
+    --secondary: 30 6% 15%;
+    --secondary-foreground: 35 12% 65%;
+
+    --muted: 30 6% 13%;
+    --muted-foreground: 35 8% 50%;
+
+    --accent: 32 80% 45%;
+    --accent-foreground: 30 10% 6%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 6% 18%;
+    --input: 30 6% 18%;
+    --ring: 32 80% 45%;
+
+    --rule-color: rgba(232, 228, 220, 0.12);
+    --rule-accent: rgba(217, 119, 6, 0.5);
+    --drop-cap-color: #d97706;
+    --gold: #d97706;
   }
 }
 
@@ -99,237 +102,300 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
-    font-feature-settings: "rlig" 1, "calt" 1;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    font-feature-settings: "rlig" 1, "calt" 1, "kern" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.4s ease, color 0.4s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
   }
 }
 
-/* ── Noise grain overlay ───────────────────────────────────────────── */
+/* ── Newspaper Typography ──────────────────────────────────────────── */
+.font-editorial { font-family: var(--font-heading); }
+.font-serif-body { font-family: var(--font-body); }
+.font-mono-meta { font-family: var(--font-mono); }
+.font-sans-ui { font-family: var(--font-sans); }
+
+/* ── Drop Cap ──────────────────────────────────────────────────────── */
+.drop-cap::first-letter {
+  float: left;
+  font-family: var(--font-heading);
+  font-size: 4.5em;
+  line-height: 0.8;
+  padding-right: 0.08em;
+  padding-top: 0.06em;
+  color: var(--drop-cap-color);
+  font-weight: 700;
+}
+
+/* ── Newspaper Rules (Dividers) ────────────────────────────────────── */
+.rule-thin { border-top: 1px solid var(--rule-color); }
+.rule-thick { border-top: 3px solid hsl(var(--foreground)); }
+.rule-double {
+  border-top: 3px double hsl(var(--foreground));
+}
+.rule-accent { border-top: 2px solid var(--rule-accent); }
+.rule-accent-thick { border-top: 3px solid hsl(var(--primary)); }
+
+/* ── Column Dividers ───────────────────────────────────────────────── */
+.column-divider {
+  border-right: 1px solid var(--rule-color);
+}
+
+/* ── Newspaper Section Flag ────────────────────────────────────────── */
+.section-flag {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.8rem;
+  display: inline-block;
+}
+
+/* ── Editorial Card / Insert ───────────────────────────────────────── */
+.editorial-insert {
+  background: hsl(var(--card));
+  border: 1px solid var(--rule-color);
+  box-shadow: 4px 4px 0px 0px var(--rule-color);
+}
+
+.editorial-insert:hover {
+  box-shadow: 6px 6px 0px 0px var(--rule-color);
+  transform: translate(-1px, -1px);
+}
+
+/* ── Category Tags ─────────────────────────────────────────────────── */
+.category-tag {
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+}
+
+/* ── Masthead styles ───────────────────────────────────────────────── */
+.masthead-title {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+@media (min-width: 768px) {
+  .masthead-title { font-size: 3rem; }
+}
+
+.masthead-meta {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+.masthead-nav {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.masthead-nav a, .masthead-nav button {
+  color: hsl(var(--muted-foreground));
+  transition: color 0.2s ease;
+  text-decoration: none;
+}
+
+.masthead-nav a:hover, .masthead-nav button:hover {
+  color: hsl(var(--foreground));
+}
+
+.masthead-nav a.active, .masthead-nav button.active {
+  color: hsl(var(--primary));
+}
+
+/* ── Animations ────────────────────────────────────────────────────── */
+@keyframes pulse-border {
+  0%, 100% { border-color: hsl(var(--primary) / 0.3); }
+  50% { border-color: hsl(var(--primary) / 0.7); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes flow-line {
+  0% { stroke-dashoffset: 12; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+.animate-pulse-border { animation: pulse-border 2s ease-in-out infinite; }
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, hsl(var(--primary-foreground) / 0.15) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.animate-fade-up { animation: fade-up 0.6s ease-out forwards; }
+.animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+.animate-slide-in-right { animation: slide-in-right 0.5s ease-out forwards; }
+.animate-slide-in-left { animation: slide-in-left 0.5s ease-out forwards; }
+.animate-slide-down { animation: slide-down 0.3s ease-out forwards; }
+.animate-scale-in { animation: scale-in 0.25s ease-out forwards; }
+
+/* Staggered delays for tool cards */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+/* ── Drop Zone ─────────────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed hsl(var(--primary) / 0.3);
+  transition: all 0.3s ease;
+  animation: pulse-border 2.5s ease-in-out infinite;
+}
+
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: hsl(var(--primary) / 0.8);
+  background: hsl(var(--primary) / 0.04);
+}
+
+/* ── CTA Button with shimmer ───────────────────────────────────────── */
+.btn-editorial {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.25s ease;
+}
+
+.btn-editorial::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-editorial:hover::after {
+  opacity: 1;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.btn-editorial:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
+}
+
+/* ── Tool Card (editorial style) ───────────────────────────────────── */
+.tool-card {
+  transition: all 0.25s ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px 0px var(--rule-color);
+}
+
+/* ── Noise grain (subtle) ──────────────────────────────────────────── */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  opacity: 0.018;
+  opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   mix-blend-mode: overlay;
 }
 
-.light body::after {
-  opacity: 0.04;
-}
-
-/* ── Glow effects ──────────────────────────────────────────────────── */
-.glow-primary {
-  box-shadow: 0 0 28px -4px hsl(158 64% 48% / 0.4), 0 0 8px -2px hsl(158 64% 48% / 0.2);
-}
-
-.card-glow:hover {
-  box-shadow: 0 0 0 1px hsl(158 64% 48% / 0.2), 0 12px 40px -12px hsl(158 64% 48% / 0.15);
-}
-
-.hero-glow {
-  background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(158 64% 48% / 0.1), transparent);
-}
-
-.light .glow-primary {
-  box-shadow: 0 0 24px -4px hsl(158 64% 38% / 0.3), 0 0 8px -2px hsl(158 64% 38% / 0.15);
-}
-
-.light .card-glow:hover {
-  box-shadow: 0 0 0 1px hsl(158 64% 38% / 0.12), 0 8px 28px -8px hsl(158 64% 38% / 0.1);
-}
-
-.light .hero-glow {
-  background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(158 64% 38% / 0.06), transparent);
-}
-
-/* ── Grid background ───────────────────────────────────────────────── */
-.grid-bg {
-  background-image:
-    linear-gradient(hsl(var(--border) / 0.25) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(var(--border) / 0.25) 1px, transparent 1px);
-  background-size: 64px 64px;
-}
-
-/* ── Animated gradient mesh orbs ───────────────────────────────────── */
-@keyframes mesh-float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -25px) scale(1.04); }
-  66% { transform: translate(-20px, 15px) scale(0.96); }
-}
-
-.mesh-orb {
-  animation: mesh-float 22s ease-in-out infinite;
-  will-change: transform;
-}
-
-.mesh-orb-2 {
-  animation: mesh-float 28s ease-in-out infinite reverse;
-  animation-delay: -7s;
-  will-change: transform;
-}
-
-.mesh-orb-3 {
-  animation: mesh-float 32s ease-in-out infinite;
-  animation-delay: -14s;
-  will-change: transform;
-}
-
-/* ── Logo animation ────────────────────────────────────────────────── */
-.logo-animated {
-  transition: transform 0.3s ease, filter 0.3s ease;
-}
-
-.logo-animated:hover {
-  transform: scale(1.06);
-  filter: drop-shadow(0 0 14px hsl(158 64% 48% / 0.5));
-}
-
-.logo-animated:hover .logo-shield {
-  animation: shield-pulse 0.5s ease-in-out;
-}
-
-@keyframes shield-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.18); }
-}
-
-/* ── Tool card ─────────────────────────────────────────────────────── */
-.tool-card {
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-}
-
-.tool-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: hsl(var(--primary));
-  opacity: 0;
-  transform: scaleY(0.4);
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.tool-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 48px -16px hsl(158 64% 48% / 0.12), 0 0 0 1px hsl(var(--border));
-}
-
-.tool-card:hover::before {
-  opacity: 1;
-  transform: scaleY(1);
-}
-
-.light .tool-card:hover {
-  box-shadow: 0 16px 48px -16px hsl(158 64% 38% / 0.1), 0 0 0 1px hsl(var(--border));
-}
-
-/* ── Upload zone animated dashes ───────────────────────────────────── */
-@keyframes dash-march {
-  to { stroke-dashoffset: -24; }
-}
-
-.upload-zone {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.upload-zone:hover {
-  border-color: hsl(158 64% 48% / 0.5);
-  background: hsl(158 64% 48% / 0.04);
-}
-
-.upload-zone.dragging {
-  border-color: hsl(var(--primary));
-  background: hsl(158 64% 48% / 0.08);
-  transform: scale(1.01);
-}
-
-/* ── Staggered fade-up animation ───────────────────────────────────── */
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.stagger-item {
-  opacity: 0;
-  animation: fade-up 0.5s ease-out forwards;
-}
-
-.stagger-item:nth-child(1) { animation-delay: 0ms; }
-.stagger-item:nth-child(2) { animation-delay: 40ms; }
-.stagger-item:nth-child(3) { animation-delay: 80ms; }
-.stagger-item:nth-child(4) { animation-delay: 120ms; }
-.stagger-item:nth-child(5) { animation-delay: 160ms; }
-.stagger-item:nth-child(6) { animation-delay: 200ms; }
-.stagger-item:nth-child(7) { animation-delay: 240ms; }
-.stagger-item:nth-child(8) { animation-delay: 280ms; }
-.stagger-item:nth-child(9) { animation-delay: 320ms; }
-
-/* ── Pulse ring for processing ─────────────────────────────────────── */
-@keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 hsl(158 64% 48% / 0.4); }
-  70% { box-shadow: 0 0 0 12px hsl(158 64% 48% / 0); }
-  100% { box-shadow: 0 0 0 0 hsl(158 64% 48% / 0); }
-}
-
-.pulse-ring {
-  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* ── Pipeline connector line ───────────────────────────────────────── */
-.pipeline-step + .pipeline-step::before {
-  content: '';
-  display: block;
-  width: 2px;
-  height: 24px;
-  margin: 0 auto;
-  background: linear-gradient(to bottom, hsl(var(--border)), hsl(var(--primary) / 0.3));
-  border-radius: 1px;
-}
-
-/* ── Shimmer ───────────────────────────────────────────────────────── */
-@keyframes shimmer {
-  100% { transform: translateX(100%); }
-}
-
-/* ── No scrollbar ──────────────────────────────────────────────────── */
+/* ── Scrollbar ─────────────────────────────────────────────────────── */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Success confetti burst ────────────────────────────────────────── */
-@keyframes confetti-pop {
-  0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); opacity: 1; }
+/* ── Selection ─────────────────────────────────────────────────────── */
+::selection {
+  background: hsl(var(--primary) / 0.15);
+  color: hsl(var(--foreground));
 }
 
-.animate-confetti {
-  animation: confetti-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+/* ── Print-like subtle texture for light mode ──────────────────────── */
+:root body {
+  background-image: none;
 }
 
-/* ── Floating badge ────────────────────────────────────────────────── */
-@keyframes float-gentle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+/* ── Glow effects for dark mode ────────────────────────────────────── */
+.dark .glow-primary {
+  box-shadow: 0 0 20px -4px hsl(var(--primary) / 0.3);
 }
 
-.animate-float {
-  animation: float-gentle 3s ease-in-out infinite;
-}
-
-/* ── Gradient text helper ──────────────────────────────────────────── */
+/* ── Text gradient utility ─────────────────────────────────────────── */
 .text-gradient {
   background-clip: text;
   -webkit-background-clip: text;

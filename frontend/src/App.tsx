@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CommandPalette from "./components/CommandPalette";
 import { DynamicHead } from "./components/DynamicHead";
-import { OnboardingTour } from "./components/OnboardingTour";
+// import { OnboardingTour } from "./components/OnboardingTour";
 import { MobileNav } from "./components/MobileNav";
 import { BackendStatusBanner } from "./components/BackendStatusBanner";
 
@@ -46,7 +46,7 @@ const App = () => (
         <BackendStatusBanner />
         <DynamicHead />
         <CommandPalette />
-        <OnboardingTour />
+        {/* OnboardingTour removed */}
         <Routes>
           <Route path="/" element={withRouteFallback(<Index />)} />
           <Route path="/about" element={withRouteFallback(<LandingPage />)} />

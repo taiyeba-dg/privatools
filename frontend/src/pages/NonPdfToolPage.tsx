@@ -1,11 +1,12 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useRef, Suspense, lazy, type ComponentType } from "react";
 import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta, type NonPdfCategory } from "@/data/non-pdf-tools";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight } from "lucide-react";
+import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight, ArrowRight, Lock } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
+import { EditorialMasthead } from "@/components/EditorialMasthead";
+import { EditorialFooter } from "@/components/EditorialFooter";
 
 type AnyModule = Record<string, unknown>;
 
@@ -47,41 +48,30 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
   const scrollRef = useRef<HTMLDivElement>(null);
   const categoryTools = nonPdfTools.filter(t => t.category === category);
   const meta = nonPdfCategoryMeta[category];
-
   useEffect(() => {
     const el = scrollRef.current?.querySelector('[data-active="true"]');
     if (el) el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [currentSlug]);
-
   return (
-    <div className="mb-8 -mx-4 sm:-mx-6">
-      <div className="px-4 sm:px-6 mb-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50 font-heading">
-          {meta.label} — {categoryTools.length} tools
-        </p>
-      </div>
-      <div ref={scrollRef} className="flex items-center gap-1 overflow-x-auto no-scrollbar px-4 sm:px-6 pb-1">
+    <div className="mb-6">
+      <p className="font-mono-meta text-[10px] text-muted-foreground/50 mb-2">{meta.label} — {categoryTools.length} tools</p>
+      <div ref={scrollRef} className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1">
         {categoryTools.map(t => {
           const TIcon = t.icon;
           const isActive = t.slug === currentSlug;
           return (
-            <Link
-              key={t.slug}
-              to={`/tools/${t.slug}`}
-              data-active={isActive}
+            <Link key={t.slug} to={`/tools/${t.slug}`} data-active={isActive}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-all shrink-0",
-                isActive
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40 border border-transparent"
-              )}
-            >
+                "flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 text-[12px] font-sans-ui font-medium transition-all shrink-0 border-b-2",
+                isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground/60 hover:text-foreground hover:border-foreground/20"
+              )}>
               <TIcon size={12} strokeWidth={1.75} />
               {t.name}
             </Link>
           );
         })}
       </div>
+      <div className="rule-thin" />
     </div>
   );
 }
@@ -89,8 +79,8 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
 function ToolLoadingCard() {
   return (
     <div className="space-y-4">
-      <div className="h-40 animate-pulse rounded-2xl border border-border/60 bg-card/50" />
-      <div className="h-14 animate-pulse rounded-xl border border-border/60 bg-card/40" />
+      <div className="h-40 animate-pulse border border-border/40 bg-card/50" />
+      <div className="h-14 animate-pulse border border-border/40 bg-card/40" />
     </div>
   );
 }
@@ -143,120 +133,77 @@ export default function NonPdfToolPage() {
   useEffect(() => {
     if (tool) {
       document.title = `${tool.name} — PrivaTools`;
-      let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-      if (!meta) {
-        meta = document.createElement("meta");
-        meta.name = "description";
-        document.head.appendChild(meta);
+      let m = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+      if (!m) {
+        m = document.createElement("meta");
+        m.name = "description";
+        document.head.appendChild(m);
       }
-      meta.content = tool.longDescription || tool.description;
+      m.content = tool.longDescription || tool.description;
     }
-    return () => {
-      document.title = "PrivaTools";
-    };
+    return () => { document.title = "PrivaTools"; };
   }, [tool]);
 
-  const relatedTools = nonPdfTools
-    .filter((t) => t.category === tool?.category && t.slug !== slug)
-    .slice(0, 6);
+  const relatedTools = nonPdfTools.filter(t => t.category === tool?.category && t.slug !== slug).slice(0, 6);
 
   if (!tool) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">Tool not found.</p>
-          <Button asChild variant="outline"><Link to="/">Go home</Link></Button>
+          <p className="font-serif-body text-muted-foreground mb-4">Tool not found.</p>
+          <Link to="/" className="btn-editorial inline-block">← Back to all tools</Link>
         </div>
       </div>
     );
   }
 
   const meta = nonPdfCategoryMeta[tool.category];
-  const Icon = tool.icon;
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border/30 bg-background/75 backdrop-blur-2xl">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex h-14 items-center gap-3">
-            <Link to="/" className="flex items-center gap-2.5 shrink-0 logo-animated">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/25">
-                <Shield size={14} className="text-primary-foreground logo-shield" strokeWidth={2.5} />
-              </div>
-              <span className="text-[15px] font-bold text-foreground font-heading">PrivaTools</span>
-            </Link>
-            <span className="text-muted-foreground/30 text-sm">/</span>
-            <span className="text-sm text-muted-foreground truncate max-w-[180px] sm:max-w-none">{tool.name}</span>
-            <div className="flex-1" />
-            <a
-              href="https://github.com/taiyeba-dg/privatools"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-xl border border-border/40 bg-secondary/25 px-3.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
-            >
-              <Github size={13} /><span className="hidden sm:inline">Open Source</span>
-            </a>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4 rounded-lg px-2 py-1 -ml-2 hover:bg-secondary/40">
-          <ArrowLeft size={12} /> All tools
-        </Link>
+      <EditorialMasthead />
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
+        <nav className="font-mono-meta text-[11px] text-muted-foreground mb-6 flex items-center gap-1.5">
+          <Link to="/" className="hover:text-foreground transition-colors">ALL TOOLS</Link>
+          <span className="text-muted-foreground/30">›</span>
+          <span className="hover:text-foreground transition-colors">{meta.label.toUpperCase()}</span>
+          <span className="text-muted-foreground/30">›</span>
+          <span className="text-foreground">{tool.name.toUpperCase()}</span>
+        </nav>
 
         <CategoryToolNav currentSlug={slug!} category={tool.category} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10">
           <div>
-            <div className="flex items-start gap-4 mb-8">
-              <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl", meta.iconBg)}>
-                <Icon size={26} strokeWidth={1.5} className={meta.iconColor} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-heading tracking-tight">{tool.name}</h1>
-                  <span className={cn("text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-secondary", meta.accent)}>
-                    {meta.label}
-                  </span>
-                  {tool.clientOnly && (
-                    <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400">
-                      Client-Side
-                    </span>
-                  )}
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground max-w-lg leading-relaxed">{tool.longDescription}</p>
-              </div>
+            <div className="mb-8">
+              <span className="section-flag">{meta.label}</span>
+              {tool.clientOnly && <span className="section-flag ml-2 !bg-green-700 dark:!bg-green-800">CLIENT-SIDE</span>}
+              <h1 className="font-heading text-3xl sm:text-5xl font-bold text-foreground mt-4 tracking-tight">{tool.name}</h1>
+              <div className="rule-accent mt-4 mb-4 w-16" />
+              <p className="font-serif-body text-base sm:text-lg text-foreground/75 leading-relaxed max-w-xl">{tool.longDescription || tool.description}</p>
             </div>
 
-            <Suspense fallback={<ToolLoadingCard />}>
-              <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
-            </Suspense>
+            <div className="editorial-insert p-4 sm:p-6 mb-8">
+              <Suspense fallback={<ToolLoadingCard />}>
+                <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
+              </Suspense>
+            </div>
 
-            <div className="mt-12">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-5 font-heading">How it works</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="mt-10 mb-4">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="section-flag">HOW IT WORKS</div>
+                <div className="flex-1 rule-thin" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 {[
-                  {
-                    step: "01",
-                    title: "Upload your file",
-                    desc: tool.clientOnly
-                      ? "Drag & drop or click to select. Processing happens locally in your browser."
-                      : "Drag & drop or click to select. Files are processed on your self-hosted server.",
-                  },
-                  {
-                    step: "02",
-                    title: "Configure & process",
-                    desc: tool.clientOnly
-                      ? "Adjust settings and process instantly without uploading file contents."
-                      : "Adjust any settings, then process instantly on your server.",
-                  },
-                  { step: "03", title: "Download result", desc: "Your processed file is ready immediately. No email, no waiting." },
-                ].map((s) => (
-                  <div key={s.step} className="rounded-xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm">
-                    <div className="text-lg font-black text-primary/30 font-heading mb-2">{s.step}</div>
-                    <p className="text-sm font-bold text-foreground mb-1.5 font-heading">{s.title}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
+                  { step: "I.", title: "Upload your file", desc: tool.clientOnly ? "Drag & drop or click to select. Processing happens locally in your browser." : "Drag & drop or click to select. Files are processed on your self-hosted server." },
+                  { step: "II.", title: "Configure & process", desc: tool.clientOnly ? "Adjust settings and process instantly without uploading file contents." : "Adjust any settings, then process instantly on your server." },
+                  { step: "III.", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email." },
+                ].map(s => (
+                  <div key={s.step} className="editorial-insert p-5">
+                    <div className="font-heading text-2xl font-bold text-primary/40 mb-2">{s.step}</div>
+                    <p className="font-heading text-sm font-bold text-foreground mb-1.5">{s.title}</p>
+                    <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
                   </div>
                 ))}
               </div>
@@ -265,23 +212,15 @@ export default function NonPdfToolPage() {
 
           <div className="space-y-5">
             {relatedTools.length > 0 && (
-              <div className="rounded-xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 font-heading">Related tools</h3>
+              <div className="editorial-insert p-5">
+                <h3 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related tools</h3>
                 <div className="space-y-0.5">
-                  {relatedTools.map((t) => {
+                  {relatedTools.map(t => {
                     const TIcon = t.icon;
-                    const m = nonPdfCategoryMeta[t.category];
                     return (
-                      <Link
-                        key={t.slug}
-                        to={`/tools/${t.slug}`}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-primary/6 transition-colors group"
-                      >
-                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", m.iconBg)}>
-                          <TIcon size={14} strokeWidth={1.75} className={m.iconColor} />
-                        </div>
-                        <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors flex-1 truncate">{t.name}</span>
-                        <ChevronRight size={12} className="text-muted-foreground/25 group-hover:text-primary/50 shrink-0 transition-colors" />
+                      <Link key={t.slug} to={`/tools/${t.slug}`} className="flex items-center gap-3 px-2 py-2 hover:bg-card/60 transition-colors group">
+                        <TIcon size={14} strokeWidth={1.75} className="text-primary shrink-0" />
+                        <span className="font-serif-body text-sm text-muted-foreground group-hover:text-foreground transition-colors flex-1 truncate">{t.name}</span>
                       </Link>
                     );
                   })}
@@ -289,44 +228,28 @@ export default function NonPdfToolPage() {
               </div>
             )}
 
-            <div className="rounded-xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm">
+            <div className="editorial-insert p-5">
               <div className="flex items-center gap-2 mb-2">
                 <Github size={14} className="text-foreground" />
-                <span className="text-sm font-bold text-foreground font-heading">Open Source</span>
+                <span className="font-sans-ui text-sm font-bold text-foreground">Open Source</span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no tracking. Forever.</p>
-              <a
-                href="https://github.com/taiyeba-dg/privatools"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
-              >
+              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no tracking. Forever.</p>
+              <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer" className="font-sans-ui inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline">
                 View on GitHub <ArrowUpRight size={11} />
               </a>
             </div>
 
-            <div className="rounded-xl border border-primary/15 bg-primary/5 p-5">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                <Shield size={12} className="inline-block mr-1 text-primary" />
-                <span className="text-foreground font-semibold">Your files stay private.</span> All processing happens locally on your self-hosted server — files are never sent to third parties.
+            <div className="editorial-insert p-5 border-l-4 !border-l-primary">
+              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">
+                <Lock size={12} className="inline-block mr-1 text-primary" />
+                <span className="text-foreground font-semibold">Your files stay private.</span>{" "}
+                All processing happens locally on your self-hosted server — files are never sent to third parties.
               </p>
             </div>
           </div>
         </div>
       </main>
-
-      <footer className="mt-12 border-t border-border/30 bg-card/20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
-              <Shield size={11} className="text-primary-foreground" />
-            </div>
-            <span className="font-bold text-foreground font-heading">PrivaTools</span>
-            <span className="text-muted-foreground/40">· Free forever · MIT License</span>
-          </div>
-          <p className="text-muted-foreground/40">No cookies · No tracking · No sign-up</p>
-        </div>
-      </footer>
+      <EditorialFooter />
     </div>
   );
 }

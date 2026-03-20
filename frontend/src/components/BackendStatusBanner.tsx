@@ -49,20 +49,20 @@ export function BackendStatusBanner() {
 
   return (
     <div className="fixed inset-x-4 bottom-4 z-[120] sm:inset-x-auto sm:right-4 sm:w-[420px]">
-      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 shadow-xl backdrop-blur">
+      <div className="rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-amber-100 dark:bg-amber-500/10 px-4 py-3 shadow-xl backdrop-blur">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 rounded-md bg-amber-500/20 p-1.5 text-amber-300">
+          <div className="mt-0.5 rounded-md bg-amber-500/20 p-1.5 text-amber-700 dark:text-amber-300">
             {checking ? <RefreshCcw size={14} className="animate-spin" /> : <ServerCrash size={14} />}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-amber-200">Processing server unavailable</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-amber-100/80">
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Processing server unavailable</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-amber-800/80 dark:text-amber-100/80">
               File tools cannot run right now. Start your backend service and retry.
             </p>
           </div>
           <button
             onClick={checkHealth}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-400/40 px-2 py-1 text-xs font-medium text-amber-200 transition-colors hover:bg-amber-500/10"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-600/40 dark:border-amber-400/40 px-2 py-1 text-xs font-medium text-amber-900 dark:text-amber-200 transition-colors hover:bg-amber-500/10"
             disabled={checking}
           >
             {checking ? <RefreshCcw size={12} className="animate-spin" /> : <AlertTriangle size={12} />}
