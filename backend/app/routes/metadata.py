@@ -35,11 +35,11 @@ async def get_metadata(file: UploadFile = File(...)):
         if temp_path is not None:
             remove_files(str(temp_path))
         raise
-    except Exception:
+    except Exception as e:
         if temp_path is not None:
             remove_files(str(temp_path))
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
     finally:
         if temp_path is not None:
             remove_files(str(temp_path))
@@ -98,8 +98,8 @@ async def update_metadata(
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise
-    except Exception:
+    except Exception as e:
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

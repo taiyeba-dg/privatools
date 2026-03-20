@@ -42,8 +42,8 @@ async def convert_html_to_pdf(
         if output_path:
             remove_files(output_path)
         raise
-    except Exception:
+    except Exception as e:
         if output_path:
             remove_files(output_path)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

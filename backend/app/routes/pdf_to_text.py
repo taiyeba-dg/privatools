@@ -30,8 +30,8 @@ async def pdf_to_text(file: UploadFile = File(...)):
         if temp_path is not None:
             remove_files(str(temp_path))
         raise
-    except Exception:
+    except Exception as e:
         if temp_path is not None:
             remove_files(str(temp_path))
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

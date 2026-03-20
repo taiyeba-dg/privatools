@@ -56,7 +56,7 @@ async def word_to_pdf(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("word-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -82,7 +82,7 @@ async def excel_to_pdf(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("excel-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -108,7 +108,7 @@ async def pptx_to_pdf(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("pptx-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -159,7 +159,7 @@ async def stamp_pdf(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("stamp error")
         raise HTTPException(status_code=500, detail="Stamping failed")
@@ -188,7 +188,7 @@ async def txt_to_pdf(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("txt-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -219,7 +219,7 @@ async def heic_to_jpg(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("heic-to-jpg error")
         raise HTTPException(status_code=500, detail="Conversion failed")

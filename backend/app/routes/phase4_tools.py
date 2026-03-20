@@ -104,7 +104,7 @@ async def whiteout_pdf(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("whiteout error")
         raise HTTPException(status_code=500, detail="White-out failed")
@@ -144,7 +144,7 @@ async def add_attachment(
     except HTTPException:
         _cleanup_on_error(temp_pdf, temp_att, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp_pdf, temp_att, out)
         logger.exception("attachment error")
         raise HTTPException(status_code=500, detail="Attachment failed")
@@ -188,7 +188,7 @@ async def set_permissions(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("permissions error")
         raise HTTPException(status_code=500, detail="Permission setting failed")
@@ -219,7 +219,7 @@ async def json_to_pdf(file: UploadFile = File(...)):
     except ValueError as exc:
         _cleanup_on_error(temp, out)
         raise HTTPException(status_code=400, detail=str(exc))
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("json-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -244,7 +244,7 @@ async def xml_to_pdf(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("xml-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -275,7 +275,7 @@ async def annotate_pdf(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("annotate error")
         raise HTTPException(status_code=500, detail="Annotation failed")
@@ -306,7 +306,7 @@ async def add_shapes(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("shapes error")
         raise HTTPException(status_code=500, detail="Shape addition failed")
@@ -331,7 +331,7 @@ async def epub_to_pdf(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("epub-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -356,7 +356,7 @@ async def rtf_to_pdf(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("rtf-to-pdf error")
         raise HTTPException(status_code=500, detail="Conversion failed")

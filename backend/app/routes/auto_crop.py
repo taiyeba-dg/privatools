@@ -57,18 +57,18 @@ async def auto_crop(file: UploadFile = File(...)):
         if doc is not None:
             try:
                 doc.close()
-            except Exception:
+            except Exception as e:
                 pass
         if out_path:
             remove_files(out_path)
         raise
-    except Exception:
+    except Exception as e:
         if doc is not None:
             try:
                 doc.close()
-            except Exception:
+            except Exception as e:
                 pass
         if out_path:
             remove_files(out_path)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

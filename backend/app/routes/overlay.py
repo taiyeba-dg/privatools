@@ -54,7 +54,7 @@ async def overlay(
         )
         remove_files(*to_remove)
         raise
-    except Exception:
+    except Exception as e:
         to_remove = (
             ([str(base_path)] if base_path is not None else [])
             + ([str(ovl_path)] if ovl_path is not None else [])
@@ -62,4 +62,4 @@ async def overlay(
         )
         remove_files(*to_remove)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

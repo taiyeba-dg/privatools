@@ -90,7 +90,7 @@ async def url_to_pdf(url: str = Form(...)):
     except HTTPException:
         _cleanup_on_error(out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(out)
         logger.exception("url-to-pdf error")
         raise HTTPException(status_code=500, detail="Failed to convert URL to PDF")
@@ -116,7 +116,7 @@ async def pdf_to_markdown(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("pdf-to-markdown error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -144,7 +144,7 @@ async def svg_to_png(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("svg-to-png error")
         raise HTTPException(status_code=500, detail="Conversion failed")
@@ -186,7 +186,7 @@ async def generate_barcode(
     except HTTPException:
         _cleanup_on_error(out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(out)
         logger.exception("barcode error")
         raise HTTPException(status_code=500, detail="Barcode generation failed")
@@ -229,7 +229,7 @@ async def image_watermark(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("watermark error")
         raise HTTPException(status_code=500, detail="Watermark failed")
@@ -256,7 +256,7 @@ async def generate_favicon(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("favicon error")
         raise HTTPException(status_code=500, detail="Favicon generation failed")
@@ -301,7 +301,7 @@ async def make_collage(
     except HTTPException:
         _cleanup_on_error(*temp_paths, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(*temp_paths, out)
         logger.exception("collage error")
         raise HTTPException(status_code=500, detail="Collage creation failed")

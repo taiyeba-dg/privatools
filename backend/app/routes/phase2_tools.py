@@ -68,7 +68,7 @@ async def esign_pdf(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("esign-pdf error")
         raise HTTPException(status_code=500, detail="Signing failed")
@@ -104,7 +104,7 @@ async def extract_tables(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("extract-tables error")
         raise HTTPException(status_code=500, detail="Table extraction failed")
@@ -135,7 +135,7 @@ async def remove_background(
     except HTTPException:
         _cleanup_on_error(temp, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp, out)
         logger.exception("remove-background error")
         raise HTTPException(status_code=500, detail="Background removal failed")

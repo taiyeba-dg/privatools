@@ -112,8 +112,8 @@ async def invert_colors(
         to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise
-    except Exception:
+    except Exception as e:
         to_remove = ([str(temp_pdf)] if temp_pdf is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

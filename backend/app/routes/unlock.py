@@ -80,7 +80,7 @@ async def unlock_pdf(
         remove_files(*input_paths, *output_paths)
         msg = str(e) if str(e) else "Incorrect password"
         raise HTTPException(status_code=400, detail=msg)
-    except Exception:
+    except Exception as e:
         remove_files(*input_paths, *output_paths)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

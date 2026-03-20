@@ -53,7 +53,7 @@ async def alternate_mix(
         )
         remove_files(*to_remove)
         raise
-    except Exception:
+    except Exception as e:
         to_remove = (
             ([str(path1)] if path1 is not None else [])
             + ([str(path2)] if path2 is not None else [])
@@ -61,4 +61,4 @@ async def alternate_mix(
         )
         remove_files(*to_remove)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

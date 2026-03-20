@@ -353,7 +353,7 @@ async def remove_exif(files: list[UploadFile] = File(...)):
     except HTTPException:
         _cleanup_paths(*output_paths)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_paths(*output_paths)
         logger.exception("remove-exif error")
         raise HTTPException(status_code=500, detail="Failed to remove EXIF data")

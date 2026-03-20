@@ -66,7 +66,7 @@ async def strip_metadata(files: List[UploadFile] = File(...)):
     except HTTPException:
         remove_files(*input_paths, *output_paths)
         raise
-    except Exception:
+    except Exception as e:
         remove_files(*input_paths, *output_paths)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

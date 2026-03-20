@@ -72,10 +72,10 @@ async def sign_pdf(
         if signature_path is not None:
             remove_files(signature_path)
         raise
-    except Exception:
+    except Exception as e:
         if temp_pdf is not None:
             remove_files(str(temp_pdf))
         if signature_path is not None:
             remove_files(signature_path)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

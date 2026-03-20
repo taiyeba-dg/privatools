@@ -251,14 +251,14 @@ async def markdown_to_pdf(file: UploadFile = File(...)):
                 story.draw(dev)
                 writer.end_page()
             writer.close()
-        except Exception:
+        except Exception as e:
             # Fallback for older PyMuPDF versions
             doc = fitz.open()
             page = doc.new_page()
             try:
                 rect = page.rect + fitz.Rect(40, 40, -40, -40)
                 page.insert_htmlbox(rect, full_html)
-            except Exception:
+            except Exception as e:
                 page.insert_text((40, 60), text, fontsize=11)
             doc.save(tmp.name)
             doc.close()
@@ -330,7 +330,7 @@ async def csv_to_pdf(file: UploadFile = File(...)):
                 story.draw(dev)
                 writer.end_page()
             writer.close()
-        except Exception:
+        except Exception as e:
             # Fallback for older PyMuPDF versions
             doc = fitz.open()
             page = doc.new_page()
@@ -499,7 +499,7 @@ async def form_creator(
 
         try:
             doc.need_appearances(True)
-        except Exception:
+        except Exception as e:
             pass
         tmp = _new_temp_file(".pdf")
         tmp.close()

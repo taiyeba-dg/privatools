@@ -78,7 +78,7 @@ async def merge_images(
     except HTTPException:
         _cleanup_on_error(*temp_paths, out)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(*temp_paths, out)
         logger.exception("merge-images error")
         raise HTTPException(status_code=500, detail="Image merge failed")
@@ -105,7 +105,7 @@ async def read_qr(file: UploadFile = File(...)):
     except HTTPException:
         _cleanup_on_error(temp)
         raise
-    except Exception:
+    except Exception as e:
         _cleanup_on_error(temp)
         logger.exception("read-qr error")
         raise HTTPException(status_code=500, detail="QR code reading failed")

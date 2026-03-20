@@ -74,8 +74,8 @@ async def generate_qr_code(
         if temp_pdf is not None:
             remove_files(str(temp_pdf))
         raise
-    except Exception:
+    except Exception as e:
         if temp_pdf is not None:
             remove_files(str(temp_pdf))
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

@@ -35,7 +35,7 @@ async def get_fields(file: UploadFile = File(...)):
         if "no form field" in str(exc).lower() or type(exc).__name__ == "ValidationError":
             return JSONResponse({"fields": []})
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
 
 
 @router.post("/fill-form")
@@ -74,4 +74,4 @@ async def fill_form(file: UploadFile = File(...), field_values: str = Form(...))
         if exc_name == "ValidationError" or "no form field" in str(exc).lower():
             raise HTTPException(status_code=400, detail=str(exc))
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")

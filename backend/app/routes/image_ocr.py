@@ -71,7 +71,7 @@ async def image_ocr(
     except RuntimeError as e:
         remove_files(tmp.name)
         raise HTTPException(status_code=500, detail=str(e))
-    except Exception:
+    except Exception as e:
         remove_files(tmp.name)
         logger.exception("OCR failed")
         raise HTTPException(status_code=500, detail="OCR processing failed. Is Tesseract installed?")
