@@ -58,6 +58,10 @@ async def sitemap():
         (f"{BASE_URL}/about", "0.6", "monthly"),
         (f"{BASE_URL}/batch", "0.7", "weekly"),
         (f"{BASE_URL}/pipeline", "0.7", "weekly"),
+        (f"{BASE_URL}/compare", "0.7", "monthly"),
+        (f"{BASE_URL}/compare/ilovepdf", "0.8", "monthly"),
+        (f"{BASE_URL}/compare/smallpdf", "0.8", "monthly"),
+        (f"{BASE_URL}/compare/adobe-acrobat", "0.8", "monthly"),
     ]
 
     for slug in PDF_TOOLS:

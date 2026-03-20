@@ -1,16 +1,21 @@
 {
-    "name": "PrivaTools",
+    "name": "PrivaTools — Privacy-First File Tools",
     "short_name": "PrivaTools",
-    "description": "90+ privacy-first file tools. PDF, image, video, and dev utilities — all processed locally.",
+    "description": "90+ free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your device. Zero uploads, zero tracking.",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#0d1117",
-    "theme_color": "#3b82f6",
+    "background_color": "#FAF7F2",
+    "theme_color": "#8B0000",
     "orientation": "any",
     "categories": [
         "productivity",
-        "utilities"
+        "utilities",
+        "business"
     ],
+    "lang": "en",
+    "dir": "ltr",
+    "scope": "/",
+    "id": "/",
     "icons": [
         {
             "src": "/icons/icon-192.png",
@@ -23,6 +28,41 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/og-image.png",
+            "sizes": "1200x630",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "PrivaTools — 90+ Free File Tools"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Merge PDF",
+            "short_name": "Merge",
+            "url": "/tool/merge-pdf",
+            "description": "Combine multiple PDFs into one"
+        },
+        {
+            "name": "Compress PDF",
+            "short_name": "Compress",
+            "url": "/tool/compress-pdf",
+            "description": "Reduce PDF file size"
+        },
+        {
+            "name": "Image Compressor",
+            "short_name": "Compress Image",
+            "url": "/tools/image-compressor",
+            "description": "Reduce image file sizes"
+        },
+        {
+            "name": "PDF to Word",
+            "short_name": "PDF→Word",
+            "url": "/tool/pdf-to-word",
+            "description": "Convert PDF to editable Word"
         }
     ]
 }

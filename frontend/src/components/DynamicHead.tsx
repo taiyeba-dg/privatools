@@ -23,8 +23,8 @@ const pageMeta: Record<string, { title: string; description: string }> = {
         description: "90+ free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your device. Zero uploads, zero tracking.",
     },
     "/about": {
-        title: "About PrivaTools — Privacy-First File Processing",
-        description: "PrivaTools is a free, open-source suite of 90+ file tools. Your files never leave your device — all processing happens locally.",
+        title: "About PrivaTools — How We Handle Your Files | Privacy-First",
+        description: "Learn how PrivaTools processes your files with zero-knowledge architecture. Files are processed and immediately deleted — never stored, never read, never shared. 100% open source.",
     },
     "/batch": {
         title: "Batch Process Files — Apply Tools to Multiple Files | PrivaTools",
@@ -33,6 +33,22 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     "/pipeline": {
         title: "PDF Pipeline — Chain Multiple PDF Tools Together | PrivaTools",
         description: "Chain multiple PDF tools together into a processing pipeline. Compress, rotate, watermark, and more — all in one pass. Privacy-first and free.",
+    },
+    "/compare": {
+        title: "PrivaTools vs iLovePDF vs Smallpdf vs Adobe — Free Comparison",
+        description: "Compare PrivaTools with iLovePDF, Smallpdf, and Adobe Acrobat Online. See which tool is truly free, private, and open source.",
+    },
+    "/compare/ilovepdf": {
+        title: "PrivaTools vs iLovePDF — Honest Feature Comparison (2026)",
+        description: "PrivaTools vs iLovePDF compared: pricing, file limits, privacy, features. PrivaTools is 100% free with no ads, no accounts, and open source. See the full comparison.",
+    },
+    "/compare/smallpdf": {
+        title: "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
+        description: "PrivaTools vs Smallpdf compared: no 2-tasks/day limit, no premium upsells, no watermarks. 90+ tools vs 21 tools. See the full comparison.",
+    },
+    "/compare/adobe-acrobat": {
+        title: "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
+        description: "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. No Adobe ID required, no subscription, 90+ tools. Compare features side by side.",
     },
 };
 
