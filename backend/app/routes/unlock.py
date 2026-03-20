@@ -76,9 +76,10 @@ async def unlock_pdf(
     except HTTPException:
         remove_files(*input_paths, *output_paths)
         raise
-    except pikepdf.PasswordError:
+    except (pikepdf.PasswordError, ValueError) as e:
         remove_files(*input_paths, *output_paths)
-        raise HTTPException(status_code=400, detail="Incorrect password")
+        msg = str(e) if str(e) else "Incorrect password"
+        raise HTTPException(status_code=400, detail=msg)
     except Exception:
         remove_files(*input_paths, *output_paths)
         logger.exception("Unexpected error")
