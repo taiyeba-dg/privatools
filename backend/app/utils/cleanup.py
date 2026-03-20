@@ -29,8 +29,14 @@ def cleanup_old_files(max_age_seconds: int = 600):
 
 
 def get_temp_path(filename: str) -> Path:
-    """Return a Path object for a file inside TEMP_DIR."""
-    return TEMP_DIR / filename
+    """Return a Path object for a file inside TEMP_DIR.
+
+    Sanitises filename to prevent path-traversal attacks (e.g. ../../etc/passwd).
+    """
+    safe_name = Path(filename).name  # strips all directory components
+    if not safe_name:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return TEMP_DIR / safe_name
 
 
 def remove_files(*paths: str | Path) -> None:
