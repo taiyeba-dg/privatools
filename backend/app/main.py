@@ -103,54 +103,43 @@ _STATIC_EXTENSIONS = {
     ".xml", ".txt", ".pdf", ".mp4", ".mp3", ".wav", ".ogg", ".zip",
 }
 
+# Path to the built index.html — same root as _frontend_path computed below
+_INDEX_HTML = Path(__file__).parent.parent.parent / "frontend" / "dist" / "index.html"
+
 
 class SPASEOMiddleware(BaseHTTPMiddleware):
     """
-    For any route that is NOT an API call and NOT a static asset,
-    read the body returned by StaticFiles (which will be index.html),
-    inject the correct per-route <title> and <meta> tags, and return
-    the modified HTML so crawlers see meaningful metadata without JS.
+    For SPA routes (anything that is NOT an API call or a static asset),
+    serve index.html directly with per-route <title>/<meta> already injected
+    in the HTML string.  This runs BEFORE StaticFiles gets a chance to 404,
+    so crawlers always receive correct metadata without JavaScript execution.
     """
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Skip API, sitemap, and other non-SPA paths
+        # Pass through API, sitemap, and other non-HTML paths unchanged
         for prefix in _SKIP_SEO_PREFIXES:
             if path.startswith(prefix):
                 return await call_next(request)
 
-        # Skip known static asset extensions
+        # Pass through requests for real static assets (JS, CSS, images…)
         suffix = Path(path).suffix.lower()
         if suffix in _STATIC_EXTENSIONS:
             return await call_next(request)
 
-        response = await call_next(request)
+        # SPA route — serve index.html directly with injected meta tags.
+        # Do NOT call call_next: StaticFiles would return a JSON 404 for any
+        # path that doesn't correspond to a file on disk.
+        if _INDEX_HTML.exists():
+            try:
+                html = _INDEX_HTML.read_text("utf-8")
+                html = inject_seo(html, path)
+                return HTMLResponse(content=html, status_code=200)
+            except Exception:
+                pass  # Fall through to normal handling if anything goes wrong
 
-        content_type = response.headers.get("content-type", "")
-        if "text/html" not in content_type:
-            return response
-
-        # Read response body
-        body_bytes = b""
-        async for chunk in response.body_iterator:
-            body_bytes += chunk
-
-        try:
-            html = body_bytes.decode("utf-8")
-            html = inject_seo(html, path)
-            body_bytes = html.encode("utf-8")
-        except Exception:
-            pass  # Never break the app — serve unmodified if injection fails
-
-        headers = dict(response.headers)
-        headers["content-length"] = str(len(body_bytes))
-
-        return HTMLResponse(
-            content=body_bytes.decode("utf-8"),
-            status_code=response.status_code,
-            headers={k: v for k, v in headers.items() if k.lower() not in ("content-length",)},
-        )
+        return await call_next(request)
 
 
 # ---------------------------------------------------------------------------
