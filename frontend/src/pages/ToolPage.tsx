@@ -232,20 +232,6 @@ export default function ToolPage() {
     }
   }, [slug, tool, addEntry]);
 
-  useEffect(() => {
-    if (tool) {
-      document.title = `${tool.name} — PrivaTools`;
-      let m = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-      if (!m) {
-        m = document.createElement("meta");
-        m.name = "description";
-        document.head.appendChild(m);
-      }
-      m.content = tool.longDescription || tool.description;
-    }
-    return () => { document.title = "PrivaTools"; };
-  }, [tool]);
-
   const relatedTools = tools.filter(t => t.category === tool?.category && t.slug !== slug).slice(0, 6);
 
   if (!tool) {

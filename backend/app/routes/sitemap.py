@@ -25,7 +25,7 @@ PDF_TOOLS = [
     "pdf-to-epub", "markdown-to-pdf", "csv-to-pdf",
     "invert-colors", "pdfa-validator", "verify-signature",
     "sanitize-pdf", "add-hyperlinks", "form-creator",
-    "transparent-background", "stamp-pdf", "e-sign-pdf",
+    "transparent-background", "stamp-pdf", "esign-pdf",
     "word-to-pdf", "excel-to-pdf", "pptx-to-pdf-convert",
     "txt-to-pdf", "json-to-pdf", "xml-to-pdf", "epub-to-pdf", "rtf-to-pdf",
     "extract-tables", "pdf-to-markdown",
@@ -46,6 +46,10 @@ NON_PDF_TOOLS = [
     "url-to-pdf", "qr-reader", "merge-images",
 ]
 
+COMPARE_PAGES = [
+    "ilovepdf", "smallpdf", "adobe-acrobat", "sejda", "pdf24", "foxit", "lightpdf",
+]
+
 BASE_URL = "https://privatools.me"
 
 
@@ -59,10 +63,10 @@ async def sitemap():
         (f"{BASE_URL}/batch", "0.7", "weekly"),
         (f"{BASE_URL}/pipeline", "0.7", "weekly"),
         (f"{BASE_URL}/compare", "0.7", "monthly"),
-        (f"{BASE_URL}/compare/ilovepdf", "0.8", "monthly"),
-        (f"{BASE_URL}/compare/smallpdf", "0.8", "monthly"),
-        (f"{BASE_URL}/compare/adobe-acrobat", "0.8", "monthly"),
     ]
+
+    for slug in COMPARE_PAGES:
+        entries.append((f"{BASE_URL}/compare/{slug}", "0.8", "monthly"))
 
     for slug in PDF_TOOLS:
         entries.append((f"{BASE_URL}/tool/{slug}", "0.8", "weekly"))

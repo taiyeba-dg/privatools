@@ -36,7 +36,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare": {
         title: "PrivaTools vs iLovePDF vs Smallpdf vs Adobe — Free Comparison",
-        description: "Compare PrivaTools with iLovePDF, Smallpdf, and Adobe Acrobat Online. See which tool is truly free, private, and open source.",
+        description: "Compare PrivaTools with iLovePDF, Smallpdf, Adobe Acrobat, Sejda, PDF24, Foxit, and LightPDF. See which tool is truly free, private, and open source.",
     },
     "/compare/ilovepdf": {
         title: "PrivaTools vs iLovePDF — Honest Feature Comparison (2026)",
@@ -49,6 +49,22 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     "/compare/adobe-acrobat": {
         title: "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
         description: "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. No Adobe ID required, no subscription, 90+ tools. Compare features side by side.",
+    },
+    "/compare/sejda": {
+        title: "PrivaTools vs Sejda — Free PDF Tool Comparison (2026)",
+        description: "PrivaTools vs Sejda: unlimited tools vs Sejda's 3 tasks/hour limit. 100% free, open source, self-hostable. See how PrivaTools compares to Sejda PDF.",
+    },
+    "/compare/pdf24": {
+        title: "PrivaTools vs PDF24 — Free PDF Tools Comparison (2026)",
+        description: "PrivaTools vs PDF24: both free, but PrivaTools is open source, self-hostable, and privacy-first. Compare features, privacy practices, and tool breadth.",
+    },
+    "/compare/foxit": {
+        title: "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
+        description: "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. 90+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
+    },
+    "/compare/lightpdf": {
+        title: "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
+        description: "PrivaTools vs LightPDF: 100% free and open source vs LightPDF's freemium model. No file limits, no accounts, no ads. Compare privacy and features.",
     },
 };
 

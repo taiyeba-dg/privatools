@@ -5,11 +5,12 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from .seo_meta import inject_seo
 
 from .routes import (
     merge, split, compress, pdf_to_image, image_to_pdf, rotate, protect,
@@ -93,6 +94,66 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 # ---------------------------------------------------------------------------
+# SPA SEO middleware — inject per-route meta tags into index.html responses
+# ---------------------------------------------------------------------------
+_SKIP_SEO_PREFIXES = ("/api/", "/sitemap", "/robots", "/manifest", "/sw.js", "/icons", "/assets", "/favicon")
+_STATIC_EXTENSIONS = {
+    ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
+    ".ico", ".woff", ".woff2", ".ttf", ".otf", ".map", ".json",
+    ".xml", ".txt", ".pdf", ".mp4", ".mp3", ".wav", ".ogg", ".zip",
+}
+
+
+class SPASEOMiddleware(BaseHTTPMiddleware):
+    """
+    For any route that is NOT an API call and NOT a static asset,
+    read the body returned by StaticFiles (which will be index.html),
+    inject the correct per-route <title> and <meta> tags, and return
+    the modified HTML so crawlers see meaningful metadata without JS.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+
+        # Skip API, sitemap, and other non-SPA paths
+        for prefix in _SKIP_SEO_PREFIXES:
+            if path.startswith(prefix):
+                return await call_next(request)
+
+        # Skip known static asset extensions
+        suffix = Path(path).suffix.lower()
+        if suffix in _STATIC_EXTENSIONS:
+            return await call_next(request)
+
+        response = await call_next(request)
+
+        content_type = response.headers.get("content-type", "")
+        if "text/html" not in content_type:
+            return response
+
+        # Read response body
+        body_bytes = b""
+        async for chunk in response.body_iterator:
+            body_bytes += chunk
+
+        try:
+            html = body_bytes.decode("utf-8")
+            html = inject_seo(html, path)
+            body_bytes = html.encode("utf-8")
+        except Exception:
+            pass  # Never break the app — serve unmodified if injection fails
+
+        headers = dict(response.headers)
+        headers["content-length"] = str(len(body_bytes))
+
+        return HTMLResponse(
+            content=body_bytes.decode("utf-8"),
+            status_code=response.status_code,
+            headers={k: v for k, v in headers.items() if k.lower() not in ("content-length",)},
+        )
+
+
+# ---------------------------------------------------------------------------
 # Max upload size (100 MB)
 # ---------------------------------------------------------------------------
 MAX_UPLOAD_BYTES = _env_positive_int("MAX_UPLOAD_MB", 100) * 1024 * 1024
@@ -123,6 +184,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 _origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:8080").split(",")
 
+app.add_middleware(SPASEOMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(UploadSizeLimitMiddleware)
 app.add_middleware(
