@@ -401,3 +401,83 @@ body::after {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ── Blog prose ────────────────────────────────────────────────────── */
+.blog-prose {
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  color: hsl(var(--foreground));
+}
+.blog-prose p { margin: 0 0 1.25rem; }
+.blog-prose h2 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 2.25rem 0 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid hsl(var(--primary));
+  display: inline-block;
+  color: hsl(var(--foreground));
+}
+.blog-prose h3 {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 1.75rem 0 0.5rem;
+  color: hsl(var(--foreground));
+}
+.blog-prose ul, .blog-prose ol {
+  margin: 0 0 1.25rem 1.5rem;
+  padding: 0;
+}
+.blog-prose ul { list-style: disc; }
+.blog-prose ol { list-style: decimal; }
+.blog-prose li { margin-bottom: 0.4rem; }
+.blog-prose a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.blog-prose a:hover { opacity: 0.8; }
+.blog-prose strong { font-weight: 700; }
+.blog-prose em { font-style: italic; }
+.blog-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: hsl(var(--muted));
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+.blog-prose pre {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin: 0 0 1.5rem;
+}
+.blog-prose pre code { background: none; padding: 0; font-size: inherit; }
+.blog-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+}
+.blog-prose th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid hsl(var(--primary));
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+}
+.blog-prose td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.blog-prose tr:nth-child(even) td { background: hsl(var(--muted) / 0.4); }

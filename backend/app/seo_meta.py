@@ -6,7 +6,9 @@ so that search-engine crawlers see the correct metadata without
 executing JavaScript.
 """
 from __future__ import annotations
+import json
 import re
+from urllib.parse import quote
 
 BASE_URL = "https://privatools.me"
 
@@ -74,6 +76,97 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "PrivaTools vs LightPDF: 100% free and open source vs LightPDF's freemium model. "
         "No file limits, no accounts, no ads. Compare privacy and features.",
     ),
+    "/compare/stirling-pdf": (
+        "PrivaTools vs Stirling PDF — Open-Source PDF Tools Compared (2026)",
+        "PrivaTools vs Stirling PDF: two open-source, self-hostable PDF suites compared. "
+        "See which offers more tools, easier setup, and better privacy defaults.",
+    ),
+    "/compare/dochub": (
+        "PrivaTools vs DocHub — Free PDF & Document Tools Compared (2026)",
+        "PrivaTools vs DocHub: free, open-source file tools vs DocHub's document workflow platform. "
+        "No sign-up, no subscription. Compare 90+ tools vs DocHub's feature set.",
+    ),
+    "/compare/pdfescape": (
+        "PrivaTools vs PDFescape — Free PDF Editor Compared (2026)",
+        "PrivaTools vs PDFescape: both free online PDF editors, compared side by side. "
+        "PrivaTools is open source with 90+ tools. See which handles your files more privately.",
+    ),
+    "/compare/nitro-pdf": (
+        "PrivaTools vs Nitro PDF — Free vs Paid PDF Tools (2026)",
+        "PrivaTools vs Nitro PDF: 100% free open-source tools vs Nitro's paid PDF suite. "
+        "No subscription, no account, no file limits. Compare features and pricing.",
+    ),
+    "/blog": (
+        "PrivaTools Blog — PDF & File Tools Tips, Guides & Comparisons",
+        "In-depth guides on PDF compression, merging, password removal, and more. "
+        "Honest comparisons of free PDF tools. Written by the PrivaTools team.",
+    ),
+    "/blog/compress-pdf-without-losing-quality": (
+        "How to Compress a PDF Without Losing Quality (2026 Guide)",
+        "Learn how to reduce PDF file size by up to 90% without visible quality loss. "
+        "Three methods compared: online tools, desktop apps, and command-line. Free and instant.",
+    ),
+    "/blog/merge-pdf-files-online-free": (
+        "How to Merge PDF Files Online for Free — No Sign-Up Required",
+        "Step-by-step guide to combining PDF files online for free. "
+        "Drag, drop, reorder, and merge — no software, no account, no watermarks.",
+    ),
+    "/blog/best-free-pdf-tools-2026": (
+        "Best Free PDF Tools in 2026: Honest Comparison of 8 Options",
+        "We tested 8 free PDF tool suites in 2026. Here's the honest verdict: "
+        "which are truly free, which have hidden limits, and which respect your privacy.",
+    ),
+    "/blog/remove-password-from-pdf": (
+        "How to Remove a Password from a PDF (3 Methods)",
+        "Three ways to remove or bypass a PDF password you own. "
+        "Online tool, Adobe Acrobat, and command-line — explained step by step.",
+    ),
+    "/blog/convert-word-to-pdf-free": (
+        "How to Convert Word to PDF for Free (No Microsoft Office Needed)",
+        "5 ways to convert .docx files to PDF without Microsoft Office. "
+        "Online tools, Google Docs, LibreOffice — plus which method preserves formatting best.",
+    ),
+}
+
+# ---------------------------------------------------------------------------
+# Blog post metadata  (slug → post info dict)
+# ---------------------------------------------------------------------------
+_BLOG_POSTS: dict[str, dict] = {
+    "compress-pdf-without-losing-quality": {
+        "title": "How to Compress a PDF Without Losing Quality",
+        "description": "Learn how to reduce PDF file size by up to 90% without visible quality loss. Three methods compared: online tools, desktop apps, and command-line.",
+        "publishedAt": "2026-03-22",
+        "readTime": "5 min read",
+        "tags": ["PDF", "Compression", "How-To"],
+    },
+    "merge-pdf-files-online-free": {
+        "title": "How to Merge PDF Files Online for Free",
+        "description": "Step-by-step guide to combining PDF files online for free. Drag, drop, reorder, and merge — no software, no account, no watermarks.",
+        "publishedAt": "2026-03-22",
+        "readTime": "4 min read",
+        "tags": ["PDF", "Merge", "How-To"],
+    },
+    "best-free-pdf-tools-2026": {
+        "title": "Best Free PDF Tools in 2026: Honest Comparison",
+        "description": "We tested 8 free PDF tool suites in 2026. Honest verdict on which are truly free, which have hidden limits, and which respect your privacy.",
+        "publishedAt": "2026-03-22",
+        "readTime": "8 min read",
+        "tags": ["PDF", "Comparison", "Review"],
+    },
+    "remove-password-from-pdf": {
+        "title": "How to Remove a Password from a PDF",
+        "description": "Three ways to remove or bypass a PDF password you own — online tool, Adobe Acrobat, and command-line — explained step by step.",
+        "publishedAt": "2026-03-22",
+        "readTime": "4 min read",
+        "tags": ["PDF", "Security", "How-To"],
+    },
+    "convert-word-to-pdf-free": {
+        "title": "How to Convert Word to PDF for Free",
+        "description": "5 ways to convert .docx files to PDF without Microsoft Office — online tools, Google Docs, LibreOffice — plus which preserves formatting best.",
+        "publishedAt": "2026-03-22",
+        "readTime": "5 min read",
+        "tags": ["PDF", "Convert", "How-To"],
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -233,8 +326,139 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
             f"Use {readable} online for free on PrivaTools. Privacy-first file processing — no sign-up, no uploads stored.",
         )
 
+    # /blog listing and /blog/<slug>
+    if path == "/blog" or path.startswith("/blog/"):
+        if path in _STATIC_META:
+            return _STATIC_META[path]
+        return _STATIC_META["/blog"]
+
     # Fallback
     return _STATIC_META["/"]
+
+
+def get_jsonld_for_path(path: str) -> dict | None:
+    """Return a JSON-LD dict for the given URL path, or None."""
+    path = path.rstrip("/") or "/"
+    title, description = get_meta_for_path(path)
+    canonical_url = BASE_URL + (path if path != "/" else "")
+
+    breadcrumbs: list[dict] = [
+        {"@type": "ListItem", "position": 1, "name": "PrivaTools", "item": BASE_URL}
+    ]
+
+    if path == "/":
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "WebSite",
+                    "@id": f"{BASE_URL}/#website",
+                    "url": BASE_URL,
+                    "name": "PrivaTools",
+                    "description": description,
+                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "potentialAction": {
+                        "@type": "SearchAction",
+                        "target": {"@type": "EntryPoint", "urlTemplate": f"{BASE_URL}/?q={{search_term_string}}"},
+                        "query-input": "required name=search_term_string",
+                    },
+                },
+                {
+                    "@type": "Organization",
+                    "@id": f"{BASE_URL}/#organization",
+                    "name": "PrivaTools",
+                    "url": BASE_URL,
+                    "logo": f"{BASE_URL}/icons/icon-192.png",
+                    "sameAs": ["https://github.com/taiyeba-dg/privatools"],
+                },
+            ],
+        }
+
+    if path.startswith("/tool/"):
+        slug = path[len("/tool/"):]
+        name = _PDF_TOOLS.get(slug, (slug.replace("-", " ").title(), ""))[0]
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": name, "item": canonical_url})
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "WebApplication",
+                    "name": f"{name} — PrivaTools",
+                    "url": canonical_url,
+                    "description": description,
+                    "applicationCategory": "UtilitiesApplication",
+                    "operatingSystem": "Any (browser-based)",
+                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+                    "provider": {"@id": f"{BASE_URL}/#organization"},
+                },
+                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+            ],
+        }
+
+    if path.startswith("/tools/"):
+        slug = path[len("/tools/"):]
+        name = _NONPDF_TOOLS.get(slug, (slug.replace("-", " ").title(), ""))[0]
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": name, "item": canonical_url})
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "WebApplication",
+                    "name": f"{name} — PrivaTools",
+                    "url": canonical_url,
+                    "description": description,
+                    "applicationCategory": "UtilitiesApplication",
+                    "operatingSystem": "Any (browser-based)",
+                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+                    "provider": {"@id": f"{BASE_URL}/#organization"},
+                },
+                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+            ],
+        }
+
+    if path.startswith("/compare/"):
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Compare", "item": f"{BASE_URL}/compare"})
+        breadcrumbs.append({"@type": "ListItem", "position": 3, "name": title, "item": canonical_url})
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "Article",
+                    "headline": title,
+                    "description": description,
+                    "url": canonical_url,
+                    "dateModified": "2026-03-22",
+                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                },
+                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+            ],
+        }
+
+    if path.startswith("/blog/"):
+        slug = path[len("/blog/"):]
+        post = _BLOG_POSTS.get(slug)
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Blog", "item": f"{BASE_URL}/blog"})
+        if post:
+            breadcrumbs.append({"@type": "ListItem", "position": 3, "name": post["title"], "item": canonical_url})
+            return {
+                "@context": "https://schema.org",
+                "@graph": [
+                    {
+                        "@type": "BlogPosting",
+                        "headline": post["title"],
+                        "description": post["description"],
+                        "url": canonical_url,
+                        "datePublished": post["publishedAt"],
+                        "dateModified": post["publishedAt"],
+                        "author": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL},
+                        "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    },
+                    {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+                ],
+            }
+        return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": breadcrumbs}
+
+    return None
 
 
 def inject_seo(html: str, path: str) -> str:
@@ -273,6 +497,16 @@ def inject_seo(html: str, path: str) -> str:
         html = re.sub(r'<link rel="canonical"[^>]*/?\s*>', f'<link rel="canonical" href="{u}" />', html, count=1)
     else:
         html = html.replace("</head>", f'  <link rel="canonical" href="{u}" />\n</head>', 1)
+
+    # Dynamic OG image
+    og_image_url = esc(f"{BASE_URL}/api/og-image?p={quote(path)}")
+    html = _set_meta(html, 'property="og:image"', og_image_url)
+
+    # Inject JSON-LD structured data
+    jsonld = get_jsonld_for_path(path)
+    if jsonld:
+        jsonld_tag = f'<script type="application/ld+json">{json.dumps(jsonld, ensure_ascii=False, separators=(",", ":"))}</script>'
+        html = html.replace("</head>", f"  {jsonld_tag}\n</head>", 1)
 
     return html
 

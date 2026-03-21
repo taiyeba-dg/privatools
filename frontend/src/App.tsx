@@ -19,6 +19,8 @@ const ComparePage = lazy(() => import("./pages/ComparePage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BatchPage = lazy(() => import("./pages/BatchPage"));
 const PipelinePage = lazy(() => import("./pages/PipelinePage"));
+const BlogPage = lazy(() => import("./pages/BlogPage"));
+const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 
 const queryClient = new QueryClient();
 
@@ -58,6 +60,8 @@ const App = () => (
           <Route path="/tools/:slug" element={withRouteFallback(<NonPdfToolPage />)} />
           <Route path="/batch" element={withRouteFallback(<BatchPage />)} />
           <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
+          <Route path="/blog" element={withRouteFallback(<BlogPage />)} />
+          <Route path="/blog/:slug" element={withRouteFallback(<BlogPostPage />)} />
           <Route path="*" element={withRouteFallback(<NotFound />)} />
         </Routes>
         <MobileNav />

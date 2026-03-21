@@ -48,6 +48,15 @@ NON_PDF_TOOLS = [
 
 COMPARE_PAGES = [
     "ilovepdf", "smallpdf", "adobe-acrobat", "sejda", "pdf24", "foxit", "lightpdf",
+    "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
+]
+
+BLOG_POSTS = [
+    "compress-pdf-without-losing-quality",
+    "merge-pdf-files-online-free",
+    "best-free-pdf-tools-2026",
+    "remove-password-from-pdf",
+    "convert-word-to-pdf-free",
 ]
 
 BASE_URL = "https://privatools.me"
@@ -63,7 +72,11 @@ async def sitemap():
         (f"{BASE_URL}/batch", "0.7", "weekly"),
         (f"{BASE_URL}/pipeline", "0.7", "weekly"),
         (f"{BASE_URL}/compare", "0.7", "monthly"),
+        (f"{BASE_URL}/blog", "0.8", "weekly"),
     ]
+
+    for slug in BLOG_POSTS:
+        entries.append((f"{BASE_URL}/blog/{slug}", "0.8", "weekly"))
 
     for slug in COMPARE_PAGES:
         entries.append((f"{BASE_URL}/compare/{slug}", "0.8", "monthly"))

@@ -7,6 +7,8 @@ const navLinks = [
   { label: "ALL TOOLS", href: "/" },
   { label: "BATCH", href: "/batch" },
   { label: "PIPELINE", href: "/pipeline" },
+  { label: "BLOG", href: "/blog" },
+  { label: "COMPARE", href: "/compare" },
 ];
 
 export function EditorialMasthead() {

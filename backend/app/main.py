@@ -31,6 +31,7 @@ from .routes import (
     reverse_pdf,
     booklet,
     sitemap,
+    og_image,
 )
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
@@ -96,7 +97,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 # SPA SEO middleware — inject per-route meta tags into index.html responses
 # ---------------------------------------------------------------------------
-_SKIP_SEO_PREFIXES = ("/api/", "/sitemap", "/robots", "/manifest", "/sw.js", "/icons", "/assets", "/favicon")
+_SKIP_SEO_PREFIXES = ("/api/", "/sitemap", "/robots", "/manifest", "/sw.js", "/icons", "/assets", "/favicon", "/og-image")
 _STATIC_EXTENSIONS = {
     ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
     ".ico", ".woff", ".woff2", ".ttf", ".otf", ".map", ".json",
@@ -253,8 +254,9 @@ app.include_router(phase5_tools.router, prefix="/api")
 app.include_router(reverse_pdf.router, prefix="/api")
 app.include_router(booklet.router, prefix="/api")
 
-# Sitemap
+# Sitemap + OG image
 app.include_router(sitemap.router)
+app.include_router(og_image.router)
 
 
 @app.get("/api/health")
