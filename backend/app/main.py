@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -264,7 +264,7 @@ async def health():
     return JSONResponse({"status": "ok"})
 
 
-# Mount frontend static files (only if the directory exists)
+# Mount frontend static files with SPA catch-all
 def _resolve_frontend_path() -> Path:
     if "FRONTEND_PATH" in os.environ:
         return Path(os.environ["FRONTEND_PATH"])
@@ -283,4 +283,21 @@ def _resolve_frontend_path() -> Path:
 
 _frontend_path = _resolve_frontend_path()
 if _frontend_path.exists():
-    app.mount("/", StaticFiles(directory=str(_frontend_path), html=True), name="frontend")
+    # SPA catch-all: serve static files when they exist on disk,
+    # otherwise serve index.html so React Router handles routing.
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        # Prevent path traversal
+        if ".." in full_path:
+            return JSONResponse({"detail": "Not found"}, status_code=404)
+        file_path = (_frontend_path / full_path).resolve()
+        # Ensure the resolved path is within the frontend directory
+        if not str(file_path).startswith(str(_frontend_path.resolve())):
+            return JSONResponse({"detail": "Not found"}, status_code=404)
+        if file_path.is_file():
+            return FileResponse(file_path)
+        # Fall back to index.html for SPA routing
+        index = _frontend_path / "index.html"
+        if index.is_file():
+            return FileResponse(index)
+        return JSONResponse({"detail": "Not found"}, status_code=404)
