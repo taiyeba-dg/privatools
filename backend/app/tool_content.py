@@ -13,27 +13,27 @@ from __future__ import annotations
 TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── PDF manipulation ──────────────────────────────────────────────
     "merge-pdf": [
-        {"name": "Add PDF files", "text": "Drop or select two or more PDF files into the upload area. There is no page-count limit; the max per file is 100 MB."},
+        {"name": "Add PDF files", "text": "Drop or select two or more PDF files into the upload area. There is no page-count limit; the max per file is 500 MB."},
         {"name": "Reorder the files", "text": "Drag the thumbnail cards to set the order in which the PDFs will be joined."},
         {"name": "Merge and download", "text": "Click Merge. The server concatenates the files, preserving bookmarks and links, and returns a single PDF."},
     ],
     "split-pdf": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 100 MB. The page-count preview loads automatically."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. The page-count preview loads automatically."},
         {"name": "Choose split mode", "text": "Pick 'Fixed range' to split every N pages, 'Custom ranges' to specify exact page numbers (e.g. 1-3, 7-10), or 'Extract every page' to get individual pages."},
         {"name": "Split and download", "text": "Click Split. Each resulting PDF is packaged into a ZIP file for convenient downloading."},
     ],
     "split-by-size": [
-        {"name": "Upload the PDF", "text": "Select a PDF file up to 100 MB that you want to split into smaller chunks."},
+        {"name": "Upload the PDF", "text": "Select a PDF file up to 500 MB that you want to split into smaller chunks."},
         {"name": "Set the target chunk size", "text": "Enter the maximum file size per chunk in megabytes (e.g. 10 MB). The tool will split at page boundaries to stay under the limit."},
         {"name": "Download the parts", "text": "Click Split. The server breaks the PDF into parts that respect your size target and delivers them in a ZIP archive."},
     ],
     "compress-pdf": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 100 MB. Large scanned documents benefit the most from compression."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Large scanned documents benefit the most from compression."},
         {"name": "Pick a compression level", "text": "Choose Low (best quality, modest reduction), Medium (balanced), or High (smallest file, some quality loss on images)."},
         {"name": "Download the compressed file", "text": "Click Compress. The result shows the new file size and the percentage saved compared to the original."},
     ],
     "edit-pdf": [
-        {"name": "Open the PDF", "text": "Upload a PDF up to 100 MB. The editor renders each page for annotation."},
+        {"name": "Open the PDF", "text": "Upload a PDF up to 500 MB. The editor renders each page for annotation."},
         {"name": "Add annotations", "text": "Use the toolbar to add text boxes, highlights, shapes, or freehand drawings on any page."},
         {"name": "Save the edited PDF", "text": "Click Save. Annotations are flattened into the document so they appear in any PDF reader."},
     ],
@@ -44,7 +44,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the signed PDF", "text": "Click Apply. The signature is embedded into the PDF and the file is ready to share."},
     ],
     "protect-pdf": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 100 MB that you want to password-protect."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB that you want to password-protect."},
         {"name": "Set a password", "text": "Enter a strong password. You can separately restrict printing, copying text, or editing."},
         {"name": "Download the encrypted PDF", "text": "Click Protect. The output uses AES-256 encryption and requires the password to open."},
     ],
@@ -54,17 +54,17 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the unlocked PDF", "text": "Click Unlock. The resulting PDF has all password restrictions removed."},
     ],
     "rotate-pdf": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 100 MB. Thumbnail previews of each page are shown."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Thumbnail previews of each page are shown."},
         {"name": "Select pages and rotation angle", "text": "Click individual page thumbnails or select all, then choose 90°, 180°, or 270° clockwise rotation."},
         {"name": "Apply and download", "text": "Click Rotate. The server applies the rotation permanently and returns the updated PDF."},
     ],
     "watermark": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 100 MB that needs a watermark."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB that needs a watermark."},
         {"name": "Configure the watermark", "text": "Enter text (e.g. 'CONFIDENTIAL') or upload an image. Set opacity, font size, color, and position (diagonal, center, header, or footer)."},
         {"name": "Apply and download", "text": "Click Apply. Every page receives the watermark, and the output PDF is ready to download."},
     ],
     "ocr-pdf": [
-        {"name": "Upload a scanned PDF or image-based PDF", "text": "Select a PDF containing scanned pages. Files up to 100 MB are supported."},
+        {"name": "Upload a scanned PDF or image-based PDF", "text": "Select a PDF containing scanned pages. Files up to 500 MB are supported."},
         {"name": "Select the document language", "text": "Choose the primary language (or multiple languages) so the OCR engine uses the correct dictionary for accuracy."},
         {"name": "Run OCR and download", "text": "Click Process. Tesseract extracts text and creates an invisible text layer, making the PDF fully searchable and copyable."},
     ],
@@ -80,7 +80,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the flattened PDF", "text": "Click Flatten. The result is a clean PDF where all content is baked into the pages, preventing further edits."},
     ],
     "bookmarks": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 100 MB. Existing bookmarks, if any, are listed automatically."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Existing bookmarks, if any, are listed automatically."},
         {"name": "Edit the bookmark tree", "text": "Add, rename, reorder, or delete bookmarks. Set the target page number for each entry. You can nest bookmarks to create a multi-level table of contents."},
         {"name": "Save and download", "text": "Click Save. The updated bookmark tree is embedded into the PDF for easy navigation in any reader."},
     ],
@@ -104,27 +104,27 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
 
     # ── PDF conversion ────────────────────────────────────────────────
     "image-to-pdf": [
-        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF). Each image can be up to 100 MB."},
+        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF). Each image can be up to 500 MB."},
         {"name": "Arrange and configure", "text": "Reorder images by dragging thumbnails. Set page size (A4, Letter, or fit-to-image) and orientation."},
         {"name": "Convert to PDF", "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution."},
     ],
     "txt-to-pdf": [
-        {"name": "Upload a text file or paste text", "text": "Select a .txt file up to 100 MB or paste plain text directly into the editor."},
+        {"name": "Upload a text file or paste text", "text": "Select a .txt file up to 500 MB or paste plain text directly into the editor."},
         {"name": "Choose formatting", "text": "Pick the font family, font size, page size, and margins. Monospace fonts work best for code or tabular content."},
         {"name": "Generate the PDF", "text": "Click Convert. The text is reflowed into paginated PDF pages with the selected formatting."},
     ],
     "office-to-pdf": [
-        {"name": "Upload an Office document", "text": "Select a Word (.docx), Excel (.xlsx), or PowerPoint (.pptx) file up to 100 MB."},
+        {"name": "Upload an Office document", "text": "Select a Word (.docx), Excel (.xlsx), or PowerPoint (.pptx) file up to 500 MB."},
         {"name": "Convert via LibreOffice", "text": "The server uses LibreOffice in headless mode for high-fidelity conversion, preserving fonts, tables, charts, and layouts."},
         {"name": "Download the PDF", "text": "Click Convert. The resulting PDF is ready within seconds for most documents."},
     ],
     "word-to-pdf": [
-        {"name": "Upload the Word document", "text": "Select a .doc or .docx file up to 100 MB."},
+        {"name": "Upload the Word document", "text": "Select a .doc or .docx file up to 500 MB."},
         {"name": "Conversion runs automatically", "text": "LibreOffice converts the document server-side, preserving formatting, images, headers, footers, and table-of-contents links."},
         {"name": "Download the PDF", "text": "Click Convert and save the result. Hyperlinks and bookmarks from the original document are preserved."},
     ],
     "epub-to-pdf": [
-        {"name": "Upload an EPUB file", "text": "Select an .epub e-book file up to 100 MB."},
+        {"name": "Upload an EPUB file", "text": "Select an .epub e-book file up to 500 MB."},
         {"name": "Choose page layout", "text": "Select a page size (A4, Letter, or custom dimensions). The tool reflows text and embeds images to match the chosen layout."},
         {"name": "Convert and download", "text": "Click Convert. Chapters, formatting, and embedded images are preserved in the output PDF."},
     ],
@@ -134,22 +134,22 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Generate the PDF", "text": "Click Convert. The server uses a headless browser to render the page and produce a pixel-perfect PDF."},
     ],
     "xml-to-pdf": [
-        {"name": "Upload an XML file", "text": "Select an .xml file up to 100 MB. Common schemas like RSS, Atom, and XHTML are supported."},
+        {"name": "Upload an XML file", "text": "Select an .xml file up to 500 MB. Common schemas like RSS, Atom, and XHTML are supported."},
         {"name": "Choose display format", "text": "Select tree view (collapsible hierarchy) or formatted table view for structured data."},
         {"name": "Convert and download", "text": "Click Convert. The XML is rendered into a readable, paginated PDF document."},
     ],
     "csv-to-pdf": [
-        {"name": "Upload a CSV file", "text": "Select a .csv or .tsv file up to 100 MB. The first row is treated as column headers by default."},
+        {"name": "Upload a CSV file", "text": "Select a .csv or .tsv file up to 500 MB. The first row is treated as column headers by default."},
         {"name": "Customize table appearance", "text": "Set font size, enable zebra striping, choose landscape or portrait orientation. Wide tables automatically wrap or scale to fit."},
         {"name": "Convert to PDF", "text": "Click Convert. The data is rendered into a clean, paginated table in the output PDF."},
     ],
     "json-to-pdf": [
-        {"name": "Upload a JSON file or paste JSON", "text": "Select a .json file up to 100 MB or paste JSON directly into the editor."},
+        {"name": "Upload a JSON file or paste JSON", "text": "Select a .json file up to 500 MB or paste JSON directly into the editor."},
         {"name": "Choose the rendering style", "text": "Pick syntax-highlighted code view for developers or a table/tree view for structured data."},
         {"name": "Convert and download", "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation and optional line numbers."},
     ],
     "pdf-to-word": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 100 MB. Both text-based and scanned PDFs are supported (scanned PDFs go through OCR first)."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Both text-based and scanned PDFs are supported (scanned PDFs go through OCR first)."},
         {"name": "Convert to Word", "text": "Click Convert. The server extracts text, images, and tables and reconstructs them in a .docx file preserving layout as closely as possible."},
         {"name": "Download the Word document", "text": "Save the .docx file. Open it in Microsoft Word, Google Docs, or LibreOffice for editing."},
     ],
@@ -159,19 +159,19 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert and download", "text": "Click Convert. Each detected table becomes a separate sheet in the resulting .xlsx file, with rows and columns preserved."},
     ],
     "pdf-to-text": [
-        {"name": "Upload the PDF", "text": "Select a text-based or scanned PDF up to 100 MB."},
+        {"name": "Upload the PDF", "text": "Select a text-based or scanned PDF up to 500 MB."},
         {"name": "Choose extraction mode", "text": "Select plain text extraction for text-based PDFs, or enable OCR for scanned documents. Pick the OCR language if needed."},
         {"name": "Download the text", "text": "Click Convert. The extracted text is returned as a .txt file with page breaks preserved."},
     ],
     "pdf-to-image": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 100 MB. The tool displays a page-count summary."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. The tool displays a page-count summary."},
         {"name": "Configure output settings", "text": "Choose the image format (PNG, JPG, or WebP), resolution (72–600 DPI), and which pages to convert."},
         {"name": "Convert and download", "text": "Click Convert. Each page becomes a separate image file, delivered in a ZIP archive."},
     ],
 
     # ── Image tools ───────────────────────────────────────────────────
     "heic-to-jpg": [
-        {"name": "Upload HEIC/HEIF images", "text": "Select one or more .heic or .heif files from your iPhone or camera. Each file can be up to 100 MB."},
+        {"name": "Upload HEIC/HEIF images", "text": "Select one or more .heic or .heif files from your iPhone or camera. Each file can be up to 500 MB."},
         {"name": "Choose output format and quality", "text": "Select JPG or PNG output. For JPG, set the quality slider (1–100). Higher values preserve detail at larger file sizes."},
         {"name": "Convert and download", "text": "Click Convert. EXIF orientation is applied automatically so images display correctly. Multiple files are delivered in a ZIP."},
     ],
@@ -181,29 +181,29 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Strip metadata and download", "text": "Click Remove. All EXIF, IPTC, and XMP metadata is permanently stripped. The pixel data is untouched."},
     ],
     "image-compressor": [
-        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP). Each file can be up to 100 MB."},
+        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP). Each file can be up to 500 MB."},
         {"name": "Set compression level", "text": "Choose a quality target or let the tool auto-optimize. For PNG, lossless compression is applied; for JPG, you can set the quality percentage."},
         {"name": "Download compressed images", "text": "Click Compress. The tool shows the original and compressed sizes side by side. Multiple files are returned in a ZIP."},
     ],
     "remove-background": [
-        {"name": "Upload an image", "text": "Select a JPG, PNG, or WebP image up to 100 MB. Photos of people, products, and animals work best."},
+        {"name": "Upload an image", "text": "Select a JPG, PNG, or WebP image up to 500 MB. Photos of people, products, and animals work best."},
         {"name": "Background removal runs automatically", "text": "The server uses an AI model to detect the foreground subject and remove the background. No manual tracing is needed."},
         {"name": "Download the result", "text": "Save the transparent PNG. You can also choose a solid-color replacement background before downloading."},
     ],
 
     # ── Video/media tools ─────────────────────────────────────────────
     "video-to-gif": [
-        {"name": "Upload a video", "text": "Select an MP4, WebM, MOV, or AVI file up to 100 MB."},
+        {"name": "Upload a video", "text": "Select an MP4, WebM, MOV, or AVI file up to 500 MB."},
         {"name": "Set GIF parameters", "text": "Choose the start time, duration (max 30 seconds recommended for file size), frame rate (10–30 fps), and output width."},
         {"name": "Convert and download", "text": "Click Convert. FFmpeg extracts the frames and optimizes the color palette for the smallest possible GIF."},
     ],
     "compress-video": [
-        {"name": "Upload a video", "text": "Select an MP4, WebM, MOV, or AVI file up to 100 MB."},
+        {"name": "Upload a video", "text": "Select an MP4, WebM, MOV, or AVI file up to 500 MB."},
         {"name": "Choose compression preset", "text": "Pick Light, Medium, or Heavy compression. Heavier settings reduce file size more but lower visual quality."},
         {"name": "Compress and download", "text": "Click Compress. The server re-encodes the video using FFmpeg with H.264/H.265. The result shows the file size reduction."},
     ],
     "trim-media": [
-        {"name": "Upload an audio or video file", "text": "Select an MP4, MP3, WAV, WebM, or other media file up to 100 MB."},
+        {"name": "Upload an audio or video file", "text": "Select an MP4, MP3, WAV, WebM, or other media file up to 500 MB."},
         {"name": "Set the trim range", "text": "Use the waveform/timeline to set precise start and end times, or type timestamps manually (e.g. 00:30 to 02:15)."},
         {"name": "Trim and download", "text": "Click Trim. The server extracts the selected segment without re-encoding when possible, preserving original quality."},
     ],
@@ -211,7 +211,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── Developer tools ───────────────────────────────────────────────
     "base64": [
         {"name": "Choose encode or decode mode", "text": "Select whether you want to encode data to Base64 or decode a Base64 string back to its original form."},
-        {"name": "Enter input", "text": "Paste text into the editor, or upload a file (image, PDF, binary — up to 100 MB). For decoding, paste the Base64 string."},
+        {"name": "Enter input", "text": "Paste text into the editor, or upload a file (image, PDF, binary — up to 500 MB). For decoding, paste the Base64 string."},
         {"name": "Get the result", "text": "The output appears instantly. Copy the Base64 string to your clipboard, or download the decoded file."},
     ],
     "text-diff": [
@@ -228,7 +228,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
 # ---------------------------------------------------------------------------
 TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "merge-pdf": [
-        {"q": "Is there a limit on how many PDFs I can merge at once?", "a": "There is no hard limit on the number of files. Each individual file must be under 100 MB. The server handles merges of dozens of files without issues."},
+        {"q": "Is there a limit on how many PDFs I can merge at once?", "a": "There is no hard limit on the number of files. Each individual file must be under 500 MB. The server handles merges of dozens of files without issues."},
         {"q": "Are bookmarks and hyperlinks preserved when merging?", "a": "Yes. PrivaTools preserves existing bookmarks, internal links, and external hyperlinks from all input files in the merged result."},
         {"q": "Do I need to create an account to merge PDFs?", "a": "No. PrivaTools requires no account, no email, and no sign-up. Upload your files, merge them, and download the result."},
     ],
@@ -313,14 +313,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will the document look different after conversion?", "a": "Visually the document should look the same. Transparency may be flattened in PDF/A-1b, and embedded multimedia will be removed since PDF/A does not allow it."},
     ],
     "image-to-pdf": [
-        {"q": "What image formats are supported?", "a": "JPG, PNG, WebP, BMP, and TIFF. Each image can be up to 100 MB."},
+        {"q": "What image formats are supported?", "a": "JPG, PNG, WebP, BMP, and TIFF. Each image can be up to 500 MB."},
         {"q": "Can I control the page size?", "a": "Yes. Choose A4, Letter, or fit-to-image (where the page matches the image dimensions exactly). You can also set landscape or portrait orientation."},
         {"q": "Are multiple images combined into one PDF?", "a": "Yes. All uploaded images become pages in a single PDF. Drag to reorder them before converting."},
     ],
     "txt-to-pdf": [
         {"q": "Can I change the font and page size?", "a": "Yes. Choose from several font families (serif, sans-serif, monospace), set the font size, and select A4 or Letter page size with custom margins."},
         {"q": "Does the tool handle Unicode text?", "a": "Yes. UTF-8 encoded text is fully supported, including non-Latin scripts like Chinese, Arabic, Cyrillic, and Devanagari."},
-        {"q": "Is there a character or line limit?", "a": "No character limit beyond the 100 MB file-size cap. The text is automatically reflowed and paginated."},
+        {"q": "Is there a character or line limit?", "a": "No character limit beyond the 500 MB file-size cap. The text is automatically reflowed and paginated."},
     ],
     "office-to-pdf": [
         {"q": "Which Office formats are supported?", "a": "Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx), and OpenDocument formats (.odt, .ods, .odp)."},
@@ -345,7 +345,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "xml-to-pdf": [
         {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported. The tool renders the structure as a readable tree or table — it does not apply XSL transforms."},
         {"q": "Is syntax highlighting included?", "a": "Yes. Element names, attributes, and values are color-coded for readability in the PDF output."},
-        {"q": "Can I convert large XML files?", "a": "Files up to 100 MB are supported. Very deeply nested structures may produce many pages."},
+        {"q": "Can I convert large XML files?", "a": "Files up to 500 MB are supported. Very deeply nested structures may produce many pages."},
     ],
     "csv-to-pdf": [
         {"q": "Does the tool auto-detect delimiters?", "a": "Yes. Comma, semicolon, tab, and pipe delimiters are automatically detected. You can also specify the delimiter manually."},
@@ -414,13 +414,13 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "base64": [
         {"q": "Can I encode files (not just text)?", "a": "Yes. Upload any file — images, PDFs, binaries — and the tool returns the Base64-encoded string. Useful for embedding files in JSON, HTML, or CSS."},
-        {"q": "Is there a size limit for encoding?", "a": "Files up to 100 MB can be encoded. Keep in mind that Base64 output is approximately 33% larger than the original file."},
+        {"q": "Is there a size limit for encoding?", "a": "Files up to 500 MB can be encoded. Keep in mind that Base64 output is approximately 33% larger than the original file."},
         {"q": "What character set is used?", "a": "Standard Base64 (RFC 4648) using A-Z, a-z, 0-9, +, and /. URL-safe Base64 (replacing + and / with - and _) is also available."},
     ],
     "text-diff": [
         {"q": "What diff algorithm is used?", "a": "The tool uses a line-by-line diff algorithm similar to Unix diff, highlighting additions, deletions, and modifications with color coding."},
         {"q": "Can I compare files directly?", "a": "Yes. Upload two text files instead of pasting. Supported formats include .txt, .csv, .json, .xml, .html, .css, .js, .py, and other plain-text formats."},
-        {"q": "Is there a file size limit for comparison?", "a": "Each file can be up to 100 MB. Very large files may take a few seconds to process the diff."},
+        {"q": "Is there a file size limit for comparison?", "a": "Each file can be up to 500 MB. Very large files may take a few seconds to process the diff."},
         {"q": "Can I compare code files?", "a": "Yes. The diff viewer works with any plain-text format. It highlights changes line by line, making it useful for comparing code, configs, or data files."},
     ],
 }

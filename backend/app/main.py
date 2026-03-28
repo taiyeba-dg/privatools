@@ -149,9 +149,9 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
 
 
 # ---------------------------------------------------------------------------
-# Max upload size (100 MB)
+# Max upload size (500 MB — 24 GB RAM server)
 # ---------------------------------------------------------------------------
-MAX_UPLOAD_BYTES = _env_positive_int("MAX_UPLOAD_MB", 100) * 1024 * 1024
+MAX_UPLOAD_BYTES = _env_positive_int("MAX_UPLOAD_MB", 500) * 1024 * 1024
 
 class UploadSizeLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

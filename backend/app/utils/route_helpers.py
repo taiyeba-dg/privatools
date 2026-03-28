@@ -7,7 +7,7 @@ from fastapi import HTTPException, UploadFile
 
 from .cleanup import remove_files
 
-MAX_SIZE = 100 * 1024 * 1024  # 100 MB per file (protects 1 GB RAM server)
+MAX_SIZE = int(os.getenv("MAX_UPLOAD_MB", "500")) * 1024 * 1024  # 500 MB default (24 GB RAM server)
 
 
 def safe_filename(name: str | None, fallback: str = "file") -> str:

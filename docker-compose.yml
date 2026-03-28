@@ -10,7 +10,14 @@ services:
     environment:
       - PORT=8000
       - ENVIRONMENT=production
+      - REQUEST_TIMEOUT_SECONDS=300
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 20G
+        reservations:
+          memory: 4G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
