@@ -97,7 +97,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 # SPA SEO middleware — inject per-route meta tags into index.html responses
 # ---------------------------------------------------------------------------
-_SKIP_SEO_PREFIXES = ("/api/", "/sitemap", "/robots", "/manifest", "/sw.js", "/icons", "/assets", "/favicon", "/og-image")
+_SKIP_SEO_PREFIXES = ("/api/", "/sitemap", "/robots", "/manifest", "/sw.js", "/icons", "/assets", "/favicon", "/og-image", "/llms")
 _STATIC_EXTENSIONS = {
     ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
     ".ico", ".woff", ".woff2", ".ttf", ".otf", ".map", ".json",

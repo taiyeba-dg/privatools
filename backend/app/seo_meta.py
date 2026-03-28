@@ -461,10 +461,118 @@ def get_jsonld_for_path(path: str) -> dict | None:
     return None
 
 
+def _build_ssr_content(path: str, title: str, description: str) -> str:
+    """
+    Build server-rendered HTML content that crawlers (including AI crawlers)
+    can read without executing JavaScript.  This content is placed inside
+    <div id="root"> so that React hydration replaces it once JS loads.
+    """
+    parts: list[str] = []
+
+    # ── Homepage ───────────────────────────────────────────────────────────
+    if path == "/":
+        parts.append(f"<h1>PrivaTools — Free, Open-Source Privacy-First File Tools</h1>")
+        parts.append(
+            "<p>PrivaTools provides 105 free online file tools — 77 PDF tools and 28 image, video, "
+            "and developer utilities. All processing happens on our servers with zero-knowledge "
+            "architecture: files are processed and immediately deleted within minutes. No uploads "
+            "to third parties, no tracking, no sign-ups required. PrivaTools is 100% open source "
+            "under the MIT license and can be self-hosted via Docker.</p>"
+        )
+        parts.append("<h2>PDF Tools</h2><ul>")
+        for slug, (name, desc) in _PDF_TOOLS.items():
+            parts.append(f'<li><a href="/tool/{slug}">{name}</a> — {desc[:120]}</li>')
+        parts.append("</ul>")
+        parts.append("<h2>Image, Video & Developer Tools</h2><ul>")
+        for slug, (name, desc) in _NONPDF_TOOLS.items():
+            parts.append(f'<li><a href="/tools/{slug}">{name}</a> — {desc[:120]}</li>')
+        parts.append("</ul>")
+        return "\n".join(parts)
+
+    # ── Individual tool pages (/tool/<slug> and /tools/<slug>) ─────────────
+    if path.startswith("/tool/"):
+        slug = path[len("/tool/"):]
+        if slug in _PDF_TOOLS:
+            name, desc = _PDF_TOOLS[slug]
+            parts.append(f"<h1>{name} Online Free — PrivaTools</h1>")
+            parts.append(f"<p>{desc}</p>")
+            parts.append(
+                f"<p>{name} is one of 105 free file tools on PrivaTools. All processing happens "
+                "on our servers with zero-knowledge architecture — your files are never stored, "
+                "never read, and never shared with third parties. No account required.</p>"
+            )
+            # Add related tools for internal linking
+            category_tools = [(s, n) for s, (n, _) in _PDF_TOOLS.items() if s != slug][:8]
+            if category_tools:
+                parts.append("<h2>Related PDF Tools</h2><ul>")
+                for s, n in category_tools:
+                    parts.append(f'<li><a href="/tool/{s}">{n}</a></li>')
+                parts.append("</ul>")
+            return "\n".join(parts)
+
+    if path.startswith("/tools/"):
+        slug = path[len("/tools/"):]
+        if slug in _NONPDF_TOOLS:
+            name, desc = _NONPDF_TOOLS[slug]
+            parts.append(f"<h1>{name} Online Free — PrivaTools</h1>")
+            parts.append(f"<p>{desc}</p>")
+            parts.append(
+                f"<p>{name} is one of 105 free file tools on PrivaTools. All processing happens "
+                "on our servers with zero-knowledge architecture — your files are never stored, "
+                "never read, and never shared with third parties. No account required.</p>"
+            )
+            related = [(s, n) for s, (n, _) in _NONPDF_TOOLS.items() if s != slug][:8]
+            if related:
+                parts.append("<h2>Related Tools</h2><ul>")
+                for s, n in related:
+                    parts.append(f'<li><a href="/tools/{s}">{n}</a></li>')
+                parts.append("</ul>")
+            return "\n".join(parts)
+
+    # ── Compare pages ──────────────────────────────────────────────────────
+    if path.startswith("/compare/") or path == "/compare":
+        parts.append(f"<h1>{title}</h1>")
+        parts.append(f"<p>{description}</p>")
+        parts.append(
+            "<p>PrivaTools is a free, open-source alternative with 105 file tools, "
+            "no file limits, no sign-ups, and zero tracking. Compare features, pricing, "
+            "and privacy practices side by side.</p>"
+        )
+        return "\n".join(parts)
+
+    # ── Blog pages ─────────────────────────────────────────────────────────
+    if path.startswith("/blog/"):
+        slug = path[len("/blog/"):]
+        post = _BLOG_POSTS.get(slug)
+        if post:
+            parts.append(f"<h1>{post['title']}</h1>")
+            parts.append(f"<p>{post['description']}</p>")
+            parts.append(f"<p>Published: {post['publishedAt']} · {post['readTime']}</p>")
+            return "\n".join(parts)
+    elif path == "/blog":
+        parts.append("<h1>PrivaTools Blog — PDF & File Tools Tips, Guides & Comparisons</h1>")
+        parts.append("<ul>")
+        for slug, post in _BLOG_POSTS.items():
+            parts.append(f'<li><a href="/blog/{slug}">{post["title"]}</a> — {post["description"]}</li>')
+        parts.append("</ul>")
+        return "\n".join(parts)
+
+    # ── About page ─────────────────────────────────────────────────────────
+    if path == "/about":
+        parts.append("<h1>About PrivaTools</h1>")
+        parts.append(f"<p>{description}</p>")
+        return "\n".join(parts)
+
+    # Fallback: just title + description
+    parts.append(f"<h1>{title}</h1>")
+    parts.append(f"<p>{description}</p>")
+    return "\n".join(parts)
+
+
 def inject_seo(html: str, path: str) -> str:
     """
-    Inject server-side <title>, <meta name="description">, and
-    <meta property="og:*"> into the HTML string returned by StaticFiles.
+    Inject server-side <title>, <meta name="description">,
+    <meta property="og:*">, and visible SSR content into the HTML string.
     """
     title, description = get_meta_for_path(path)
     canonical_url = BASE_URL + (path if path != "/" else "")
@@ -507,6 +615,12 @@ def inject_seo(html: str, path: str) -> str:
     if jsonld:
         jsonld_tag = f'<script type="application/ld+json">{json.dumps(jsonld, ensure_ascii=False, separators=(",", ":"))}</script>'
         html = html.replace("</head>", f"  {jsonld_tag}\n</head>", 1)
+
+    # Inject SSR content into <div id="root"> so crawlers see real content.
+    # React will hydrate over this once JavaScript loads for real users.
+    ssr_content = _build_ssr_content(path, title, description)
+    if ssr_content:
+        html = html.replace('<div id="root"></div>', f'<div id="root">{ssr_content}</div>', 1)
 
     return html
 
