@@ -220,6 +220,26 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Choose diff mode", "text": "Switch between side-by-side and unified views. Line numbers help locate changes in large documents."},
         {"name": "Copy or download the diff", "text": "Copy the highlighted diff to your clipboard or download it as an HTML file for sharing."},
     ],
+    "batch-compress-pdf": [
+        {"name": "Upload PDF files", "text": "Select or drag up to 50 PDF files into the upload area. Each file can be up to 500 MB."},
+        {"name": "Choose compression level", "text": "Select Light (minimal quality loss), Balanced (recommended), or Extreme (maximum size reduction)."},
+        {"name": "Compress and download", "text": "Click Compress All. The server processes all files in parallel using 4-core processing and returns a ZIP with all compressed PDFs."},
+    ],
+    "pdf-page-counter": [
+        {"name": "Upload PDFs", "text": "Select or drag up to 100 PDF files. Any mix of sizes and page counts is supported."},
+        {"name": "View page counts", "text": "The tool instantly displays a table with each filename and its page count, plus the total across all files."},
+        {"name": "Use the results", "text": "Copy the table for print quotes, billing, or document inventory. No download needed — results are shown on screen."},
+    ],
+    "image-upscaler": [
+        {"name": "Upload an image", "text": "Select a JPG, PNG, or WebP image. The tool shows the current dimensions."},
+        {"name": "Choose the scale", "text": "Select 2x (double) or 4x (quadruple) enlargement. The tool uses Lanczos resampling for sharp, artifact-free results."},
+        {"name": "Download the upscaled image", "text": "Click Upscale. The enlarged image downloads in the same format as the original with the scale factor in the filename."},
+    ],
+    "audio-converter": [
+        {"name": "Upload an audio file", "text": "Select an MP3, WAV, OGG, FLAC, AAC, or M4A file up to 200 MB."},
+        {"name": "Choose output format and bitrate", "text": "Select the target format (MP3, WAV, OGG, FLAC, AAC) and bitrate (64k to 320k). Default is MP3 at 192k."},
+        {"name": "Convert and download", "text": "Click Convert. FFmpeg processes the audio and the converted file downloads automatically."},
+    ],
 }
 
 
@@ -422,5 +442,25 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I compare files directly?", "a": "Yes. Upload two text files instead of pasting. Supported formats include .txt, .csv, .json, .xml, .html, .css, .js, .py, and other plain-text formats."},
         {"q": "Is there a file size limit for comparison?", "a": "Each file can be up to 500 MB. Very large files may take a few seconds to process the diff."},
         {"q": "Can I compare code files?", "a": "Yes. The diff viewer works with any plain-text format. It highlights changes line by line, making it useful for comparing code, configs, or data files."},
+    ],
+    "batch-compress-pdf": [
+        {"q": "How many PDFs can I compress at once?", "a": "You can upload up to 50 PDF files per batch. Each file can be up to 500 MB. All files are compressed in parallel using 4-core processing."},
+        {"q": "What compression levels are available?", "a": "Three levels: Light (minimal quality loss, ~20% reduction), Balanced (good quality with ~50% reduction), and Extreme (maximum compression, up to 90% smaller)."},
+        {"q": "How do I get my compressed files?", "a": "All compressed PDFs are packaged into a single ZIP file for download. Each file keeps its original name with '_compressed' appended."},
+    ],
+    "pdf-page-counter": [
+        {"q": "How many PDFs can I count at once?", "a": "Upload up to 100 PDF files. The tool instantly reports the page count for each file plus the total across all files."},
+        {"q": "Does it work with encrypted PDFs?", "a": "Yes, the page counter works with most encrypted PDFs since it only reads metadata, not content. Password-protected PDFs that block all access may show as invalid."},
+        {"q": "Is this useful for print quotes?", "a": "Absolutely. Print shops and copy centers use this to quickly count total pages across multiple documents for accurate pricing."},
+    ],
+    "image-upscaler": [
+        {"q": "What upscaling methods are available?", "a": "The tool uses Lanczos resampling, a high-quality interpolation algorithm that produces sharp, artifact-free results. Choose 2x or 4x enlargement."},
+        {"q": "What image formats are supported?", "a": "JPG, PNG, and WebP images are supported. The output format matches the input — upload a JPG, get a JPG back."},
+        {"q": "Is there a maximum image size?", "a": "The upscaled result cannot exceed 100 megapixels. For a 4x upscale, this means input images up to about 2500x2500 pixels."},
+    ],
+    "audio-converter": [
+        {"q": "What audio formats are supported?", "a": "Convert between MP3, WAV, OGG, FLAC, and AAC. The tool uses FFmpeg for professional-quality conversion with precise codec handling."},
+        {"q": "Can I choose the bitrate?", "a": "Yes. Available bitrates: 64k (small file), 128k (good), 192k (high quality), 256k (very high), and 320k (maximum). Default is 192k."},
+        {"q": "What is the file size limit?", "a": "Audio files up to 200 MB are supported. This covers most audio files including full albums in lossless FLAC format."},
     ],
 }

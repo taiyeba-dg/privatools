@@ -18,7 +18,7 @@ router = APIRouter()
 
 MAX_IMAGE_SIZE = 2 * 1024 * 1024 * 1024  # effectively unlimited
 MAX_MEDIA_SIZE = 2 * 1024 * 1024 * 1024
-MAX_VIDEO_SIZE = 30 * 1024 * 1024  # 30 MB – protects the 1 GB RAM server
+MAX_VIDEO_SIZE = 200 * 1024 * 1024  # 200 MB – 24 GB RAM server handles large video
 MAX_ARCHIVE_SIZE = 2 * 1024 * 1024 * 1024
 MAX_ARCHIVE_FILES = 5000
 TIMESTAMP_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(?:\.\d+)?$")

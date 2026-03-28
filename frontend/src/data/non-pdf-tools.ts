@@ -5,7 +5,7 @@ import {
   Archive, Lock,
   ArrowLeftRight, Code2, ScanText,
   Stamp, Globe, LayoutGrid, ScanLine, Link,
-  QrCode, Merge,
+  QrCode, Merge, Maximize2,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -199,6 +199,18 @@ export const nonPdfTools: NonPdfTool[] = [
     description: "Combine images side-by-side or top-to-bottom",
     longDescription: "Merge images online for free — combine multiple photos side-by-side (horizontal) or top-to-bottom (vertical) into a single image. Images are automatically scaled to match. Free, instant, no sign-up.",
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "merged.png",
+  },
+  {
+    slug: "image-upscaler", icon: Maximize2, name: "Image Upscaler",
+    description: "Upscale images 2x or 4x with Lanczos resampling",
+    longDescription: "Upscale images online for free — enlarge photos by 2x or 4x using high-quality Lanczos resampling. Supports JPG, PNG, and WebP. Perfect for improving resolution of small images, thumbnails, or screenshots. No sign-up, no watermarks.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.webp", outputLabel: "upscaled image",
+  },
+  {
+    slug: "audio-converter", icon: Music, name: "Audio Converter",
+    description: "Convert between MP3, WAV, OGG, FLAC, AAC",
+    longDescription: "Convert audio files online for free — change between MP3, WAV, OGG, FLAC, and AAC formats. Choose your preferred bitrate (64k to 320k). Powered by FFmpeg for professional-quality conversion. Files up to 200 MB supported.",
+    category: "video-audio", accepts: ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma", outputLabel: "converted audio",
   },
 ];
 

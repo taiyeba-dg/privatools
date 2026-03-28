@@ -6,7 +6,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 
 ## Key Facts
 
-- 105 tools: 77 PDF tools + 28 non-PDF tools
+- 109 tools: 79 PDF tools + 30 non-PDF tools
 - 100% free, no premium tiers, 500 MB upload limit per file
 - Open source under MIT license
 - Self-hostable via Docker
@@ -55,6 +55,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 
 ### Optimize & Transform
 - [Compress PDF](https://privatools.me/tool/compress-pdf): Reduce file size by up to 90% without losing quality
+- [Batch Compress PDF](https://privatools.me/tool/batch-compress-pdf): Compress up to 50 PDFs in parallel, download as ZIP
 - [Flatten PDF](https://privatools.me/tool/flatten-pdf): Merge form fields and annotations into static content
 - [Deskew PDF](https://privatools.me/tool/deskew-pdf): Correct tilt angle of scanned documents
 - [Repair PDF](https://privatools.me/tool/repair-pdf): Fix corrupted or broken PDF files
@@ -66,6 +67,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 - [Transparent Background](https://privatools.me/tool/transparent-background): Convert white backgrounds to transparency
 - [Overlay PDF](https://privatools.me/tool/overlay): Layer one PDF on top of another
 - [Compare PDF](https://privatools.me/tool/compare-pdf): Visual diff of two PDF versions
+- [PDF Page Counter](https://privatools.me/tool/pdf-page-counter): Count pages in up to 100 PDFs at once
 
 ### Security & Privacy
 - [Protect PDF](https://privatools.me/tool/protect-pdf): Encrypt with AES-256 and set passwords
@@ -120,12 +122,14 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 - [Photo Collage](https://privatools.me/tools/make-collage): Arrange images into grid layouts
 - [Merge Images](https://privatools.me/tools/merge-images): Combine images side by side or stacked
 - [Image OCR](https://privatools.me/tools/image-ocr): Extract text from images (40+ languages)
+- [Image Upscaler](https://privatools.me/tool/image-upscaler): Enlarge images 2x or 4x with Lanczos resampling
 
 ## Video & Audio Tools
 - [Video to GIF](https://privatools.me/tools/video-to-gif): Convert video clips to animated GIFs
 - [Extract Audio](https://privatools.me/tools/extract-audio): Pull audio from video as MP3, WAV, or OGG
 - [Trim Video/Audio](https://privatools.me/tools/trim-media): Cut clips with visual timeline
 - [Compress Video](https://privatools.me/tools/compress-video): Reduce video file size for sharing
+- [Audio Converter](https://privatools.me/tool/audio-converter): Convert between MP3, WAV, OGG, FLAC, AAC
 
 ## Developer Tools
 - [JSON/XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify, validate, and highlight syntax

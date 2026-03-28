@@ -32,6 +32,7 @@ PDF_TOOLS = [
     "whiteout-pdf", "annotate-pdf", "add-shapes",
     "set-permissions", "add-attachment",
     "reverse-pdf", "booklet-pdf",
+    "batch-compress-pdf", "pdf-page-counter",
 ]
 
 NON_PDF_TOOLS = [
@@ -44,6 +45,7 @@ NON_PDF_TOOLS = [
     "remove-background", "svg-to-png", "image-watermark",
     "generate-favicon", "make-collage", "generate-barcode",
     "url-to-pdf", "qr-reader", "merge-images",
+    "image-upscaler", "audio-converter",
 ]
 
 COMPARE_PAGES = [

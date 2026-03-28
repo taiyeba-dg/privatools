@@ -507,6 +507,18 @@ export const tools: Tool[] = [
     longDescription: "Create PDF booklets online for free — rearrange pages for saddle-stitch booklet printing. Pages are reordered so that when printed double-sided and folded in half, they form a perfect booklet.",
     category: "organize", accepts: ".pdf", outputLabel: "booklet.pdf",
   },
+  {
+    slug: "batch-compress-pdf", icon: Minimize2, name: "Batch Compress PDF",
+    description: "Compress multiple PDFs at once in parallel",
+    longDescription: "Batch compress PDFs online for free — upload up to 50 PDF files and compress them all in parallel. Choose light, balanced, or extreme compression. Download all results as a single ZIP. Powered by 4-core parallel processing for speed.",
+    category: "optimize", accepts: ".pdf", outputLabel: "compressed_pdfs.zip",
+  },
+  {
+    slug: "pdf-page-counter", icon: Hash, name: "PDF Page Counter",
+    description: "Count pages in multiple PDFs instantly",
+    longDescription: "Count PDF pages online for free — upload up to 100 PDF files and instantly see the page count for each file plus the total. Perfect for print quotes, document audits, and project planning. No sign-up required.",
+    category: "advanced", accepts: ".pdf", outputLabel: "page counts",
+  },
 ];
 
 export const toolBySlug = Object.fromEntries(tools.map(t => [t.slug, t]));

@@ -31,6 +31,7 @@ from .routes import (
     phase3_tools,
     phase4_tools,
     phase5_tools,
+    phase6_tools,
     reverse_pdf,
     booklet,
     sitemap,
@@ -49,6 +50,18 @@ async def _cleanup_task():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_temp_dir()
+    # Pre-warm ML models so first requests are fast
+    try:
+        from rembg import new_session
+        new_session("u2netp")
+        logger.info("rembg model pre-warmed")
+    except Exception:
+        logger.warning("rembg pre-warm skipped (not critical)")
+    try:
+        import fitz  # PyMuPDF
+        logger.info("PyMuPDF loaded: %s", fitz.version)
+    except Exception:
+        pass
     task = asyncio.create_task(_cleanup_task())
     yield
     task.cancel()
@@ -111,6 +124,15 @@ _STATIC_EXTENSIONS = {
 _INDEX_HTML = Path(__file__).parent.parent.parent / "frontend" / "dist" / "index.html"
 
 
+from functools import lru_cache
+
+@lru_cache(maxsize=256)
+def _get_seo_html(path: str) -> str:
+    """Cache SEO-injected HTML — same path always produces same output."""
+    html = _INDEX_HTML.read_text("utf-8")
+    return inject_seo(html, path)
+
+
 class SPASEOMiddleware(BaseHTTPMiddleware):
     """
     For SPA routes (anything that is NOT an API call or a static asset),
@@ -137,8 +159,7 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
         # path that doesn't correspond to a file on disk.
         if _INDEX_HTML.exists():
             try:
-                html = _INDEX_HTML.read_text("utf-8")
-                html = inject_seo(html, path)
+                html = _get_seo_html(path)
                 return HTMLResponse(content=html, status_code=200)
             except Exception as exc:
                 logger.error("SPA SEO injection failed for %s: %s", path, exc)
@@ -216,6 +237,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 _origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:8080").split(",")
 
+from fastapi.middleware.gzip import GZIPMiddleware
+app.add_middleware(GZIPMiddleware, minimum_size=500)
 app.add_middleware(SPASEOMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(UploadSizeLimitMiddleware)
@@ -295,6 +318,7 @@ app.include_router(phase2_tools.router, prefix="/api")
 app.include_router(phase3_tools.router, prefix="/api")
 app.include_router(phase4_tools.router, prefix="/api")
 app.include_router(phase5_tools.router, prefix="/api")
+app.include_router(phase6_tools.router, prefix="/api")
 app.include_router(reverse_pdf.router, prefix="/api")
 app.include_router(booklet.router, prefix="/api")
 
