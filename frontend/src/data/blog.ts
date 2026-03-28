@@ -120,7 +120,7 @@ export const blogPosts: BlogPost[] = [
 <p>PrivaTools processes files through a FastAPI backend and deletes them immediately after your download. The source code is open and auditable at <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener">GitHub</a>. If you want total certainty, you can self-host the entire stack with Docker.</p>
 
 <h2>What About File Size Limits?</h2>
-<p>PrivaTools supports uploads up to 100&nbsp;MB per file. For merging very large PDFs (e.g., high-resolution scan archives), you may need to <a href="/tool/compress-pdf">compress each file first</a> before merging, then optionally compress the merged result.</p>
+<p>PrivaTools supports uploads up to 500&nbsp;MB per file — far more generous than most free tools. Even large scan archives and high-resolution documents can be merged directly without pre-compression.</p>
 
 <h2>Alternatives to Online Merging</h2>
 <ul>
@@ -554,7 +554,7 @@ export const blogPosts: BlogPost[] = [
 <p>We uploaded the same 15-page document (a mix of text, images, tables, and form fields) to each editor and tested: adding text, adding a signature, highlighting, filling forms, and re-downloading. We checked for watermarks, file size limits, task limits, account requirements, and how files are handled after download.</p>
 
 <h2>1. PrivaTools — Best for Privacy + No Limits</h2>
-<p><strong>Price:</strong> Free · <strong>Account:</strong> Not required · <strong>Watermarks:</strong> None · <strong>File limit:</strong> 100 MB</p>
+<p><strong>Price:</strong> Free · <strong>Account:</strong> Not required · <strong>Watermarks:</strong> None · <strong>File limit:</strong> 500 MB</p>
 <p><a href="/tool/edit-pdf">PrivaTools Edit PDF</a> lets you add text, highlights, shapes, and signatures to any PDF. It also offers 76 other PDF tools — from <a href="/tool/merge-pdf">merging</a> to <a href="/tool/ocr-pdf">OCR</a> to <a href="/tool/redact-pdf">redaction</a> — all free, all without accounts.</p>
 <p><strong>Privacy:</strong> Files are processed on the server and deleted within minutes. The source code is open and auditable on GitHub. You can self-host the entire stack with Docker for complete control.</p>
 <p><strong>Best for:</strong> Users who need frequent PDF editing without limits and care about where their files go.</p>
@@ -595,7 +595,7 @@ export const blogPosts: BlogPost[] = [
     <tr><th>Editor</th><th>Truly Free?</th><th>Account?</th><th>Limit</th><th>Privacy</th></tr>
   </thead>
   <tbody>
-    <tr><td>PrivaTools</td><td>Yes</td><td>No</td><td>100 MB</td><td>Open source, files deleted</td></tr>
+    <tr><td>PrivaTools</td><td>Yes</td><td>No</td><td>500 MB</td><td>Open source, files deleted</td></tr>
     <tr><td>Sejda</td><td>3 tasks/hr</td><td>No</td><td>50 MB</td><td>Deleted in 2 hours</td></tr>
     <tr><td>PDF24</td><td>Yes</td><td>No</td><td>Generous</td><td>Uploaded to their servers</td></tr>
     <tr><td>PDFescape</td><td>Yes</td><td>No</td><td>10 MB</td><td>Uploaded to their servers</td></tr>

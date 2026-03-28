@@ -33,8 +33,8 @@ export function useClipboardPaste(onPaste: (file: File) => void) {
  * File size warning — returns warning message if file exceeds threshold.
  */
 export function getFileSizeWarning(sizeBytes: number): string | null {
-    if (sizeBytes > 100 * 1024 * 1024) return "File exceeds 100 MB limit. Please use a smaller file.";
-    if (sizeBytes > 50 * 1024 * 1024) return "Large file (>50 MB). Processing may take longer.";
+    if (sizeBytes > 500 * 1024 * 1024) return "File exceeds 500 MB limit. Please use a smaller file.";
+    if (sizeBytes > 200 * 1024 * 1024) return "Large file (>200 MB). Processing may take longer.";
     return null;
 }
 

@@ -564,7 +564,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
 _PRIVATOOLS_FEATURES: dict[str, str] = {
     "Free to use": "Yes — 100% free",
     "No account required": "Yes",
-    "No file size limits": "Yes (100 MB per file)",
+    "No file size limits": "Yes (500 MB per file)",
     "No ads": "Yes",
     "Open source": "Yes (MIT license)",
     "Self-hostable": "Yes (Docker)",
@@ -705,7 +705,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f"<h2>Why Choose PrivaTools Over {comp['name']}?</h2>"
                 f"<p>Unlike {comp['name']}, PrivaTools is 100% free with no premium tiers, "
-                "no file size limits beyond 100 MB, no account required, and no ads. "
+                "no file size limits (up to 500 MB per file), no account required, and no ads. "
                 "Your files are processed on the server and deleted within minutes — "
                 "never stored, never shared with third parties. PrivaTools is open source "
                 "under the MIT license and can be self-hosted via Docker for complete control.</p>"

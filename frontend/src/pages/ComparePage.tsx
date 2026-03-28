@@ -225,7 +225,7 @@ const competitors: Record<string, CompetitorData> = {
 const privatoolsFeatures: Record<string, boolean | string> = {
   "Free to use": "Yes — 100% free",
   "No account required": "Yes",
-  "No file size limits": "100MB per file",
+  "No file size limits": "500MB per file",
   "No ads": "Yes",
   "Open source": "Yes (MIT license)",
   "Self-hostable": "Yes (Docker)",
@@ -246,7 +246,7 @@ function FeatureCell({ value }: { value: boolean | string }) {
   if (value === false || value === "No") {
     return <span className="inline-flex items-center gap-1 text-red-500 text-sm"><X className="w-4 h-4" /> No</span>;
   }
-  const isPositive = typeof value === "string" && (value.startsWith("Yes") || value === "100MB per file" || value.startsWith("PWA"));
+  const isPositive = typeof value === "string" && (value.startsWith("Yes") || value === "500MB per file" || value.startsWith("PWA"));
   return <span className={`text-sm ${isPositive ? "text-green-600 font-semibold" : "text-[var(--text-secondary)]"}`}>{value as string}</span>;
 }
 

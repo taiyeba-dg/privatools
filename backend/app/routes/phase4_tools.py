@@ -129,7 +129,7 @@ async def add_attachment(
         validate_pdf_content(pdf_content)
         att_content = await _read_upload(attachment, label="Attachment file")
         if len(pdf_content) + len(att_content) > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="Combined file size exceeds 50 MB limit")
+            raise HTTPException(status_code=413, detail="Combined file size exceeds the upload limit")
 
         temp_pdf = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_pdf.write_bytes(pdf_content)

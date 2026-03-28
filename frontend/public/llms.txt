@@ -7,7 +7,7 @@ PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrob
 ## Key Facts
 
 - 105 tools: 77 PDF tools + 28 non-PDF tools
-- 100% free, no premium tiers, no file limits
+- 100% free, no premium tiers, 500 MB upload limit per file
 - Open source under MIT license
 - Self-hostable via Docker
 - No account or sign-up required

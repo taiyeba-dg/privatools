@@ -5,14 +5,14 @@
 
 const API_BASE = "/api";
 
-/** Maximum file size: 100 MB per file (protects 1GB RAM server from OOM) */
-export const MAX_FILE_SIZE = 100 * 1024 * 1024;
-export const MAX_FILE_SIZE_LABEL = "100 MB";
+/** Maximum file size: 500 MB per file (24 GB RAM server) */
+export const MAX_FILE_SIZE = 500 * 1024 * 1024;
+export const MAX_FILE_SIZE_LABEL = "500 MB";
 
 function validateFileSize(file: File) {
     if (file.size > MAX_FILE_SIZE) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-        throw new Error(`File "${file.name}" is ${sizeMB} MB — max allowed is 100 MB`);
+        throw new Error(`File "${file.name}" is ${sizeMB} MB — max allowed is 500 MB`);
     }
 }
 
