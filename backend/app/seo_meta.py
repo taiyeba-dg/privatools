@@ -437,6 +437,8 @@ def get_jsonld_for_path(path: str) -> dict | None:
                 "operatingSystem": "Any (browser-based)",
                 "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
                 "provider": {"@id": f"{BASE_URL}/#organization"},
+                "datePublished": "2026-03-15",
+                "dateModified": "2026-03-29",
             },
             {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
         ]
@@ -481,6 +483,8 @@ def get_jsonld_for_path(path: str) -> dict | None:
                 "operatingSystem": "Any (browser-based)",
                 "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
                 "provider": {"@id": f"{BASE_URL}/#organization"},
+                "datePublished": "2026-03-15",
+                "dateModified": "2026-03-29",
             },
             {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
         ]

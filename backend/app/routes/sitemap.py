@@ -51,54 +51,66 @@ COMPARE_PAGES = [
     "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
 ]
 
-BLOG_POSTS = [
-    "compress-pdf-without-losing-quality",
-    "merge-pdf-files-online-free",
-    "best-free-pdf-tools-2026",
-    "remove-password-from-pdf",
-    "convert-word-to-pdf-free",
-    "edit-pdf-online-free-no-sign-up",
-    "split-pdf-online-free",
-    "redact-pdf-free-guide",
-    "best-free-online-pdf-editors-2026",
-]
+# Blog posts with their published dates
+BLOG_POSTS: dict[str, str] = {
+    "compress-pdf-without-losing-quality": "2026-03-22",
+    "merge-pdf-files-online-free": "2026-03-22",
+    "best-free-pdf-tools-2026": "2026-03-22",
+    "remove-password-from-pdf": "2026-03-22",
+    "convert-word-to-pdf-free": "2026-03-22",
+    "edit-pdf-online-free-no-sign-up": "2026-03-29",
+    "split-pdf-online-free": "2026-03-29",
+    "redact-pdf-free-guide": "2026-03-29",
+    "best-free-online-pdf-editors-2026": "2026-03-29",
+}
 
 BASE_URL = "https://privatools.me"
+
+# Dates for different content types
+_TOOLS_LAUNCH_DATE = "2026-03-15"
+_COMPARE_DATE = "2026-03-22"
+
+
+def _entry(url: str, lastmod: str, priority: str, changefreq: str) -> str:
+    return (
+        f"  <url>\n"
+        f"    <loc>{url}</loc>\n"
+        f"    <lastmod>{lastmod}</lastmod>\n"
+        f"    <changefreq>{changefreq}</changefreq>\n"
+        f"    <priority>{priority}</priority>\n"
+        f"  </url>\n"
+    )
 
 
 @router.get("/sitemap.xml")
 async def sitemap():
     today = date.today().isoformat()
 
-    entries = [
-        (BASE_URL, "1.0", "daily"),
-        (f"{BASE_URL}/about", "0.6", "monthly"),
-        (f"{BASE_URL}/batch", "0.7", "weekly"),
-        (f"{BASE_URL}/pipeline", "0.7", "weekly"),
-        (f"{BASE_URL}/compare", "0.7", "monthly"),
-        (f"{BASE_URL}/blog", "0.8", "weekly"),
-    ]
-
-    for slug in BLOG_POSTS:
-        entries.append((f"{BASE_URL}/blog/{slug}", "0.8", "weekly"))
-
-    for slug in COMPARE_PAGES:
-        entries.append((f"{BASE_URL}/compare/{slug}", "0.8", "monthly"))
-
-    for slug in PDF_TOOLS:
-        entries.append((f"{BASE_URL}/tool/{slug}", "0.8", "weekly"))
-    for slug in NON_PDF_TOOLS:
-        entries.append((f"{BASE_URL}/tools/{slug}", "0.8", "weekly"))
-
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    for url, priority, changefreq in entries:
-        xml += f"  <url>\n"
-        xml += f"    <loc>{url}</loc>\n"
-        xml += f"    <lastmod>{today}</lastmod>\n"
-        xml += f"    <changefreq>{changefreq}</changefreq>\n"
-        xml += f"    <priority>{priority}</priority>\n"
-        xml += f"  </url>\n"
+
+    # Static pages — homepage updated daily
+    xml += _entry(BASE_URL, today, "1.0", "daily")
+    xml += _entry(f"{BASE_URL}/about", _TOOLS_LAUNCH_DATE, "0.6", "monthly")
+    xml += _entry(f"{BASE_URL}/batch", _TOOLS_LAUNCH_DATE, "0.7", "weekly")
+    xml += _entry(f"{BASE_URL}/pipeline", _TOOLS_LAUNCH_DATE, "0.7", "weekly")
+    xml += _entry(f"{BASE_URL}/compare", _COMPARE_DATE, "0.7", "monthly")
+    xml += _entry(f"{BASE_URL}/blog", today, "0.8", "weekly")
+
+    # Blog posts — use actual published date
+    for slug, published in BLOG_POSTS.items():
+        xml += _entry(f"{BASE_URL}/blog/{slug}", published, "0.8", "weekly")
+
+    # Compare pages
+    for slug in COMPARE_PAGES:
+        xml += _entry(f"{BASE_URL}/compare/{slug}", _COMPARE_DATE, "0.8", "monthly")
+
+    # Tool pages — use launch date
+    for slug in PDF_TOOLS:
+        xml += _entry(f"{BASE_URL}/tool/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
+    for slug in NON_PDF_TOOLS:
+        xml += _entry(f"{BASE_URL}/tools/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
+
     xml += "</urlset>"
 
     return Response(content=xml, media_type="application/xml")

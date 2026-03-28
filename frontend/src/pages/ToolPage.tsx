@@ -3,7 +3,7 @@ import { useEffect, useRef, Suspense, lazy, type ComponentType } from "react";
 import { toolBySlug, tools, categoryMeta, type Category } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Shield, ChevronRight, Github, ExternalLink, ArrowUpRight, ArrowRight, Lock } from "lucide-react";
+import { Shield, ChevronRight, Github, ExternalLink, ArrowUpRight, ArrowRight, Lock, BookOpen } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
@@ -96,6 +96,79 @@ const LazyDeleteAnnotationsUI = lazyNamed(loadSimpleConvertUI, "DeleteAnnotation
 const LazyOfficeToPdfUI = lazyNamed(loadSimpleConvertUI, "OfficeToPdfUI");
 const LazyReversePdfUI = lazyNamed(loadSimpleConvertUI, "ReversePdfUI");
 const LazyBookletUI = lazyNamed(loadSimpleConvertUI, "BookletUI");
+
+// Map tool slugs to related blog posts for internal linking
+const TOOL_BLOG_LINKS: Record<string, { slug: string; title: string }[]> = {
+  "merge-pdf": [
+    { slug: "merge-pdf-files-online-free", title: "How to Merge PDF Files Online for Free" },
+    { slug: "best-free-pdf-tools-2026", title: "Best Free PDF Tools in 2026" },
+  ],
+  "split-pdf": [
+    { slug: "split-pdf-online-free", title: "How to Split a PDF File Online — 3 Methods" },
+  ],
+  "split-by-bookmarks": [
+    { slug: "split-pdf-online-free", title: "How to Split a PDF File Online — 3 Methods" },
+  ],
+  "split-by-size": [
+    { slug: "split-pdf-online-free", title: "How to Split a PDF File Online — 3 Methods" },
+  ],
+  "compress-pdf": [
+    { slug: "compress-pdf-without-losing-quality", title: "How to Compress a PDF Without Losing Quality" },
+    { slug: "best-free-pdf-tools-2026", title: "Best Free PDF Tools in 2026" },
+  ],
+  "edit-pdf": [
+    { slug: "edit-pdf-online-free-no-sign-up", title: "How to Edit a PDF Online — No Sign-Up" },
+    { slug: "best-free-online-pdf-editors-2026", title: "Best Free Online PDF Editors in 2026" },
+  ],
+  "sign-pdf": [
+    { slug: "edit-pdf-online-free-no-sign-up", title: "How to Edit a PDF Online — No Sign-Up" },
+  ],
+  "esign-pdf": [
+    { slug: "edit-pdf-online-free-no-sign-up", title: "How to Edit a PDF Online — No Sign-Up" },
+  ],
+  "annotate-pdf": [
+    { slug: "edit-pdf-online-free-no-sign-up", title: "How to Edit a PDF Online — No Sign-Up" },
+  ],
+  "protect-pdf": [
+    { slug: "remove-password-from-pdf", title: "How to Remove a Password from a PDF" },
+  ],
+  "unlock-pdf": [
+    { slug: "remove-password-from-pdf", title: "How to Remove a Password from a PDF" },
+  ],
+  "redact-pdf": [
+    { slug: "redact-pdf-free-guide", title: "How to Redact Sensitive Information from PDFs" },
+  ],
+  "word-to-pdf": [
+    { slug: "convert-word-to-pdf-free", title: "How to Convert Word to PDF for Free" },
+  ],
+  "office-to-pdf": [
+    { slug: "convert-word-to-pdf-free", title: "How to Convert Word to PDF for Free" },
+  ],
+  "pdf-to-word": [
+    { slug: "best-free-pdf-tools-2026", title: "Best Free PDF Tools in 2026" },
+  ],
+  "ocr-pdf": [
+    { slug: "best-free-pdf-tools-2026", title: "Best Free PDF Tools in 2026" },
+  ],
+  "fill-form": [
+    { slug: "edit-pdf-online-free-no-sign-up", title: "How to Edit a PDF Online — No Sign-Up" },
+  ],
+  "form-creator": [
+    { slug: "edit-pdf-online-free-no-sign-up", title: "How to Edit a PDF Online — No Sign-Up" },
+  ],
+  "flatten-pdf": [
+    { slug: "best-free-pdf-tools-2026", title: "Best Free PDF Tools in 2026" },
+  ],
+  "watermark": [
+    { slug: "edit-pdf-online-free-no-sign-up", title: "How to Edit a PDF Online — No Sign-Up" },
+  ],
+  "strip-metadata": [
+    { slug: "redact-pdf-free-guide", title: "How to Redact Sensitive Information from PDFs" },
+  ],
+  "sanitize-pdf": [
+    { slug: "redact-pdf-free-guide", title: "How to Redact Sensitive Information from PDFs" },
+  ],
+};
 
 function CategoryToolNav({ currentSlug, category }: { currentSlug: string; category: Category }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -333,6 +406,20 @@ export default function ToolPage() {
                 All processing happens locally on your self-hosted server — files are never sent to third parties.
               </p>
             </div>
+
+            {slug && TOOL_BLOG_LINKS[slug] && TOOL_BLOG_LINKS[slug].length > 0 && (
+              <div className="editorial-insert p-5">
+                <h3 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related articles</h3>
+                <div className="space-y-0.5">
+                  {TOOL_BLOG_LINKS[slug].map(post => (
+                    <Link key={post.slug} to={`/blog/${post.slug}`} className="flex items-center gap-3 px-2 py-2 hover:bg-card/60 transition-colors group">
+                      <BookOpen size={14} strokeWidth={1.75} className="text-primary shrink-0" />
+                      <span className="font-serif-body text-sm text-muted-foreground group-hover:text-foreground transition-colors flex-1">{post.title}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
