@@ -34,7 +34,7 @@ export default function LandingPage() {
               </h2>
               <div className="rule-accent mt-6 mb-6 w-16" />
               <p className="drop-cap font-serif-body text-lg sm:text-xl text-foreground/80 leading-relaxed max-w-lg">
-                PrivaTools gives you 99+ powerful file tools — PDF, image, video, and developer utilities — with a promise: your files never leave your server. No cloud uploads. No tracking. No accounts. Just tools that work.
+                PrivaTools gives you 107 powerful file tools — PDF, image, video, and developer utilities — with a promise: your files never leave your server. No cloud uploads. No tracking. No accounts. Just tools that work.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row items-start gap-3">
                 <Link
@@ -63,7 +63,7 @@ export default function LandingPage() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { num: "99+", label: "Tools" },
+                    { num: "107", label: "Tools" },
                     { num: "0", label: "Data Collected" },
                     { num: "100%", label: "Open Source" },
                     { num: "∞", label: "Free Forever" },
@@ -158,7 +158,7 @@ export default function LandingPage() {
               to="/"
               className="font-sans-ui text-sm font-semibold text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
             >
-              View all 99+ tools <ArrowRight size={14} />
+              View all 107 tools <ArrowRight size={14} />
             </Link>
           </div>
         </section>

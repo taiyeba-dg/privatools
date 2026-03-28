@@ -89,7 +89,7 @@ export default function Index() {
               <Search size={16} className="text-muted-foreground shrink-0" />
               <input
                 className="flex-1 bg-transparent outline-none font-serif-body text-base placeholder:text-muted-foreground/40 text-foreground"
-                placeholder="Search 99+ tools..."
+                placeholder="Search 107 tools..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
               />

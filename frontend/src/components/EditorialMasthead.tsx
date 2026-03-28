@@ -26,7 +26,7 @@ export function EditorialMasthead() {
           <h1 className="masthead-title text-foreground">PRIVATOOLS</h1>
         </Link>
         <p className="masthead-meta mt-1">
-          EST. 2025 · FREE · OPEN SOURCE · PRIVACY-FIRST
+          EST. 2026 · FREE · OPEN SOURCE · PRIVACY-FIRST
         </p>
       </div>
 
@@ -90,7 +90,7 @@ export function EditorialMasthead() {
             })}
           </span>
           <span className="masthead-meta">
-            99+ Tools for Every File Task
+            107 Tools for Every File Task
           </span>
         </div>
       </div>

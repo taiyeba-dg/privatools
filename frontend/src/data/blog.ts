@@ -6,6 +6,7 @@ export interface BlogPost {
   readTime: string;
   tags: string[];
   body: string;
+  author?: string;
 }
 
 export const blogPosts: BlogPost[] = [
@@ -154,7 +155,7 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2>1. PrivaTools — Best Overall for Privacy + Tool Count</h2>
-<p><strong>Free:</strong> Yes, 100% · <strong>Account required:</strong> No · <strong>Tools:</strong> 90+ (PDF, Image, Video, Developer)</p>
+<p><strong>Free:</strong> Yes, 100% · <strong>Account required:</strong> No · <strong>Tools:</strong> 107 (PDF, Image, Video, Developer)</p>
 <p>PrivaTools is open source (MIT license), self-hostable, and covers the most tool categories of any free suite tested. It handles PDF operations, image processing, video tools, and developer utilities — all in one place. Files are processed on the server and immediately deleted.</p>
 <p><strong>Strengths:</strong> No task limits, no ads, no watermarks, open-source and auditable. Covers tools that most PDF suites don't touch (video compression, developer utilities, archive tools).</p>
 <p><strong>Weaknesses:</strong> Server-side processing (not fully client-side). Newer service with a smaller community than established alternatives.</p>

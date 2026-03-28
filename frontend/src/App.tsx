@@ -21,6 +21,8 @@ const BatchPage = lazy(() => import("./pages/BatchPage"));
 const PipelinePage = lazy(() => import("./pages/PipelinePage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
 
 const queryClient = new QueryClient();
 
@@ -62,6 +64,8 @@ const App = () => (
           <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
           <Route path="/blog" element={withRouteFallback(<BlogPage />)} />
           <Route path="/blog/:slug" element={withRouteFallback(<BlogPostPage />)} />
+          <Route path="/privacy" element={withRouteFallback(<PrivacyPage />)} />
+          <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
           <Route path="*" element={withRouteFallback(<NotFound />)} />
         </Routes>
         <MobileNav />

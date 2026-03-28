@@ -1,17 +1,20 @@
 # PrivaTools
 
-> 90+ free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your server. Zero uploads to third parties, zero tracking, zero sign-ups.
+> 107 free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your server. Zero uploads to third parties, zero tracking, zero sign-ups.
 
 PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. Every file is processed locally and deleted immediately — never stored, never read, never shared.
 
 ## Key Facts
 
-- 109 tools: 79 PDF tools + 30 non-PDF tools
+- 107 tools: 78 PDF tools + 29 non-PDF tools
 - 100% free, no premium tiers, 500 MB upload limit per file
 - Open source under MIT license
 - Self-hostable via Docker
 - No account or sign-up required
 - Files processed and deleted within minutes
+- Contact: hello@privatools.me
+- Privacy Policy: https://privatools.me/privacy
+- Terms of Service: https://privatools.me/terms
 
 ## PDF Tools
 

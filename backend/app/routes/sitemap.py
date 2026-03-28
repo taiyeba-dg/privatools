@@ -94,6 +94,8 @@ async def sitemap():
     # Static pages — homepage updated daily
     xml += _entry(BASE_URL, today, "1.0", "daily")
     xml += _entry(f"{BASE_URL}/about", _TOOLS_LAUNCH_DATE, "0.6", "monthly")
+    xml += _entry(f"{BASE_URL}/privacy", "2026-03-29", "0.4", "yearly")
+    xml += _entry(f"{BASE_URL}/terms", "2026-03-29", "0.4", "yearly")
     xml += _entry(f"{BASE_URL}/batch", _TOOLS_LAUNCH_DATE, "0.7", "weekly")
     xml += _entry(f"{BASE_URL}/pipeline", _TOOLS_LAUNCH_DATE, "0.7", "weekly")
     xml += _entry(f"{BASE_URL}/compare", _COMPARE_DATE, "0.7", "monthly")

@@ -43,7 +43,7 @@ export default function NotFound() {
         </div>
 
         <p className="mt-16 font-mono-meta text-[10px] text-muted-foreground/30 uppercase tracking-widest">
-          PrivaTools · 99+ Privacy-First File Tools
+          PrivaTools · 107 Privacy-First File Tools
         </p>
       </main>
 

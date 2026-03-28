@@ -54,7 +54,7 @@ export default function BlogPostPage() {
             </p>
 
             <div className="flex items-center gap-4 text-xs text-muted-foreground font-mono-meta pb-6 border-b border-border/60">
-              <span>PrivaTools Team</span>
+              <span>{post.author || "PrivaTools Team"}</span>
               <span>·</span>
               <span>{formatDate(post.publishedAt)}</span>
               <span>·</span>

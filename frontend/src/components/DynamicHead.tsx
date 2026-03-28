@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
+import { blogPosts } from "@/data/blog";
 
 const BASE_URL = "https://privatools.me";
 
@@ -20,7 +21,7 @@ nonPdfTools.forEach(t => { toolMap[`/tools/${t.slug}`] = { ...t }; });
 const pageMeta: Record<string, { title: string; description: string }> = {
     "/": {
         title: "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        description: "90+ free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your device. Zero uploads, zero tracking.",
+        description: "107 free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your device. Zero uploads, zero tracking.",
     },
     "/about": {
         title: "About PrivaTools — How We Handle Your Files | Privacy-First",
@@ -34,6 +35,14 @@ const pageMeta: Record<string, { title: string; description: string }> = {
         title: "PDF Pipeline — Chain Multiple PDF Tools Together | PrivaTools",
         description: "Chain multiple PDF tools together into a processing pipeline. Compress, rotate, watermark, and more — all in one pass. Privacy-first and free.",
     },
+    "/privacy": {
+        title: "Privacy Policy — PrivaTools",
+        description: "PrivaTools privacy policy: no data collection, no cookies, no tracking. Files are processed in temporary memory and immediately deleted. Full transparency.",
+    },
+    "/terms": {
+        title: "Terms of Service — PrivaTools",
+        description: "Terms of service for PrivaTools. Free, open-source file tools provided as-is under the MIT license. No accounts, no data collection.",
+    },
     "/compare": {
         title: "PrivaTools vs iLovePDF vs Smallpdf vs Adobe — Free Comparison",
         description: "Compare PrivaTools with iLovePDF, Smallpdf, Adobe Acrobat, Sejda, PDF24, Foxit, and LightPDF. See which tool is truly free, private, and open source.",
@@ -44,11 +53,11 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/smallpdf": {
         title: "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
-        description: "PrivaTools vs Smallpdf compared: no 2-tasks/day limit, no premium upsells, no watermarks. 90+ tools vs 21 tools. See the full comparison.",
+        description: "PrivaTools vs Smallpdf compared: no 2-tasks/day limit, no premium upsells, no watermarks. 107 tools vs 21 tools. See the full comparison.",
     },
     "/compare/adobe-acrobat": {
         title: "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
-        description: "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. No Adobe ID required, no subscription, 90+ tools. Compare features side by side.",
+        description: "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. No Adobe ID required, no subscription, 107 tools. Compare features side by side.",
     },
     "/compare/sejda": {
         title: "PrivaTools vs Sejda — Free PDF Tool Comparison (2026)",
@@ -60,7 +69,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/foxit": {
         title: "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
-        description: "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. 90+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
+        description: "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. 107 privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
     },
     "/compare/lightpdf": {
         title: "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
@@ -98,6 +107,31 @@ const categoryPaths: Record<string, string> = {
     "document-office": "Document Tools",
 };
 
+/** Shared Organization schema block, referenced by @id across pages. */
+const organizationSchema = {
+    "@type": "Organization",
+    "@id": `${BASE_URL}/#organization`,
+    name: "PrivaTools",
+    url: BASE_URL,
+    logo: {
+        "@type": "ImageObject",
+        url: `${BASE_URL}/icons/icon-192.png`,
+        width: 192,
+        height: 192,
+    },
+    description: "Free, open-source suite of 107 file tools for PDF, image, video, and developer workflows. Zero-knowledge architecture — no tracking, no accounts.",
+    foundingDate: "2026",
+    sameAs: [
+        "https://github.com/taiyeba-dg/privatools",
+    ],
+    contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: "hello@privatools.me",
+        url: "https://github.com/taiyeba-dg/privatools/issues",
+    },
+};
+
 /** FAQ entries shown on every tool page for FAQPage schema. */
 function getToolFAQ(toolName: string) {
     return [
@@ -120,18 +154,18 @@ function getToolFAQ(toolName: string) {
     ];
 }
 
-/** HowTo steps for each tool. */
-function getToolHowTo(toolName: string) {
-    return [
-        { name: "Upload your file", text: `Open ${toolName} on PrivaTools and drag & drop your file, or click to browse.` },
-        { name: "Configure settings", text: "Adjust any tool-specific settings or options as needed." },
-        { name: "Process and download", text: "Click the process button. Your result downloads automatically — no email required." },
-    ];
-}
+/** Person schema for the default author. */
+const authorSchema = {
+    "@type": "Organization",
+    name: "PrivaTools",
+    url: BASE_URL,
+    "@id": `${BASE_URL}/#organization`,
+};
 
 /**
  * Updates <title>, <meta>, <link rel="canonical">, and JSON-LD on every route change.
- * Includes: WebApplication, FAQPage, BreadcrumbList, HowTo schemas.
+ * Schemas: WebApplication, FAQPage, BreadcrumbList (tools), BlogPosting (blog),
+ * Article (compare), Organization + WebSite (home), SoftwareApplication (about).
  */
 export function DynamicHead() {
     const { pathname } = useLocation();
@@ -141,6 +175,7 @@ export function DynamicHead() {
         const url = `${BASE_URL}${pathname === "/" ? "" : pathname}`;
 
         if (tool) {
+            // ── Tool pages ──────────────────────────────────────
             const title = `${tool.name} Online Free — No Sign Up | PrivaTools`;
             const desc = tool.longDescription || tool.description;
             const category = tool.category || "";
@@ -152,32 +187,36 @@ export function DynamicHead() {
             setMeta("og:description", desc);
             setMeta("og:url", url);
             setMeta("og:type", "website");
-            setMeta("og:image", `${BASE_URL}/og-image.png`);
+            setMeta("og:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+            setMeta("og:image:width", "1200");
+            setMeta("og:image:height", "630");
             setMeta("twitter:title", `${tool.name} — Free Online | PrivaTools`);
             setMeta("twitter:description", desc);
-            setMeta("twitter:image", `${BASE_URL}/og-image.png`);
+            setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${pathname}`);
             setCanonical(url);
 
-            // Combined JSON-LD graph
             const faq = getToolFAQ(tool.name);
-            const howTo = getToolHowTo(tool.name);
 
             setJsonLd({
                 "@context": "https://schema.org",
                 "@graph": [
-                    // WebApplication
+                    // WebApplication (no more HowTo)
                     {
                         "@type": "WebApplication",
-                        name: tool.name,
+                        name: `${tool.name} — PrivaTools`,
                         description: desc,
                         url,
-                        applicationCategory: categoryLabels[category] || "Utility",
-                        operatingSystem: "Any",
+                        applicationCategory: categoryLabels[category] || "UtilitiesApplication",
+                        operatingSystem: "Any (browser-based)",
                         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-                        provider: {
-                            "@type": "Organization",
-                            name: "PrivaTools",
-                            url: BASE_URL,
+                        provider: { "@id": `${BASE_URL}/#organization` },
+                        isAccessibleForFree: true,
+                        image: `${BASE_URL}/api/og-image?p=${pathname}`,
+                        datePublished: "2026-03-15",
+                        dateModified: "2026-03-29",
+                        speakable: {
+                            "@type": "SpeakableSpecification",
+                            cssSelector: ["h1", ".tool-description", ".faq-section"],
                         },
                     },
                     // BreadcrumbList
@@ -189,7 +228,7 @@ export function DynamicHead() {
                             { "@type": "ListItem", position: 3, name: tool.name, item: url },
                         ],
                     },
-                    // FAQPage
+                    // FAQPage (still useful for AI semantic understanding)
                     {
                         "@type": "FAQPage",
                         mainEntity: faq.map(f => ({
@@ -198,21 +237,175 @@ export function DynamicHead() {
                             acceptedAnswer: { "@type": "Answer", text: f.answer },
                         })),
                     },
-                    // HowTo
+                    organizationSchema,
+                ],
+            });
+        } else if (pathname.startsWith("/blog/") && pathname !== "/blog") {
+            // ── Blog post pages ─────────────────────────────────
+            const slug = pathname.replace("/blog/", "");
+            const post = blogPosts.find(p => p.slug === slug);
+            if (post) {
+                const title = `${post.title} | PrivaTools Blog`;
+                document.title = title;
+                setMeta("description", post.description);
+                setMeta("og:title", post.title);
+                setMeta("og:description", post.description);
+                setMeta("og:url", url);
+                setMeta("og:type", "article");
+                setMeta("og:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+                setMeta("og:image:width", "1200");
+                setMeta("og:image:height", "630");
+                setMeta("twitter:title", post.title);
+                setMeta("twitter:description", post.description);
+                setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+                setCanonical(url);
+
+                setJsonLd({
+                    "@context": "https://schema.org",
+                    "@graph": [
+                        {
+                            "@type": "BlogPosting",
+                            headline: post.title,
+                            description: post.description,
+                            url,
+                            mainEntityOfPage: { "@type": "WebPage", "@id": url },
+                            datePublished: post.publishedAt,
+                            dateModified: post.publishedAt,
+                            author: authorSchema,
+                            publisher: { "@id": `${BASE_URL}/#organization` },
+                            image: {
+                                "@type": "ImageObject",
+                                url: `${BASE_URL}/api/og-image?p=${pathname}`,
+                                width: 1200,
+                                height: 630,
+                            },
+                            articleSection: post.tags[0] || "PDF Tools",
+                            speakable: {
+                                "@type": "SpeakableSpecification",
+                                cssSelector: ["h1", ".blog-prose h2", ".blog-prose p:first-of-type"],
+                            },
+                        },
+                        {
+                            "@type": "BreadcrumbList",
+                            itemListElement: [
+                                { "@type": "ListItem", position: 1, name: "PrivaTools", item: BASE_URL },
+                                { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE_URL}/blog` },
+                                { "@type": "ListItem", position: 3, name: post.title, item: url },
+                            ],
+                        },
+                        organizationSchema,
+                    ],
+                });
+            } else {
+                removeJsonLd();
+            }
+        } else if (pathname.startsWith("/compare/") && pathname !== "/compare") {
+            // ── Comparison pages ────────────────────────────────
+            const meta = pageMeta[pathname];
+            if (meta) {
+                document.title = meta.title;
+                setMeta("description", meta.description);
+                setMeta("og:title", meta.title);
+                setMeta("og:description", meta.description);
+                setMeta("og:url", url);
+                setMeta("og:type", "article");
+                setMeta("og:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+                setMeta("og:image:width", "1200");
+                setMeta("og:image:height", "630");
+                setMeta("twitter:title", meta.title);
+                setMeta("twitter:description", meta.description);
+                setMeta("twitter:image", `${BASE_URL}/api/og-image?p=${pathname}`);
+                setCanonical(url);
+
+                const competitor = pathname.replace("/compare/", "").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+                setJsonLd({
+                    "@context": "https://schema.org",
+                    "@graph": [
+                        {
+                            "@type": "Article",
+                            headline: meta.title,
+                            description: meta.description,
+                            url,
+                            mainEntityOfPage: { "@type": "WebPage", "@id": url },
+                            datePublished: "2026-03-22",
+                            dateModified: "2026-03-29",
+                            author: authorSchema,
+                            publisher: { "@id": `${BASE_URL}/#organization` },
+                            image: {
+                                "@type": "ImageObject",
+                                url: `${BASE_URL}/api/og-image?p=${pathname}`,
+                                width: 1200,
+                                height: 630,
+                            },
+                            about: {
+                                "@type": "SoftwareApplication",
+                                name: competitor,
+                            },
+                            speakable: {
+                                "@type": "SpeakableSpecification",
+                                cssSelector: ["h1", ".comparison-summary", "h2"],
+                            },
+                        },
+                        {
+                            "@type": "BreadcrumbList",
+                            itemListElement: [
+                                { "@type": "ListItem", position: 1, name: "PrivaTools", item: BASE_URL },
+                                { "@type": "ListItem", position: 2, name: "Compare", item: `${BASE_URL}/compare` },
+                                { "@type": "ListItem", position: 3, name: meta.title.split(" — ")[0], item: url },
+                            ],
+                        },
+                        organizationSchema,
+                    ],
+                });
+            } else {
+                removeJsonLd();
+            }
+        } else if (pathname === "/about") {
+            // ── About page ──────────────────────────────────────
+            const meta = pageMeta[pathname]!;
+            document.title = meta.title;
+            setMeta("description", meta.description);
+            setMeta("og:title", meta.title);
+            setMeta("og:description", meta.description);
+            setMeta("og:url", url);
+            setMeta("og:type", "website");
+            setMeta("og:image", `${BASE_URL}/og-image.png`);
+            setMeta("twitter:title", meta.title);
+            setMeta("twitter:description", meta.description);
+            setMeta("twitter:image", `${BASE_URL}/og-image.png`);
+            setCanonical(url);
+
+            setJsonLd({
+                "@context": "https://schema.org",
+                "@graph": [
+                    organizationSchema,
                     {
-                        "@type": "HowTo",
-                        name: `How to use ${tool.name} online`,
-                        description: `Step-by-step guide to using ${tool.name} on PrivaTools for free.`,
-                        step: howTo.map((s, i) => ({
-                            "@type": "HowToStep",
-                            position: i + 1,
-                            name: s.name,
-                            text: s.text,
-                        })),
+                        "@type": "SoftwareApplication",
+                        name: "PrivaTools",
+                        url: BASE_URL,
+                        description: "Free, open-source suite of 107 file tools for PDF, image, video, and developer workflows. Zero-knowledge architecture with no tracking.",
+                        applicationCategory: "UtilitiesApplication",
+                        operatingSystem: "Any (browser-based)",
+                        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+                        provider: { "@id": `${BASE_URL}/#organization` },
+                        license: "https://opensource.org/licenses/MIT",
+                        codeRepository: "https://github.com/taiyeba-dg/privatools",
+                        isAccessibleForFree: true,
+                        featureList: "PDF merge, PDF split, PDF compress, image conversion, video compression, OCR, format conversion, metadata removal",
+                    },
+                    {
+                        "@type": "WebPage",
+                        "@id": url,
+                        name: meta.title,
+                        description: meta.description,
+                        url,
+                        about: { "@id": `${BASE_URL}/#organization` },
                     },
                 ],
             });
         } else {
+            // ── All other pages ─────────────────────────────────
             const meta = pageMeta[pathname] || pageMeta["/"]!;
             document.title = meta.title;
             setMeta("description", meta.description);
@@ -232,22 +425,18 @@ export function DynamicHead() {
                     "@graph": [
                         {
                             "@type": "WebSite",
+                            "@id": `${BASE_URL}/#website`,
                             name: "PrivaTools",
                             url: BASE_URL,
                             description: meta.description,
+                            publisher: { "@id": `${BASE_URL}/#organization` },
                             potentialAction: {
                                 "@type": "SearchAction",
                                 target: `${BASE_URL}/?q={search_term_string}`,
                                 "query-input": "required name=search_term_string",
                             },
                         },
-                        {
-                            "@type": "Organization",
-                            name: "PrivaTools",
-                            url: BASE_URL,
-                            logo: `${BASE_URL}/og-image.png`,
-                            sameAs: ["https://github.com/taiyeba-dg/privatools"],
-                        },
+                        organizationSchema,
                     ],
                 });
             } else {

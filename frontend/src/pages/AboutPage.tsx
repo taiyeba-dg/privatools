@@ -129,7 +129,7 @@ export default function AboutPage() {
         {/* Stats */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-8 border-y border-[var(--border-color)]">
           {[
-            { value: "90+", label: "Free Tools" },
+            { value: "107", label: "Free Tools" },
             { value: "0", label: "Files Stored" },
             { value: "0", label: "Accounts Required" },
             { value: "MIT", label: "License" },
@@ -139,6 +139,28 @@ export default function AboutPage() {
               <div className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">{s.label}</div>
             </div>
           ))}
+        </section>
+
+        {/* Contact */}
+        <section className="space-y-4">
+          <h2 className="font-serif text-2xl font-bold border-b-2 border-[var(--accent-primary)] pb-2 inline-block">
+            Contact
+          </h2>
+          <p className="font-serif text-base text-[var(--text-secondary)] leading-relaxed">
+            Questions about privacy, file handling, or the project? Reach us at{" "}
+            <a href="mailto:hello@privatools.me" className="text-[var(--accent-primary)] hover:underline">
+              hello@privatools.me
+            </a>{" "}
+            or open an issue on{" "}
+            <a href="https://github.com/taiyeba-dg/privatools/issues" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">
+              GitHub
+            </a>.
+          </p>
+          <div className="flex flex-wrap gap-3 text-sm font-mono">
+            <Link to="/privacy" className="text-[var(--accent-primary)] hover:underline">Privacy Policy</Link>
+            <span className="text-[var(--text-secondary)]">·</span>
+            <Link to="/terms" className="text-[var(--accent-primary)] hover:underline">Terms of Service</Link>
+          </div>
         </section>
 
         {/* CTA */}

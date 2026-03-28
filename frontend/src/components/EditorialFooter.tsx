@@ -44,14 +44,28 @@ export function EditorialFooter() {
             </ul>
           </div>
 
-          {/* Contribute */}
+          {/* Legal & Contact */}
           <div>
             <h4 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-              Contribute
+              Legal & Contact
             </h4>
-            <p className="font-serif-body text-sm text-muted-foreground leading-relaxed">
-              PrivaTools is MIT licensed. Star us on GitHub, report issues, or submit a pull request.
-            </p>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/privacy" className="font-serif-body text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="font-serif-body text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <a href="mailto:hello@privatools.me" className="font-serif-body text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  hello@privatools.me
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
 

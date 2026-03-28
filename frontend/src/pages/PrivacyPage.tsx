@@ -1,0 +1,130 @@
+import { Link } from "react-router-dom";
+import { Shield, ArrowLeft } from "lucide-react";
+import { EditorialMasthead } from "@/components/EditorialMasthead";
+import { EditorialFooter } from "@/components/EditorialFooter";
+
+export default function PrivacyPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <EditorialMasthead />
+
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 py-12">
+        <nav className="mb-8">
+          <Link
+            to="/about"
+            className="flex items-center gap-1.5 text-xs font-mono-meta text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft size={12} /> ABOUT
+          </Link>
+        </nav>
+
+        <article className="blog-prose">
+          <header className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield size={18} className="text-primary" />
+              <span className="category-tag text-xs">LEGAL</span>
+            </div>
+            <h1 className="font-heading text-3xl sm:text-4xl font-black text-foreground leading-tight mb-4">
+              Privacy Policy
+            </h1>
+            <p className="font-mono-meta text-xs text-muted-foreground">
+              Last updated: March 29, 2026
+            </p>
+          </header>
+
+          <h2>The Short Version</h2>
+          <p>
+            PrivaTools does not collect, store, or sell your personal data. We do not use cookies,
+            analytics trackers, or advertising scripts. Your files are processed in temporary memory
+            and deleted immediately after processing completes. We have no data to sell because we
+            collect no data.
+          </p>
+
+          <h2>1. Files You Upload</h2>
+          <p>
+            When you use a server-side tool (e.g., Merge PDF, Compress PDF), your file is uploaded
+            to our processing server over an encrypted HTTPS connection. Here is exactly what happens:
+          </p>
+          <ul>
+            <li><strong>Processing:</strong> Your file is held in temporary server memory (RAM) only for the duration of processing. It is never written to disk or permanent storage.</li>
+            <li><strong>Deletion:</strong> The moment processing completes and your result is delivered, the original file and the output are purged from memory. This typically takes less than one second after download.</li>
+            <li><strong>No inspection:</strong> Our servers process raw bytes. We never read, analyze, index, or inspect the contents of your files. We have no knowledge of what you upload.</li>
+            <li><strong>No retention:</strong> We do not retain copies, backups, thumbnails, or metadata from your files. Once deleted, they are unrecoverable.</li>
+          </ul>
+
+          <h2>2. Client-Side Tools</h2>
+          <p>
+            Several tools (JSON Formatter, Text Diff, Base64 Encoder, Hash Generator, CSV-JSON Converter,
+            Markdown-HTML Converter) run entirely in your browser using JavaScript. Your data never leaves
+            your device — not even temporarily. Zero network requests are made.
+          </p>
+
+          <h2>3. Information We Do Not Collect</h2>
+          <p>We do not collect:</p>
+          <ul>
+            <li>Names, email addresses, or account credentials (no accounts exist)</li>
+            <li>IP addresses or geolocation data</li>
+            <li>Browser fingerprints or device identifiers</li>
+            <li>Usage analytics or behavioral data</li>
+            <li>Cookies of any kind (first-party or third-party)</li>
+            <li>File metadata, filenames, or content from uploaded files</li>
+          </ul>
+
+          <h2>4. Server Infrastructure</h2>
+          <p>
+            PrivaTools runs on Oracle Cloud Infrastructure (ARM-based, 24 GB RAM). The server is
+            located in a single data center and is maintained by the PrivaTools team. We use HTTPS
+            with HSTS for all connections. Our server does not log request bodies or file contents.
+            Standard web server access logs (timestamps, HTTP status codes, request paths) may be
+            retained for up to 7 days for operational debugging, but these logs never contain file
+            data or personally identifiable information.
+          </p>
+
+          <h2>5. Third-Party Services</h2>
+          <p>
+            PrivaTools uses Google Fonts for typography, loaded via a direct stylesheet link.
+            Google may collect anonymized usage data through font requests. No other third-party
+            services, analytics platforms, advertising networks, or tracking scripts are used.
+          </p>
+
+          <h2>6. Open Source Transparency</h2>
+          <p>
+            The entire PrivaTools codebase — frontend and backend — is open source under the MIT
+            license at{" "}
+            <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer">
+              github.com/taiyeba-dg/privatools
+            </a>
+            . You can audit every line of code that handles your files. If you prefer maximum privacy,
+            you can self-host the entire application using Docker.
+          </p>
+
+          <h2>7. Children's Privacy</h2>
+          <p>
+            PrivaTools does not knowingly collect any information from anyone, including children
+            under 13. Since we collect no personal data and require no accounts, there is no
+            age-specific data to protect.
+          </p>
+
+          <h2>8. Changes to This Policy</h2>
+          <p>
+            If we change this privacy policy, we will update the "Last updated" date at the top of
+            this page. Since we collect no user data, we have no way to notify you directly — we
+            recommend checking this page periodically if privacy is a concern.
+          </p>
+
+          <h2>9. Contact</h2>
+          <p>
+            If you have questions about this privacy policy or how PrivaTools handles your files,
+            contact us at{" "}
+            <a href="mailto:hello@privatools.me">hello@privatools.me</a> or open an issue on{" "}
+            <a href="https://github.com/taiyeba-dg/privatools/issues" target="_blank" rel="noopener noreferrer">
+              GitHub
+            </a>.
+          </p>
+        </article>
+      </main>
+
+      <EditorialFooter />
+    </div>
+  );
+}

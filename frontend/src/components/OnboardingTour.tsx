@@ -19,7 +19,7 @@ const steps: Step[] = [
     },
     {
         icon: Layers,
-        title: "90+ Tools",
+        title: "107 Tools",
         description: "PDF, image, video, and developer utilities — all free, open source, and ready to use.",
     },
     {
