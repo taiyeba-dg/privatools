@@ -57,6 +57,10 @@ BLOG_POSTS = [
     "best-free-pdf-tools-2026",
     "remove-password-from-pdf",
     "convert-word-to-pdf-free",
+    "edit-pdf-online-free-no-sign-up",
+    "split-pdf-online-free",
+    "redact-pdf-free-guide",
+    "best-free-online-pdf-editors-2026",
 ]
 
 BASE_URL = "https://privatools.me"

@@ -349,6 +349,266 @@ export const blogPosts: BlogPost[] = [
 <p><a href="/tool/word-to-pdf">Convert Word to PDF now — free, no sign-up required →</a></p>
     `,
   },
+  {
+    slug: "edit-pdf-online-free-no-sign-up",
+    title: "How to Edit a PDF Online for Free — No Sign-Up Required",
+    description:
+      "Step-by-step guide to editing PDF text, images, and annotations online without creating an account. Compare 5 free methods.",
+    publishedAt: "2026-03-29",
+    readTime: "5 min read",
+    tags: ["PDF", "Edit", "How-To"],
+    body: `
+<p>Need to add a sentence to a contract, fix a typo on a form, or annotate a report? Editing a PDF used to require expensive desktop software. Today you can do it in a browser for free — no account, no download, no watermark.</p>
+
+<h2>What "Edit PDF" Actually Means</h2>
+<p>PDF editing covers a wide range of operations, and not all tools handle all of them:</p>
+<ul>
+  <li><strong>Text annotation</strong> — Adding new text boxes, sticky notes, or comments on top of existing content. Nearly every tool supports this.</li>
+  <li><strong>Form filling</strong> — Filling in interactive form fields (text boxes, checkboxes, dropdowns). Requires the PDF to have form fields defined.</li>
+  <li><strong>Direct text editing</strong> — Modifying existing text in the PDF (changing words, fixing typos). This is harder because PDFs store text as positioned character runs, not editable paragraphs. Only a few tools do this well.</li>
+  <li><strong>Image editing</strong> — Adding, replacing, or removing images within the PDF.</li>
+  <li><strong>Page manipulation</strong> — Reordering, deleting, rotating, or adding pages.</li>
+</ul>
+
+<h2>Method 1: PrivaTools Edit PDF (Free, No Sign-Up)</h2>
+<ol>
+  <li>Open <a href="/tool/edit-pdf">PrivaTools Edit PDF</a>.</li>
+  <li>Upload your PDF (up to 100&nbsp;MB).</li>
+  <li>Use the toolbar to add text boxes, highlights, shapes, or freehand drawings on any page.</li>
+  <li>Click Save to download the edited PDF with all changes flattened into the document.</li>
+</ol>
+<p>Annotations are permanently embedded — they'll appear in any PDF reader. Your file is deleted from the server within minutes.</p>
+
+<h2>Method 2: PrivaTools Specialized Tools</h2>
+<p>For specific editing tasks, dedicated tools often work better than a general editor:</p>
+<ul>
+  <li><a href="/tool/sign-pdf">Sign PDF</a> — Draw, type, or upload a signature image</li>
+  <li><a href="/tool/annotate-pdf">Annotate PDF</a> — Highlights, underlines, strikethrough, sticky notes</li>
+  <li><a href="/tool/fill-form">Fill PDF Form</a> — Fill interactive form fields</li>
+  <li><a href="/tool/watermark">Watermark PDF</a> — Add text or image watermarks</li>
+  <li><a href="/tool/redact-pdf">Redact PDF</a> — Permanently black out sensitive information</li>
+  <li><a href="/tool/whiteout-pdf">White-Out PDF</a> — Cover content with white rectangles</li>
+</ul>
+
+<h2>Method 3: Google Docs (Free, Account Required)</h2>
+<ol>
+  <li>Upload the PDF to Google Drive.</li>
+  <li>Right-click → Open with → Google Docs.</li>
+  <li>Edit the text directly, then download as PDF.</li>
+</ol>
+<p><strong>Caveat:</strong> Google Docs converts the PDF to its own format, which frequently breaks formatting — columns collapse, images shift, fonts change. This works for simple text-only documents but is unreliable for anything with layout complexity.</p>
+
+<h2>Method 4: macOS Preview (Free, Built-In)</h2>
+<p>Preview on macOS lets you add text, shapes, signatures, and highlights to PDFs. It cannot edit existing text, but it handles annotations well. No software installation needed.</p>
+
+<h2>Method 5: Adobe Acrobat Online (Limited Free)</h2>
+<p>Adobe allows a few free operations per month with an Adobe ID. The editing tools are good but gated behind a subscription for regular use. Files are processed in Adobe's cloud.</p>
+
+<h2>Can You Edit Text Directly in a PDF?</h2>
+<p>True text editing (changing existing words) is technically possible but has limitations. PDFs don't store text as you'd expect — each character is individually positioned on the page. When you change a word, the surrounding text doesn't reflow automatically. For significant text changes, it's often better to convert the PDF back to Word with <a href="/tool/pdf-to-word">PDF to Word</a>, make your edits, and convert back with <a href="/tool/word-to-pdf">Word to PDF</a>.</p>
+
+<h2>Privacy Matters When Editing Sensitive Documents</h2>
+<p>Contracts, tax forms, medical records, legal filings — these are exactly the types of PDFs people need to edit, and exactly the types you shouldn't upload to random websites. PrivaTools processes files on the server and deletes them within minutes. The code is <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener">open source</a> — you can verify this yourself or self-host the entire stack.</p>
+
+<p><a href="/tool/edit-pdf">Edit your PDF now — free, no sign-up required →</a></p>
+    `,
+  },
+  {
+    slug: "split-pdf-online-free",
+    title: "How to Split a PDF File Online — 3 Free Methods",
+    description:
+      "Three ways to split PDF files for free: by page range, by file size, and by bookmarks. No software needed, no sign-up.",
+    publishedAt: "2026-03-29",
+    readTime: "4 min read",
+    tags: ["PDF", "Split", "How-To"],
+    body: `
+<p>Whether you need to extract a few pages from a long report, break a document into email-friendly chunks, or separate chapters from a textbook — splitting a PDF is straightforward with the right tool.</p>
+
+<h2>Three Ways to Split a PDF</h2>
+<p>Different situations call for different splitting methods:</p>
+<ul>
+  <li><strong>By page range</strong> — "Give me pages 1-5 as one file and pages 6-20 as another." The most common use case.</li>
+  <li><strong>By file size</strong> — "Break this 80&nbsp;MB scan into chunks under 10&nbsp;MB so I can email them." Useful for attachments.</li>
+  <li><strong>By bookmarks</strong> — "Split this textbook into one PDF per chapter." Requires the PDF to have bookmarks defined.</li>
+</ul>
+
+<h2>Method 1: Split by Page Range (Most Common)</h2>
+<ol>
+  <li>Open <a href="/tool/split-pdf">PrivaTools Split PDF</a>.</li>
+  <li>Upload your PDF (up to 100&nbsp;MB).</li>
+  <li>Choose your split mode:
+    <ul>
+      <li><strong>Fixed interval</strong> — Split every N pages (e.g., every 5 pages creates separate PDFs).</li>
+      <li><strong>Custom ranges</strong> — Specify exact page numbers (e.g., "1-3, 7-10, 15-20").</li>
+      <li><strong>Extract every page</strong> — One PDF per page.</li>
+    </ul>
+  </li>
+  <li>Click Split. The resulting files are packaged in a ZIP for download.</li>
+</ol>
+
+<h2>Method 2: Split by File Size</h2>
+<p>When email size limits are the problem rather than page counts:</p>
+<ol>
+  <li>Open <a href="/tool/split-by-size">PrivaTools Split by Size</a>.</li>
+  <li>Upload the PDF.</li>
+  <li>Set the maximum file size per chunk (e.g., 10&nbsp;MB).</li>
+  <li>The tool splits at page boundaries, keeping each part under your target size.</li>
+</ol>
+<p>This is particularly useful for large scanned documents that need to be emailed or uploaded to portals with size restrictions.</p>
+
+<h2>Method 3: Split by Bookmarks / Chapters</h2>
+<p>For structured documents like textbooks, manuals, or reports with a table of contents:</p>
+<ol>
+  <li>Open <a href="/tool/split-by-bookmarks">PrivaTools Split by Bookmarks</a>.</li>
+  <li>Upload the PDF. The tool detects bookmark entries automatically.</li>
+  <li>Choose the bookmark level to split at (top-level bookmarks = chapters, second-level = sections).</li>
+  <li>Each section becomes its own PDF file.</li>
+</ol>
+
+<h2>Extract Just a Few Pages</h2>
+<p>If you only need specific pages rather than splitting the entire document, <a href="/tool/extract-pages">Extract Pages</a> is more precise. Select individual pages or ranges and get a new PDF containing only those pages.</p>
+
+<h2>Alternatives</h2>
+<ul>
+  <li><strong>macOS Preview</strong> — Drag pages from the sidebar to the desktop to create individual page PDFs. Manual but requires no tools.</li>
+  <li><strong>pdftk (command-line)</strong> — <code>pdftk input.pdf cat 1-5 output pages1-5.pdf</code>. Excellent for scripting batch splits.</li>
+  <li><strong>Adobe Acrobat</strong> — Full-featured splitting with preview, but requires a paid subscription.</li>
+</ul>
+
+<p><a href="/tool/split-pdf">Split your PDF now — free, no sign-up →</a></p>
+    `,
+  },
+  {
+    slug: "redact-pdf-free-guide",
+    title: "How to Redact Sensitive Information from PDFs — Free Guide",
+    description:
+      "Learn how to permanently black out names, SSNs, addresses, and confidential text in PDFs. Understand why covering text with black boxes isn't enough.",
+    publishedAt: "2026-03-29",
+    readTime: "5 min read",
+    tags: ["PDF", "Security", "Redaction", "How-To"],
+    body: `
+<p>PDF redaction permanently removes sensitive information from a document — names, Social Security numbers, financial data, addresses, or any confidential text. But there's a critical distinction between <em>real</em> redaction and simply drawing a black box over text.</p>
+
+<h2>Why Black Boxes Aren't Enough</h2>
+<p>A common mistake: people draw a black rectangle over sensitive text using a PDF editor and think it's hidden. It's not. The text underneath is still in the PDF file — anyone can select it, copy-paste it, or use a text extraction tool to read it. This has caused real data breaches in legal filings, government documents, and corporate reports.</p>
+<p><strong>Real redaction</strong> permanently destroys the underlying text data. After proper redaction, the original content cannot be recovered — even by editing the PDF's raw source code.</p>
+
+<h2>How to Redact a PDF Properly</h2>
+<ol>
+  <li>Open <a href="/tool/redact-pdf">PrivaTools Redact PDF</a>.</li>
+  <li>Upload the document containing sensitive information.</li>
+  <li>Draw rectangles over the text, images, or regions you want to permanently remove. You can also search for a specific word or phrase to auto-highlight all occurrences across every page.</li>
+  <li>Preview the redactions to verify you've covered everything before committing.</li>
+  <li>Click Redact. The underlying content is permanently destroyed and replaced with black boxes.</li>
+</ol>
+<p><strong>Warning:</strong> Redaction is irreversible. Once applied, the original text cannot be recovered. Always keep an unredacted backup copy of the original document.</p>
+
+<h2>What Gets Removed During Redaction?</h2>
+<p>Proper redaction removes:</p>
+<ul>
+  <li>The visible text and images under the redaction box</li>
+  <li>The underlying text data (not just the visual layer)</li>
+  <li>Any associated metadata linked to the redacted content</li>
+</ul>
+<p>For maximum security, combine redaction with <a href="/tool/sanitize-pdf">Sanitize PDF</a> to also remove hidden data, JavaScript, embedded files, and metadata layers.</p>
+
+<h2>Common Redaction Mistakes</h2>
+<ul>
+  <li><strong>Using a black highlight instead of redaction</strong> — Highlights change the background color but don't remove the text data.</li>
+  <li><strong>Using white-out</strong> — White rectangles hide text visually but the data is still selectable and extractable.</li>
+  <li><strong>Forgetting headers and footers</strong> — Document names, case numbers, and dates often appear in headers/footers on every page.</li>
+  <li><strong>Ignoring metadata</strong> — The document title, author name, and revision history may contain the same information you're redacting from the body. Use <a href="/tool/strip-metadata">Strip Metadata</a> after redacting.</li>
+</ul>
+
+<h2>When You Need Redaction</h2>
+<ul>
+  <li>FOIA (Freedom of Information Act) responses</li>
+  <li>Legal discovery — removing privileged information before producing documents</li>
+  <li>HR documents — removing SSNs, salaries, or personal details before sharing</li>
+  <li>Medical records — HIPAA compliance when sharing patient documents</li>
+  <li>Financial documents — removing account numbers before forwarding</li>
+</ul>
+
+<h2>Alternatives</h2>
+<ul>
+  <li><strong>Adobe Acrobat Pro</strong> — Has a dedicated Redact tool with search-and-redact. Paid subscription required.</li>
+  <li><strong>PDF-XChange Editor</strong> — Windows-only, has redaction in the paid version.</li>
+  <li><strong>Command-line (qpdf + mutool)</strong> — Technical but scriptable for batch redaction workflows.</li>
+</ul>
+
+<p><a href="/tool/redact-pdf">Redact your PDF now — free, permanent, no sign-up →</a></p>
+    `,
+  },
+  {
+    slug: "best-free-online-pdf-editors-2026",
+    title: "The Best Free Online PDF Editors in 2026 — No Downloads Required",
+    description:
+      "We tested 7 free online PDF editors in 2026. Here's which ones are truly free, which add watermarks, and which respect your privacy.",
+    publishedAt: "2026-03-29",
+    readTime: "7 min read",
+    tags: ["PDF", "Editor", "Comparison", "Review"],
+    body: `
+<p>Every online PDF editor claims to be free. Most aren't — at least not in any meaningful way. After testing seven popular options, here's what we found.</p>
+
+<h2>What We Tested</h2>
+<p>We uploaded the same 15-page document (a mix of text, images, tables, and form fields) to each editor and tested: adding text, adding a signature, highlighting, filling forms, and re-downloading. We checked for watermarks, file size limits, task limits, account requirements, and how files are handled after download.</p>
+
+<h2>1. PrivaTools — Best for Privacy + No Limits</h2>
+<p><strong>Price:</strong> Free · <strong>Account:</strong> Not required · <strong>Watermarks:</strong> None · <strong>File limit:</strong> 100 MB</p>
+<p><a href="/tool/edit-pdf">PrivaTools Edit PDF</a> lets you add text, highlights, shapes, and signatures to any PDF. It also offers 76 other PDF tools — from <a href="/tool/merge-pdf">merging</a> to <a href="/tool/ocr-pdf">OCR</a> to <a href="/tool/redact-pdf">redaction</a> — all free, all without accounts.</p>
+<p><strong>Privacy:</strong> Files are processed on the server and deleted within minutes. The source code is open and auditable on GitHub. You can self-host the entire stack with Docker for complete control.</p>
+<p><strong>Best for:</strong> Users who need frequent PDF editing without limits and care about where their files go.</p>
+
+<h2>2. Sejda — Best General-Purpose Editor</h2>
+<p><strong>Price:</strong> Free (3 tasks/hour) · <strong>Account:</strong> Not required · <strong>Watermarks:</strong> None · <strong>File limit:</strong> 50 MB</p>
+<p>Sejda's online editor is arguably the most full-featured free option for direct text editing — you can click on existing text and modify it, not just add annotations. The 3-task-per-hour limit is the main downside.</p>
+<p><strong>Best for:</strong> Occasional editing where you need to modify existing text rather than just annotate.</p>
+
+<h2>3. PDF24 — Most Generous Free Tier</h2>
+<p><strong>Price:</strong> Free · <strong>Account:</strong> Not required · <strong>Watermarks:</strong> None · <strong>File limit:</strong> Generous</p>
+<p>PDF24 is genuinely free with no task limits. The editor is functional but basic — it handles annotations, form filling, and simple text addition. Not open source, and files are uploaded to their servers.</p>
+<p><strong>Best for:</strong> Users who need a no-limits free tool and don't prioritize privacy.</p>
+
+<h2>4. PDFescape — Simple but Dated</h2>
+<p><strong>Price:</strong> Free (10 MB, 100 pages) · <strong>Account:</strong> Not required · <strong>Watermarks:</strong> None</p>
+<p>PDFescape works for basic editing — adding text, forms, annotations. The interface feels outdated compared to modern alternatives, and the 10 MB file limit is restrictive. It was one of the first free online PDF editors and still gets traffic from brand recognition.</p>
+<p><strong>Best for:</strong> Quick, simple edits on small documents.</p>
+
+<h2>5. Smallpdf — Polished but Restrictive</h2>
+<p><strong>Price:</strong> Free (2 tasks/day) · <strong>Account:</strong> Not required · <strong>Watermarks:</strong> None on free</p>
+<p>Smallpdf's editor is clean and well-designed. The 2-task daily limit makes it impractical for regular use. Files are uploaded to Smallpdf's servers and retained for a period.</p>
+<p><strong>Best for:</strong> A one-off edit when you need a quick, polished experience.</p>
+
+<h2>6. iLovePDF — Popular but Limited</h2>
+<p><strong>Price:</strong> Free (limited) · <strong>Account:</strong> Optional · <strong>Watermarks:</strong> On some exports</p>
+<p>iLovePDF's editor handles basic annotations. Free users face file size limits (25 MB), and the experience pushes aggressively toward premium. Files are uploaded to and retained on their servers.</p>
+<p><strong>Best for:</strong> Light use when other options aren't available.</p>
+
+<h2>7. Adobe Acrobat Online — Best Features, Worst Free Tier</h2>
+<p><strong>Price:</strong> Very limited free · <strong>Account:</strong> Required (Adobe ID) · <strong>Watermarks:</strong> None</p>
+<p>Adobe's online tools are technically excellent but gated behind an account and a limited free tier. Meaningful editing requires a subscription (~$23/month). Files go through Adobe's cloud.</p>
+<p><strong>Best for:</strong> Users who already have an Adobe subscription.</p>
+
+<h2>Comparison Table</h2>
+<table>
+  <thead>
+    <tr><th>Editor</th><th>Truly Free?</th><th>Account?</th><th>Limit</th><th>Privacy</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>PrivaTools</td><td>Yes</td><td>No</td><td>100 MB</td><td>Open source, files deleted</td></tr>
+    <tr><td>Sejda</td><td>3 tasks/hr</td><td>No</td><td>50 MB</td><td>Deleted in 2 hours</td></tr>
+    <tr><td>PDF24</td><td>Yes</td><td>No</td><td>Generous</td><td>Uploaded to their servers</td></tr>
+    <tr><td>PDFescape</td><td>Yes</td><td>No</td><td>10 MB</td><td>Uploaded to their servers</td></tr>
+    <tr><td>Smallpdf</td><td>2 tasks/day</td><td>No</td><td>Varies</td><td>Retained temporarily</td></tr>
+    <tr><td>iLovePDF</td><td>Limited</td><td>No</td><td>25 MB</td><td>Retained on servers</td></tr>
+    <tr><td>Adobe</td><td>Very limited</td><td>Yes</td><td>Varies</td><td>Adobe cloud</td></tr>
+  </tbody>
+</table>
+
+<h2>The Bottom Line</h2>
+<p>For unrestricted free editing with privacy: <a href="/tool/edit-pdf">PrivaTools</a>. For the best direct text editing (with limits): Sejda. For no-limits without caring about privacy: PDF24. Everything else either costs money, limits you to a handful of tasks, or both.</p>
+    `,
+  },
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {

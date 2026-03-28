@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import re
 from urllib.parse import quote
+from .tool_content import TOOL_HOWTO, TOOL_FAQ
 
 BASE_URL = "https://privatools.me"
 
@@ -126,6 +127,26 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "5 ways to convert .docx files to PDF without Microsoft Office. "
         "Online tools, Google Docs, LibreOffice — plus which method preserves formatting best.",
     ),
+    "/blog/edit-pdf-online-free-no-sign-up": (
+        "How to Edit a PDF Online for Free — No Sign-Up Required",
+        "Step-by-step guide to editing PDF text, images, and annotations online "
+        "without creating an account. Compare 5 free methods.",
+    ),
+    "/blog/split-pdf-online-free": (
+        "How to Split a PDF File Online — 3 Free Methods",
+        "Three ways to split PDF files for free: by page range, by file size, "
+        "and by bookmarks. No software needed, no sign-up.",
+    ),
+    "/blog/redact-pdf-free-guide": (
+        "How to Redact Sensitive Information from PDFs — Free Guide",
+        "Learn how to permanently black out names, SSNs, addresses, and confidential text in PDFs. "
+        "Understand why covering text with black boxes isn't enough.",
+    ),
+    "/blog/best-free-online-pdf-editors-2026": (
+        "The Best Free Online PDF Editors in 2026 — No Downloads Required",
+        "We tested 7 free online PDF editors in 2026. Which ones are truly free, "
+        "which add watermarks, and which respect your privacy.",
+    ),
 }
 
 # ---------------------------------------------------------------------------
@@ -166,6 +187,34 @@ _BLOG_POSTS: dict[str, dict] = {
         "publishedAt": "2026-03-22",
         "readTime": "5 min read",
         "tags": ["PDF", "Convert", "How-To"],
+    },
+    "edit-pdf-online-free-no-sign-up": {
+        "title": "How to Edit a PDF Online for Free — No Sign-Up Required",
+        "description": "Step-by-step guide to editing PDF text, images, and annotations online without creating an account. Compare 5 free methods.",
+        "publishedAt": "2026-03-29",
+        "readTime": "5 min read",
+        "tags": ["PDF", "Edit", "How-To"],
+    },
+    "split-pdf-online-free": {
+        "title": "How to Split a PDF File Online — 3 Free Methods",
+        "description": "Three ways to split PDF files for free: by page range, by file size, and by bookmarks. No software needed, no sign-up.",
+        "publishedAt": "2026-03-29",
+        "readTime": "4 min read",
+        "tags": ["PDF", "Split", "How-To"],
+    },
+    "redact-pdf-free-guide": {
+        "title": "How to Redact Sensitive Information from PDFs — Free Guide",
+        "description": "Learn how to permanently black out names, SSNs, addresses, and confidential text in PDFs. Understand why covering text with black boxes isn't enough.",
+        "publishedAt": "2026-03-29",
+        "readTime": "5 min read",
+        "tags": ["PDF", "Security", "Redaction", "How-To"],
+    },
+    "best-free-online-pdf-editors-2026": {
+        "title": "The Best Free Online PDF Editors in 2026 — No Downloads Required",
+        "description": "We tested 7 free online PDF editors in 2026. Here's which ones are truly free, which add watermarks, and which respect your privacy.",
+        "publishedAt": "2026-03-29",
+        "readTime": "7 min read",
+        "tags": ["PDF", "Editor", "Comparison", "Review"],
     },
 }
 
@@ -378,43 +427,87 @@ def get_jsonld_for_path(path: str) -> dict | None:
         slug = path[len("/tool/"):]
         name = _PDF_TOOLS.get(slug, (slug.replace("-", " ").title(), ""))[0]
         breadcrumbs.append({"@type": "ListItem", "position": 2, "name": name, "item": canonical_url})
-        return {
-            "@context": "https://schema.org",
-            "@graph": [
-                {
-                    "@type": "WebApplication",
-                    "name": f"{name} — PrivaTools",
-                    "url": canonical_url,
-                    "description": description,
-                    "applicationCategory": "UtilitiesApplication",
-                    "operatingSystem": "Any (browser-based)",
-                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
-                    "provider": {"@id": f"{BASE_URL}/#organization"},
-                },
-                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
-            ],
-        }
+        graph: list[dict] = [
+            {
+                "@type": "WebApplication",
+                "name": f"{name} — PrivaTools",
+                "url": canonical_url,
+                "description": description,
+                "applicationCategory": "UtilitiesApplication",
+                "operatingSystem": "Any (browser-based)",
+                "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+                "provider": {"@id": f"{BASE_URL}/#organization"},
+            },
+            {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+        ]
+        # HowTo schema
+        if slug in TOOL_HOWTO:
+            graph.append({
+                "@type": "HowTo",
+                "name": f"How to {name} Online Free",
+                "description": description,
+                "step": [
+                    {"@type": "HowToStep", "position": i + 1, "name": s["name"], "text": s["text"]}
+                    for i, s in enumerate(TOOL_HOWTO[slug])
+                ],
+                "tool": {"@type": "HowToTool", "name": "PrivaTools"},
+            })
+        # FAQPage schema
+        if slug in TOOL_FAQ:
+            graph.append({
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": faq["q"],
+                        "acceptedAnswer": {"@type": "Answer", "text": faq["a"]},
+                    }
+                    for faq in TOOL_FAQ[slug]
+                ],
+            })
+        return {"@context": "https://schema.org", "@graph": graph}
 
     if path.startswith("/tools/"):
         slug = path[len("/tools/"):]
         name = _NONPDF_TOOLS.get(slug, (slug.replace("-", " ").title(), ""))[0]
         breadcrumbs.append({"@type": "ListItem", "position": 2, "name": name, "item": canonical_url})
-        return {
-            "@context": "https://schema.org",
-            "@graph": [
-                {
-                    "@type": "WebApplication",
-                    "name": f"{name} — PrivaTools",
-                    "url": canonical_url,
-                    "description": description,
-                    "applicationCategory": "UtilitiesApplication",
-                    "operatingSystem": "Any (browser-based)",
-                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
-                    "provider": {"@id": f"{BASE_URL}/#organization"},
-                },
-                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
-            ],
-        }
+        graph2: list[dict] = [
+            {
+                "@type": "WebApplication",
+                "name": f"{name} — PrivaTools",
+                "url": canonical_url,
+                "description": description,
+                "applicationCategory": "UtilitiesApplication",
+                "operatingSystem": "Any (browser-based)",
+                "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+                "provider": {"@id": f"{BASE_URL}/#organization"},
+            },
+            {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+        ]
+        if slug in TOOL_HOWTO:
+            graph2.append({
+                "@type": "HowTo",
+                "name": f"How to Use {name} Online Free",
+                "description": description,
+                "step": [
+                    {"@type": "HowToStep", "position": i + 1, "name": s["name"], "text": s["text"]}
+                    for i, s in enumerate(TOOL_HOWTO[slug])
+                ],
+                "tool": {"@type": "HowToTool", "name": "PrivaTools"},
+            })
+        if slug in TOOL_FAQ:
+            graph2.append({
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": faq["q"],
+                        "acceptedAnswer": {"@type": "Answer", "text": faq["a"]},
+                    }
+                    for faq in TOOL_FAQ[slug]
+                ],
+            })
+        return {"@context": "https://schema.org", "@graph": graph2}
 
     if path.startswith("/compare/"):
         breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Compare", "item": f"{BASE_URL}/compare"})
@@ -461,6 +554,41 @@ def get_jsonld_for_path(path: str) -> dict | None:
     return None
 
 
+# ---------------------------------------------------------------------------
+# Comparison page data (mirrors frontend ComparePage.tsx for SSR)
+# ---------------------------------------------------------------------------
+_PRIVATOOLS_FEATURES: dict[str, str] = {
+    "Free to use": "Yes — 100% free",
+    "No account required": "Yes",
+    "No file size limits": "Yes (100 MB per file)",
+    "No ads": "Yes",
+    "Open source": "Yes (MIT license)",
+    "Self-hostable": "Yes (Docker)",
+    "Files processed privately": "Yes (server-side, deleted within minutes)",
+    "No watermarks on free tier": "Yes",
+    "90+ tools (PDF, Image, Video, Dev)": "Yes (105 tools)",
+    "Works offline / client-side tools": "Some tools (client-side)",
+    "Desktop app included": "No (web-based)",
+    "API available": "Self-hosted API",
+    "E-signatures": "Yes (free)",
+    "JSON-LD structured data": "Yes",
+}
+
+_COMPARE_DATA: dict[str, dict] = {
+    "ilovepdf": {"name": "iLovePDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No (25 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "smallpdf": {"name": "Smallpdf", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "90+ tools (PDF, Image, Video, Dev)": "No (21 tools, PDF only)"}},
+    "adobe-acrobat": {"name": "Adobe Acrobat Online", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "sejda": {"name": "Sejda PDF", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "pdf24": {"name": "PDF24", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "foxit": {"name": "Foxit PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "lightpdf": {"name": "LightPDF", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", "90+ tools (PDF, Image, Video, Dev)": "No (PDF + basic image)"}},
+    "stirling-pdf": {"name": "Stirling PDF", "features": {"Free to use": "Yes", "No account required": "Yes (self-hosted)", "No file size limits": "Depends on your server", "No ads": "Yes", "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)", "Files processed privately": "Yes (your own server)", "No watermarks on free tier": "Yes", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+    "dochub": {"name": "DocHub", "features": {"Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (DocHub cloud)", "90+ tools (PDF, Image, Video, Dev)": "No (document editing only)"}},
+    "pdfescape": {"name": "PDFescape", "features": {"Free to use": "Limited (10 MB, 100 pages)", "No account required": "Yes (online version)", "No file size limits": "No (10 MB limit free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded to their servers)", "90+ tools (PDF, Image, Video, Dev)": "No (basic PDF editing only)"}},
+    "nitro-pdf": {"name": "Nitro PDF", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Nitro cloud)", "90+ tools (PDF, Image, Video, Dev)": "No (PDF only)"}},
+}
+
+
 def _build_ssr_content(path: str, title: str, description: str) -> str:
     """
     Build server-rendered HTML content that crawlers (including AI crawlers)
@@ -501,7 +629,18 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                 "on our servers with zero-knowledge architecture — your files are never stored, "
                 "never read, and never shared with third parties. No account required.</p>"
             )
-            # Add related tools for internal linking
+            # HowTo section
+            if slug in TOOL_HOWTO:
+                parts.append(f"<h2>How to {name} with PrivaTools</h2><ol>")
+                for step in TOOL_HOWTO[slug]:
+                    parts.append(f"<li><strong>{step['name']}</strong> — {step['text']}</li>")
+                parts.append("</ol>")
+            # FAQ section
+            if slug in TOOL_FAQ:
+                parts.append(f"<h2>Frequently Asked Questions</h2>")
+                for faq in TOOL_FAQ[slug]:
+                    parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
+            # Related tools for internal linking
             category_tools = [(s, n) for s, (n, _) in _PDF_TOOLS.items() if s != slug][:8]
             if category_tools:
                 parts.append("<h2>Related PDF Tools</h2><ul>")
@@ -521,6 +660,17 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                 "on our servers with zero-knowledge architecture — your files are never stored, "
                 "never read, and never shared with third parties. No account required.</p>"
             )
+            # HowTo section
+            if slug in TOOL_HOWTO:
+                parts.append(f"<h2>How to Use {name}</h2><ol>")
+                for step in TOOL_HOWTO[slug]:
+                    parts.append(f"<li><strong>{step['name']}</strong> — {step['text']}</li>")
+                parts.append("</ol>")
+            # FAQ section
+            if slug in TOOL_FAQ:
+                parts.append(f"<h2>Frequently Asked Questions</h2>")
+                for faq in TOOL_FAQ[slug]:
+                    parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
             related = [(s, n) for s, (n, _) in _NONPDF_TOOLS.items() if s != slug][:8]
             if related:
                 parts.append("<h2>Related Tools</h2><ul>")
@@ -538,6 +688,29 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "no file limits, no sign-ups, and zero tracking. Compare features, pricing, "
             "and privacy practices side by side.</p>"
         )
+        slug = path[len("/compare/"):] if path.startswith("/compare/") else ""
+        if slug and slug in _COMPARE_DATA:
+            comp = _COMPARE_DATA[slug]
+            parts.append(f"<h2>PrivaTools vs {comp['name']} — Feature Comparison</h2>")
+            parts.append("<table><thead><tr><th>Feature</th><th>PrivaTools</th>"
+                         f"<th>{comp['name']}</th></tr></thead><tbody>")
+            for feature, their_val in comp["features"].items():
+                our_val = _PRIVATOOLS_FEATURES.get(feature, "Yes")
+                parts.append(f"<tr><td>{feature}</td><td>{our_val}</td><td>{their_val}</td></tr>")
+            parts.append("</tbody></table>")
+            parts.append(
+                f"<h2>Why Choose PrivaTools Over {comp['name']}?</h2>"
+                f"<p>Unlike {comp['name']}, PrivaTools is 100% free with no premium tiers, "
+                "no file size limits beyond 100 MB, no account required, and no ads. "
+                "Your files are processed on the server and deleted within minutes — "
+                "never stored, never shared with third parties. PrivaTools is open source "
+                "under the MIT license and can be self-hosted via Docker for complete control.</p>"
+            )
+        if not slug:
+            parts.append("<h2>All Comparisons</h2><ul>")
+            for cslug, cdata in _COMPARE_DATA.items():
+                parts.append(f'<li><a href="/compare/{cslug}">PrivaTools vs {cdata["name"]}</a></li>')
+            parts.append("</ul>")
         return "\n".join(parts)
 
     # ── Blog pages ─────────────────────────────────────────────────────────

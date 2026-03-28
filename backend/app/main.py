@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -11,6 +12,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .seo_meta import inject_seo
+
+logger = logging.getLogger("privatools")
 
 from .routes import (
     merge, split, compress, pdf_to_image, image_to_pdf, rotate, protect,
@@ -137,8 +140,10 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
                 html = _INDEX_HTML.read_text("utf-8")
                 html = inject_seo(html, path)
                 return HTMLResponse(content=html, status_code=200)
-            except Exception:
-                pass  # Fall through to normal handling if anything goes wrong
+            except Exception as exc:
+                logger.error("SPA SEO injection failed for %s: %s", path, exc)
+        else:
+            logger.warning("SPA index.html not found at %s — tool pages will 404", _INDEX_HTML)
 
         return await call_next(request)
 
@@ -160,6 +165,43 @@ class UploadSizeLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+# ---------------------------------------------------------------------------
+# Request timeout middleware — prevent long-running operations from hanging
+# ---------------------------------------------------------------------------
+_REQUEST_TIMEOUT = _env_positive_int("REQUEST_TIMEOUT_SECONDS", 120)
+
+class RequestTimeoutMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        try:
+            return await asyncio.wait_for(call_next(request), timeout=_REQUEST_TIMEOUT)
+        except asyncio.TimeoutError:
+            logger.warning("Request timed out: %s %s", request.method, request.url.path)
+            return JSONResponse(
+                status_code=504,
+                content={"detail": f"Request timed out after {_REQUEST_TIMEOUT} seconds."},
+            )
+
+
+# ---------------------------------------------------------------------------
+# Request logging middleware — structured request/response logging
+# ---------------------------------------------------------------------------
+import time as _time
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Skip logging for static assets
+        if any(request.url.path.startswith(p) for p in ("/assets", "/icons", "/favicon")):
+            return await call_next(request)
+        start = _time.monotonic()
+        response = await call_next(request)
+        duration_ms = round((_time.monotonic() - start) * 1000)
+        logger.info(
+            "%s %s → %d (%dms)",
+            request.method, request.url.path, response.status_code, duration_ms,
+        )
+        return response
+
+
 app = FastAPI(
     title="PDF Studio API",
     version="1.0.0",
@@ -177,6 +219,8 @@ _origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://local
 app.add_middleware(SPASEOMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(UploadSizeLimitMiddleware)
+app.add_middleware(RequestTimeoutMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _origins],
