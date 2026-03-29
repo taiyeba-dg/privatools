@@ -1,12 +1,23 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, X, ArrowRight } from "lucide-react";
+import { Search, X, ArrowRight, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
 import { useHistory } from "@/hooks/useHistory";
 import { EditorialMasthead } from "@/components/EditorialMasthead";
 import { EditorialFooter } from "@/components/EditorialFooter";
+
+const FEATURED_SLUGS = ["merge-pdf", "compress-pdf", "image-to-pdf", "edit-pdf"];
+const FEATURED_TAGLINES: Record<string, string> = {
+  "merge-pdf": "Combine multiple PDFs into a single document",
+  "compress-pdf": "Shrink file size by up to 90% without quality loss",
+  "image-to-pdf": "Turn JPG, PNG, and other images into PDF",
+  "edit-pdf": "Modify text and images directly inside the PDF",
+};
+const featuredTools = FEATURED_SLUGS
+  .map(s => tools.find(t => t.slug === s)!)
+  .filter(Boolean);
 
 type Suite = "pdf" | "image" | "video-audio" | "developer" | "archive" | "document-office";
 
@@ -81,6 +92,53 @@ export default function Index() {
       <EditorialMasthead />
 
       <main className="mx-auto max-w-6xl px-4 sm:px-6">
+
+        {/* ── Featured Tools ───────────────────────────────────────── */}
+        <section className="pt-8 pb-6">
+          <p className="font-mono-meta text-[11px] uppercase tracking-widest text-muted-foreground/60 mb-4 text-center">
+            Start with our most popular tools
+          </p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {featuredTools.map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <Link
+                  key={tool.slug}
+                  to={`/tool/${tool.slug}`}
+                  className="group relative flex flex-col items-center text-center gap-3 sm:gap-4 px-4 py-6 sm:py-8 rounded-lg border border-border/60 bg-card/40 hover:border-primary/50 hover:bg-primary/[0.04] transition-all"
+                >
+                  <div className="flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <Icon size={22} strokeWidth={1.75} className="text-primary sm:w-7 sm:h-7" />
+                  </div>
+                  <div>
+                    <p className="font-heading text-sm sm:text-base font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
+                      {tool.name}
+                    </p>
+                    <p className="font-serif-body text-[11px] sm:text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
+                      {FEATURED_TAGLINES[tool.slug]}
+                    </p>
+                  </div>
+                  <ArrowRight size={14} className="absolute top-3 right-3 text-muted-foreground/0 group-hover:text-primary transition-all" />
+                </Link>
+              );
+            })}
+          </div>
+          <div className="mt-6 flex items-center gap-3 justify-center">
+            <Shield size={13} className="text-primary/60" />
+            <p className="font-mono-meta text-[10px] uppercase tracking-widest text-muted-foreground/50">
+              Your files never leave your device
+            </p>
+            <Shield size={13} className="text-primary/60" />
+          </div>
+        </section>
+
+        <div className="rule-thin" />
+
+        <div className="flex items-center justify-center py-3">
+          <span className="font-mono-meta text-[10px] uppercase tracking-[0.2em] text-muted-foreground/40">All Tools</span>
+        </div>
+
+        <div className="rule-thin mb-0" />
 
         {/* ── Search Bar ─────────────────────────────────────────── */}
         <section className="py-8">
