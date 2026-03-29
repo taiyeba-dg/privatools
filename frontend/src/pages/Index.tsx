@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, X, ArrowRight, Shield, GitBranch, Star } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, X, ArrowRight, Shield, GitBranch, Star, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
@@ -98,11 +98,90 @@ function ToolCard({ name, description, icon: Icon, href, categoryLabel, accent, 
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────
+/** Match a file extension to relevant tools. */
+function getToolsForExtension(ext: string) {
+  const e = ext.toLowerCase().replace(/^\./, "");
+  const matchingPdf = tools.filter(t =>
+    t.accepts.split(",").some(a => a.trim().replace(/^\./, "") === e)
+  );
+  const matchingNonPdf = nonPdfTools.filter(t =>
+    t.accepts === "*" ? false : t.accepts.split(",").some(a => a.trim().replace(/^\./, "") === e)
+  );
+  return {
+    pdf: matchingPdf.map(t => ({ ...t, href: `/tool/${t.slug}`, cat: categoryMeta[t.category].label, accent: categoryMeta[t.category].accent })),
+    nonPdf: matchingNonPdf.map(t => ({ ...t, href: `/tools/${t.slug}`, cat: nonPdfCategoryMeta[t.category].label, accent: nonPdfCategoryMeta[t.category].accent })),
+  };
+}
+
 export default function Index() {
   const [activeTab, setActiveTab] = useState<Suite>("pdf");
   const [query, setQuery] = useState("");
   const { history } = useHistory();
   const { favorites, toggle: toggleFav, isFavorite } = useFavorites();
+  const navigate = useNavigate();
+
+  // Drag-and-drop state
+  const [dragging, setDragging] = useState(false);
+  const [droppedFile, setDroppedFile] = useState<File | null>(null);
+  const [matchedTools, setMatchedTools] = useState<{ pdf: ReturnType<typeof getToolsForExtension>["pdf"]; nonPdf: ReturnType<typeof getToolsForExtension>["nonPdf"] } | null>(null);
+
+  // Track drag enter/leave depth to handle child elements
+  const [dragDepth, setDragDepth] = useState(0);
+
+  const handleDragEnter = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    setDragDepth(d => d + 1);
+    if (e.dataTransfer?.types.includes("Files")) setDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    setDragDepth(d => {
+      if (d - 1 <= 0) { setDragging(false); return 0; }
+      return d - 1;
+    });
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    setDragDepth(0);
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    const ext = file.name.split(".").pop() || "";
+    const matched = getToolsForExtension(ext);
+    const all = [...matched.pdf, ...matched.nonPdf];
+    if (all.length === 1) {
+      // Single match — go directly to that tool
+      // Store file in sessionStorage for the tool page to pick up
+      const reader = new FileReader();
+      reader.onload = () => {
+        sessionStorage.setItem("privatools_dropped_file", JSON.stringify({ name: file.name, type: file.type, data: reader.result }));
+        navigate(all[0].href);
+      };
+      reader.readAsDataURL(file);
+    } else if (all.length > 0) {
+      setDroppedFile(file);
+      setMatchedTools(matched);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    document.addEventListener("dragenter", handleDragEnter);
+    document.addEventListener("dragleave", handleDragLeave);
+    document.addEventListener("dragover", handleDragOver);
+    document.addEventListener("drop", handleDrop);
+    return () => {
+      document.removeEventListener("dragenter", handleDragEnter);
+      document.removeEventListener("dragleave", handleDragLeave);
+      document.removeEventListener("dragover", handleDragOver);
+      document.removeEventListener("drop", handleDrop);
+    };
+  }, [handleDragEnter, handleDragLeave, handleDragOver, handleDrop]);
 
   const allSearchable = [
     ...tools.map(t => ({ slug: t.slug, name: t.name, description: t.description, icon: t.icon, href: `/tool/${t.slug}`, cat: categoryMeta[t.category].label, accent: categoryMeta[t.category].accent })),
@@ -115,10 +194,58 @@ export default function Index() {
 
   const activeNonPdfCat = nonPdfSuiteCategories[activeTab];
 
+  const allMatched = matchedTools ? [...matchedTools.pdf, ...matchedTools.nonPdf] : [];
+
   return (
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
+      {/* ── Drag overlay ───────────────────────────────────────── */}
+      {dragging && (
+        <div className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+          <div className="text-center space-y-4 animate-pulse-border border-2 border-dashed border-primary/40 rounded-2xl px-16 py-12">
+            <Upload size={48} className="text-primary mx-auto" />
+            <p className="font-heading text-xl font-bold text-foreground">Drop your file to get started</p>
+            <p className="font-mono-meta text-xs text-muted-foreground uppercase tracking-widest">
+              We'll show you the right tools
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Matched tools view (after drop) ────────────────────── */}
+      {droppedFile && matchedTools && allMatched.length > 0 && (
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="font-mono-meta text-[11px] uppercase tracking-widest text-muted-foreground/60 mb-1">
+                Tools for your file
+              </p>
+              <p className="font-heading text-lg font-bold text-foreground">
+                {droppedFile.name}
+                <span className="font-mono-meta text-xs text-muted-foreground ml-2">
+                  {allMatched.length} matching tool{allMatched.length !== 1 ? "s" : ""}
+                </span>
+              </p>
+            </div>
+            <button
+              onClick={() => { setDroppedFile(null); setMatchedTools(null); }}
+              className="font-mono-meta text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest flex items-center gap-1"
+            >
+              <X size={12} /> Back to all tools
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
+            {allMatched.map(t => (
+              <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon}
+                href={t.href} categoryLabel={t.cat} accent={t.accent} slug={t.slug} isFav={isFavorite(t.slug)} onToggleFav={toggleFav} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Main content (hidden when showing matched tools) ──── */}
+      {!droppedFile && <>
       {/* ── Privacy Trust Banner (homepage only) ────────────────── */}
       <div className="border-y border-border/40 bg-card/30">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-center gap-3 sm:gap-4">
@@ -387,6 +514,7 @@ export default function Index() {
           </>
         )}
       </main>
+      </>}
 
       <EditorialFooter />
     </div>
