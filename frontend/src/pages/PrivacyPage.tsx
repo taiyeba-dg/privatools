@@ -82,9 +82,14 @@ export default function PrivacyPage() {
 
           <h2>5. Third-Party Services</h2>
           <p>
-            PrivaTools uses Google Fonts for typography, loaded via a direct stylesheet link.
-            Google may collect anonymized usage data through font requests. No other third-party
-            services, analytics platforms, advertising networks, or tracking scripts are used.
+            PrivaTools uses the following third-party services:
+          </p>
+          <ul>
+            <li><strong>Google Analytics (GA4):</strong> We use Google Analytics to understand how visitors use the site — which tools are popular, how people find us, and general usage patterns. Google Analytics collects anonymized page view data, browser type, and approximate location (country-level). It does not have access to your uploaded files. You can opt out using a <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">browser extension</a>.</li>
+            <li><strong>Google Fonts:</strong> Typography is loaded via Google Fonts. Google may collect anonymized usage data through font requests.</li>
+          </ul>
+          <p>
+            No advertising networks, remarketing scripts, or user profiling tools are used.
           </p>
 
           <h2>6. Open Source Transparency</h2>

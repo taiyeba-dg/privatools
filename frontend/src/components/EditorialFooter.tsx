@@ -76,7 +76,7 @@ export function EditorialFooter() {
             © {new Date().getFullYear()} PRIVATOOLS · MIT LICENSE · FREE FOREVER
           </p>
           <p className="font-mono-meta text-xs text-muted-foreground/60">
-            NO COOKIES · NO TRACKING · NO ACCOUNTS
+            NO FILE STORAGE · NO ADS · NO ACCOUNTS
           </p>
         </div>
       </div>
