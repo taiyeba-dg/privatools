@@ -16,6 +16,9 @@ function validateFileSize(file: File) {
     }
 }
 
+/** Progress callback: phase ("upload" | "download"), percent 0-100 */
+export type ProgressCallback = (phase: "upload" | "download", percent: number) => void;
+
 /** Upload a single file with optional form-data parameters. Returns the response. */
 export async function uploadFile(
     endpoint: string,
@@ -38,6 +41,66 @@ export async function uploadFile(
     return res;
 }
 
+/**
+ * Upload a single file with real upload progress via XMLHttpRequest.
+ * Falls back to fetch() if XHR is unavailable.
+ */
+export function uploadFileWithProgress(
+    endpoint: string,
+    file: File,
+    params?: Record<string, string | number | boolean>,
+    onProgress?: ProgressCallback,
+): Promise<Response> {
+    validateFileSize(file);
+    const fd = new FormData();
+    fd.append("file", file);
+    if (params) {
+        for (const [k, v] of Object.entries(params)) {
+            fd.append(k, String(v));
+        }
+    }
+
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API_BASE}${endpoint}`);
+        xhr.responseType = "blob";
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable && onProgress) {
+                onProgress("upload", Math.round((e.loaded / e.total) * 100));
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const blob = xhr.response as Blob;
+                const headers = new Headers();
+                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
+                    const parts = line.split(": ");
+                    if (parts.length === 2) headers.append(parts[0], parts[1]);
+                });
+                resolve(new Response(blob, { status: xhr.status, headers }));
+            } else {
+                // Try to parse error from blob response
+                const blob = xhr.response as Blob;
+                blob.text().then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        reject(new Error(data.detail || `Request failed (${xhr.status})`));
+                    } catch {
+                        reject(new Error(`Request failed (${xhr.status})`));
+                    }
+                }).catch(() => reject(new Error(`Request failed (${xhr.status})`)));
+            }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.ontimeout = () => reject(new Error("Request timed out"));
+        xhr.timeout = 300_000; // 5 min
+        xhr.send(fd);
+    });
+}
+
 /** Upload multiple files with optional params. Returns the response. */
 export async function uploadFiles(
     endpoint: string,
@@ -58,6 +121,64 @@ export async function uploadFiles(
         throw new Error(body.detail || `Request failed (${res.status})`);
     }
     return res;
+}
+
+/**
+ * Upload multiple files with real upload progress via XMLHttpRequest.
+ */
+export function uploadFilesWithProgress(
+    endpoint: string,
+    files: File[],
+    params?: Record<string, string | number | boolean>,
+    onProgress?: ProgressCallback,
+): Promise<Response> {
+    for (const f of files) validateFileSize(f);
+    const fd = new FormData();
+    for (const f of files) fd.append("files", f);
+    if (params) {
+        for (const [k, v] of Object.entries(params)) {
+            fd.append(k, String(v));
+        }
+    }
+
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API_BASE}${endpoint}`);
+        xhr.responseType = "blob";
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable && onProgress) {
+                onProgress("upload", Math.round((e.loaded / e.total) * 100));
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const blob = xhr.response as Blob;
+                const headers = new Headers();
+                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
+                    const parts = line.split(": ");
+                    if (parts.length === 2) headers.append(parts[0], parts[1]);
+                });
+                resolve(new Response(blob, { status: xhr.status, headers }));
+            } else {
+                const blob = xhr.response as Blob;
+                blob.text().then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        reject(new Error(data.detail || `Request failed (${xhr.status})`));
+                    } catch {
+                        reject(new Error(`Request failed (${xhr.status})`));
+                    }
+                }).catch(() => reject(new Error(`Request failed (${xhr.status})`)));
+            }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.ontimeout = () => reject(new Error("Request timed out"));
+        xhr.timeout = 300_000;
+        xhr.send(fd);
+    });
 }
 
 /** Upload a file and get a JSON response back. */
@@ -123,31 +244,40 @@ export function downloadBlob(blob: Blob, filename: string) {
     }).catch(() => { });
 }
 
-/** Helper: upload file → get blob → download. Returns response headers for metadata. */
+/** Helper: upload file → get blob → download. With progress tracking. */
 export async function processAndDownload(
     endpoint: string,
     file: File,
     filename: string,
     params?: Record<string, string | number | boolean>,
+    onProgress?: ProgressCallback,
 ): Promise<Record<string, string>> {
-    const res = await uploadFile(endpoint, file, params);
+    const res = onProgress
+        ? await uploadFileWithProgress(endpoint, file, params, onProgress)
+        : await uploadFile(endpoint, file, params);
+    if (onProgress) onProgress("download", 50);
     const blob = await res.blob();
+    if (onProgress) onProgress("download", 100);
     downloadBlob(blob, filename);
-    // Return headers as a plain object for convenience
     const headers: Record<string, string> = {};
     res.headers.forEach((v, k) => { headers[k] = v; });
     return headers;
 }
 
-/** Helper: upload multiple files → get blob → download. */
+/** Helper: upload multiple files → get blob → download. With progress tracking. */
 export async function processFilesAndDownload(
     endpoint: string,
     files: File[],
     filename: string,
     params?: Record<string, string | number | boolean>,
+    onProgress?: ProgressCallback,
 ): Promise<void> {
-    const res = await uploadFiles(endpoint, files, params);
+    const res = onProgress
+        ? await uploadFilesWithProgress(endpoint, files, params, onProgress)
+        : await uploadFiles(endpoint, files, params);
+    if (onProgress) onProgress("download", 50);
     const blob = await res.blob();
+    if (onProgress) onProgress("download", 100);
     downloadBlob(blob, filename);
 }
 

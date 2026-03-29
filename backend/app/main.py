@@ -363,9 +363,21 @@ if _frontend_path.exists():
         if not str(file_path).startswith(str(_frontend_path.resolve())):
             return JSONResponse({"detail": "Not found"}, status_code=404)
         if file_path.is_file():
-            return FileResponse(file_path)
+            resp = FileResponse(file_path)
+            # Immutable cache for hashed assets (e.g. /assets/index-TSOEbfYo.js)
+            if full_path.startswith("assets/"):
+                resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            # Cache icons, manifest, robots, llms.txt for 1 day
+            elif full_path.endswith((".png", ".ico", ".webmanifest", ".txt", ".xml", ".svg")):
+                resp.headers["Cache-Control"] = "public, max-age=86400"
+            # Don't cache index.html or other HTML (SPA routing)
+            else:
+                resp.headers["Cache-Control"] = "no-cache"
+            return resp
         # Fall back to index.html for SPA routing
         index = _frontend_path / "index.html"
         if index.is_file():
-            return FileResponse(index)
+            resp = FileResponse(index)
+            resp.headers["Cache-Control"] = "no-cache"
+            return resp
         return JSONResponse({"detail": "Not found"}, status_code=404)

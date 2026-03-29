@@ -446,19 +446,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
             },
             {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
         ]
-        # HowTo schema
-        if slug in TOOL_HOWTO:
-            graph.append({
-                "@type": "HowTo",
-                "name": f"How to {name} Online Free",
-                "description": description,
-                "step": [
-                    {"@type": "HowToStep", "position": i + 1, "name": s["name"], "text": s["text"]}
-                    for i, s in enumerate(TOOL_HOWTO[slug])
-                ],
-                "tool": {"@type": "HowToTool", "name": "PrivaTools"},
-            })
-        # FAQPage schema
+        # FAQPage schema (HowTo removed — deprecated by Google Sep 2023)
         if slug in TOOL_FAQ:
             graph.append({
                 "@type": "FAQPage",
@@ -492,17 +480,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
             },
             {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
         ]
-        if slug in TOOL_HOWTO:
-            graph2.append({
-                "@type": "HowTo",
-                "name": f"How to Use {name} Online Free",
-                "description": description,
-                "step": [
-                    {"@type": "HowToStep", "position": i + 1, "name": s["name"], "text": s["text"]}
-                    for i, s in enumerate(TOOL_HOWTO[slug])
-                ],
-                "tool": {"@type": "HowToTool", "name": "PrivaTools"},
-            })
+        # FAQPage schema (HowTo removed — deprecated by Google Sep 2023)
         if slug in TOOL_FAQ:
             graph2.append({
                 "@type": "FAQPage",
@@ -794,7 +772,7 @@ def inject_seo(html: str, path: str) -> str:
     # Inject JSON-LD structured data
     jsonld = get_jsonld_for_path(path)
     if jsonld:
-        jsonld_tag = f'<script type="application/ld+json">{json.dumps(jsonld, ensure_ascii=False, separators=(",", ":"))}</script>'
+        jsonld_tag = f'<script type="application/ld+json" id="jsonld-seo">{json.dumps(jsonld, ensure_ascii=False, separators=(",", ":"))}</script>'
         html = html.replace("</head>", f"  {jsonld_tag}\n</head>", 1)
 
     # Inject SSR content into <div id="root"> so crawlers see real content.

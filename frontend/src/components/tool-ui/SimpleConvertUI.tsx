@@ -19,13 +19,23 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
+    const [progress, setProgress] = useState<number | undefined>(undefined);
+    const [progressLabel, setProgressLabel] = useState("Processing…");
 
     const process = async () => {
         if (!file) return;
-        setStatus("processing"); setError(null);
+        setStatus("processing"); setError(null); setProgress(undefined);
         try {
             const outName = outputFilename || file.name.replace(/\.[^.]+$/, `.${outputExt}`);
-            await processAndDownload(getToolEndpoint(slug), file, outName);
+            await processAndDownload(getToolEndpoint(slug), file, outName, undefined, (phase, pct) => {
+                if (phase === "upload") {
+                    setProgressLabel("Uploading…");
+                    setProgress(pct);
+                } else {
+                    setProgressLabel("Downloading…");
+                    setProgress(pct);
+                }
+            });
             setStatus("done");
         } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
     };
@@ -48,7 +58,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
                 label="Drop file here"
                 hint={description}
             />
-            {status === "processing" && <ProcessingBar label="Converting your file…" />}
+            {status === "processing" && <ProcessingBar label={progressLabel} progress={progress} />}
             {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}
             {file && status !== "processing" && (
                 <div className="flex items-center gap-3">
