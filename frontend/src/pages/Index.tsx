@@ -15,6 +15,15 @@ const FEATURED_TAGLINES: Record<string, string> = {
   "image-to-pdf": "Turn JPG, PNG, and other images into PDF",
   "edit-pdf": "Modify text and images directly inside the PDF",
 };
+const suiteColors: Record<Suite, string> = {
+  pdf: "text-red-400 border-red-400",
+  image: "text-pink-400 border-pink-400",
+  "video-audio": "text-orange-400 border-orange-400",
+  developer: "text-cyan-400 border-cyan-400",
+  archive: "text-yellow-400 border-yellow-400",
+  "document-office": "text-lime-400 border-lime-400",
+};
+
 const featuredTools = FEATURED_SLUGS
   .map(s => tools.find(t => t.slug === s)!)
   .filter(Boolean);
@@ -46,16 +55,16 @@ const nonPdfSuiteCategories: Partial<Record<Suite, NonPdfCategory>> = {
 };
 
 // ── Tool Card ──────────────────────────────────────────────────────────────
-function ToolCard({ name, description, icon: Icon, href, categoryLabel }: {
+function ToolCard({ name, description, icon: Icon, href, categoryLabel, accent }: {
   name: string; description: string; icon: React.ElementType;
-  href: string; categoryLabel: string;
+  href: string; categoryLabel: string; accent?: string;
 }) {
   return (
     <Link
       to={href}
       className="tool-card group flex items-start gap-3 border-b border-border/40 py-3.5 px-1 transition-all hover:bg-card/60"
     >
-      <Icon size={16} strokeWidth={1.75} className="text-primary mt-0.5 shrink-0" />
+      <Icon size={16} strokeWidth={1.75} className={cn("mt-0.5 shrink-0", accent || "text-primary")} />
       <div className="min-w-0 flex-1">
         <p className="font-heading text-[15px] font-bold text-foreground leading-tight group-hover:text-primary transition-colors">
           {name}
@@ -64,7 +73,7 @@ function ToolCard({ name, description, icon: Icon, href, categoryLabel }: {
           {description}
         </p>
       </div>
-      <span className="category-tag shrink-0 hidden sm:block mt-1">{categoryLabel}</span>
+      <span className={cn("shrink-0 hidden sm:block mt-1 font-sans-ui text-[0.6rem] font-bold tracking-[0.1em] uppercase", accent || "text-primary")}>{categoryLabel}</span>
       <ArrowRight size={12} className="shrink-0 text-muted-foreground/0 group-hover:text-primary transition-all mt-1" />
     </Link>
   );
@@ -77,8 +86,8 @@ export default function Index() {
   const { history } = useHistory();
 
   const allSearchable = [
-    ...tools.map(t => ({ slug: t.slug, name: t.name, description: t.description, icon: t.icon, href: `/tool/${t.slug}`, cat: categoryMeta[t.category].label })),
-    ...nonPdfTools.map(t => ({ slug: t.slug, name: t.name, description: t.description, icon: t.icon, href: `/tools/${t.slug}`, cat: nonPdfCategoryMeta[t.category].label })),
+    ...tools.map(t => ({ slug: t.slug, name: t.name, description: t.description, icon: t.icon, href: `/tool/${t.slug}`, cat: categoryMeta[t.category].label, accent: categoryMeta[t.category].accent })),
+    ...nonPdfTools.map(t => ({ slug: t.slug, name: t.name, description: t.description, icon: t.icon, href: `/tools/${t.slug}`, cat: nonPdfCategoryMeta[t.category].label, accent: nonPdfCategoryMeta[t.category].accent })),
   ];
 
   const filtered = query.trim()
@@ -224,7 +233,7 @@ export default function Index() {
             {filtered.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
                 {filtered.map(t => (
-                  <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon} href={t.href} categoryLabel={t.cat} />
+                  <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon} href={t.href} categoryLabel={t.cat} accent={t.accent} />
                 ))}
               </div>
             ) : (
@@ -249,7 +258,7 @@ export default function Index() {
                     className={cn(
                       "masthead-nav whitespace-nowrap px-2 py-1.5 transition-all",
                       activeTab === s.id
-                        ? "text-primary border-b-2 border-primary"
+                        ? cn("border-b-2", suiteColors[s.id])
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -266,10 +275,10 @@ export default function Index() {
               const recentItems = history.slice(0, 4).map(h => {
                 const pdfTool = tools.find(t => t.slug === h.slug);
                 const nonPdfTool = nonPdfTools.find(t => t.slug === h.slug);
-                if (pdfTool) return { slug: pdfTool.slug, name: pdfTool.name, description: pdfTool.description, icon: pdfTool.icon, href: `/tool/${pdfTool.slug}`, cat: categoryMeta[pdfTool.category].label };
-                if (nonPdfTool) return { slug: nonPdfTool.slug, name: nonPdfTool.name, description: nonPdfTool.description, icon: nonPdfTool.icon, href: `/tools/${nonPdfTool.slug}`, cat: nonPdfCategoryMeta[nonPdfTool.category].label };
+                if (pdfTool) return { slug: pdfTool.slug, name: pdfTool.name, description: pdfTool.description, icon: pdfTool.icon, href: `/tool/${pdfTool.slug}`, cat: categoryMeta[pdfTool.category].label, accent: categoryMeta[pdfTool.category].accent };
+                if (nonPdfTool) return { slug: nonPdfTool.slug, name: nonPdfTool.name, description: nonPdfTool.description, icon: nonPdfTool.icon, href: `/tools/${nonPdfTool.slug}`, cat: nonPdfCategoryMeta[nonPdfTool.category].label, accent: nonPdfCategoryMeta[nonPdfTool.category].accent };
                 return null;
-              }).filter(Boolean) as { slug: string; name: string; description: string; icon: React.ElementType; href: string; cat: string }[];
+              }).filter(Boolean) as { slug: string; name: string; description: string; icon: React.ElementType; href: string; cat: string; accent: string }[];
               if (!recentItems.length) return null;
               return (
                 <section className="mb-10">
@@ -300,7 +309,7 @@ export default function Index() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
                         {catTools.map(t => (
                           <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon}
-                            href={`/tool/${t.slug}`} categoryLabel={meta.label} />
+                            href={`/tool/${t.slug}`} categoryLabel={meta.label} accent={meta.accent} />
                         ))}
                       </div>
                     </section>
@@ -324,7 +333,7 @@ export default function Index() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
                     {catTools.map(t => (
                       <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon}
-                        href={`/tools/${t.slug}`} categoryLabel={meta.label} />
+                        href={`/tools/${t.slug}`} categoryLabel={meta.label} accent={meta.accent} />
                     ))}
                   </div>
                 </div>
