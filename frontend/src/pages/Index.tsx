@@ -91,6 +91,19 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       <EditorialMasthead />
 
+      {/* ── Privacy Trust Banner (homepage only) ────────────────── */}
+      <div className="border-y border-border/40 bg-card/30">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-center gap-3 sm:gap-4">
+          <Shield size={15} className="text-primary shrink-0" />
+          <p className="font-mono-meta text-[10px] sm:text-[11px] uppercase tracking-widest text-muted-foreground">
+            Your files never leave your device. 100% local processing — no uploads, no servers, no tracking.
+          </p>
+          <Link to="/about" className="font-mono-meta text-[10px] uppercase tracking-widest text-primary hover:text-primary/80 transition-colors whitespace-nowrap shrink-0 hidden sm:block">
+            Learn more
+          </Link>
+        </div>
+      </div>
+
       <main className="mx-auto max-w-6xl px-4 sm:px-6">
 
         {/* ── Featured Tools ───────────────────────────────────────── */}
@@ -122,13 +135,6 @@ export default function Index() {
                 </Link>
               );
             })}
-          </div>
-          <div className="mt-6 flex items-center gap-3 justify-center">
-            <Shield size={13} className="text-primary/60" />
-            <p className="font-mono-meta text-[10px] uppercase tracking-widest text-muted-foreground/50">
-              Your files never leave your device
-            </p>
-            <Shield size={13} className="text-primary/60" />
           </div>
         </section>
 

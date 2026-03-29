@@ -372,6 +372,14 @@ export default function ToolPage() {
           </div>
 
           <div className="space-y-5">
+            <div className="editorial-insert p-5 border-l-4 !border-l-primary">
+              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">
+                <Lock size={12} className="inline-block mr-1 text-primary" />
+                <span className="text-foreground font-semibold">Your files stay private.</span>{" "}
+                All processing happens locally on your self-hosted server — files are never sent to third parties.
+              </p>
+            </div>
+
             <div className="editorial-insert p-5">
               <h3 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related tools</h3>
               <div className="space-y-0.5">
@@ -397,14 +405,6 @@ export default function ToolPage() {
               <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer" className="font-sans-ui inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline">
                 View on GitHub <ArrowUpRight size={11} />
               </a>
-            </div>
-
-            <div className="editorial-insert p-5 border-l-4 !border-l-primary">
-              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">
-                <Lock size={12} className="inline-block mr-1 text-primary" />
-                <span className="text-foreground font-semibold">Your files stay private.</span>{" "}
-                All processing happens locally on your self-hosted server — files are never sent to third parties.
-              </p>
             </div>
 
             {slug && TOOL_BLOG_LINKS[slug] && TOOL_BLOG_LINKS[slug].length > 0 && (
