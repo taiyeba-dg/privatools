@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, X, ArrowRight, Shield, GitBranch } from "lucide-react";
+import { Search, X, ArrowRight, Shield, GitBranch, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
 import { useHistory } from "@/hooks/useHistory";
+import { useFavorites } from "@/hooks/useFavorites";
 import { EditorialMasthead } from "@/components/EditorialMasthead";
 import { EditorialFooter } from "@/components/EditorialFooter";
 
@@ -55,27 +56,44 @@ const nonPdfSuiteCategories: Partial<Record<Suite, NonPdfCategory>> = {
 };
 
 // ── Tool Card ──────────────────────────────────────────────────────────────
-function ToolCard({ name, description, icon: Icon, href, categoryLabel, accent }: {
+function ToolCard({ name, description, icon: Icon, href, categoryLabel, accent, slug, isFav, onToggleFav }: {
   name: string; description: string; icon: React.ElementType;
   href: string; categoryLabel: string; accent?: string;
+  slug?: string; isFav?: boolean; onToggleFav?: (slug: string) => void;
 }) {
   return (
-    <Link
-      to={href}
-      className="tool-card group flex items-start gap-3 border-b border-border/40 py-3.5 px-1 transition-all hover:bg-card/60"
-    >
-      <Icon size={16} strokeWidth={1.75} className={cn("mt-0.5 shrink-0", accent || "text-primary")} />
-      <div className="min-w-0 flex-1">
-        <p className="font-heading text-[15px] font-bold text-foreground leading-tight group-hover:text-primary transition-colors">
-          {name}
-        </p>
-        <p className="font-serif-body text-xs text-muted-foreground line-clamp-1 mt-0.5">
-          {description}
-        </p>
-      </div>
+    <div className="tool-card group flex items-start gap-3 border-b border-border/40 py-3.5 px-1 transition-all hover:bg-card/60 relative">
+      <Link to={href} className="flex items-start gap-3 min-w-0 flex-1">
+        <Icon size={16} strokeWidth={1.75} className={cn("mt-0.5 shrink-0", accent || "text-primary")} />
+        <div className="min-w-0 flex-1">
+          <p className="font-heading text-[15px] font-bold text-foreground leading-tight group-hover:text-primary transition-colors">
+            {name}
+          </p>
+          <p className="font-serif-body text-xs text-muted-foreground line-clamp-1 mt-0.5">
+            {description}
+          </p>
+        </div>
+      </Link>
       <span className={cn("shrink-0 hidden sm:block mt-1 font-sans-ui text-[0.6rem] font-bold tracking-[0.1em] uppercase", accent || "text-primary")}>{categoryLabel}</span>
-      <ArrowRight size={12} className="shrink-0 text-muted-foreground/0 group-hover:text-primary transition-all mt-1" />
-    </Link>
+      {slug && onToggleFav && (
+        <button
+          onClick={(e) => { e.preventDefault(); onToggleFav(slug); }}
+          className="shrink-0 mt-0.5 transition-all hover:scale-110 active:scale-95"
+          title={isFav ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Star
+            size={14}
+            className={cn(
+              "transition-colors",
+              isFav ? "text-primary fill-primary" : "text-muted-foreground/30 hover:text-primary/60"
+            )}
+          />
+        </button>
+      )}
+      <Link to={href}>
+        <ArrowRight size={12} className="shrink-0 text-muted-foreground/0 group-hover:text-primary transition-all mt-1" />
+      </Link>
+    </div>
   );
 }
 
@@ -84,6 +102,7 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState<Suite>("pdf");
   const [query, setQuery] = useState("");
   const { history } = useHistory();
+  const { favorites, toggle: toggleFav, isFavorite } = useFavorites();
 
   const allSearchable = [
     ...tools.map(t => ({ slug: t.slug, name: t.name, description: t.description, icon: t.icon, href: `/tool/${t.slug}`, cat: categoryMeta[t.category].label, accent: categoryMeta[t.category].accent })),
@@ -233,7 +252,7 @@ export default function Index() {
             {filtered.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
                 {filtered.map(t => (
-                  <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon} href={t.href} categoryLabel={t.cat} accent={t.accent} />
+                  <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon} href={t.href} categoryLabel={t.cat} accent={t.accent} slug={t.slug} isFav={isFavorite(t.slug)} onToggleFav={toggleFav} />
                 ))}
               </div>
             ) : (
@@ -270,6 +289,32 @@ export default function Index() {
             </div>
             <div className="rule-thin mt-0 mb-8" />
 
+            {/* ── Favorites ────────────────────────────────────────── */}
+            {favorites.length > 0 && (() => {
+              const favItems = favorites.slice(0, 6).map(slug => {
+                const pdfTool = tools.find(t => t.slug === slug);
+                const nonPdfTool = nonPdfTools.find(t => t.slug === slug);
+                if (pdfTool) return { slug: pdfTool.slug, name: pdfTool.name, description: pdfTool.description, icon: pdfTool.icon, href: `/tool/${pdfTool.slug}`, cat: categoryMeta[pdfTool.category].label, accent: categoryMeta[pdfTool.category].accent };
+                if (nonPdfTool) return { slug: nonPdfTool.slug, name: nonPdfTool.name, description: nonPdfTool.description, icon: nonPdfTool.icon, href: `/tools/${nonPdfTool.slug}`, cat: nonPdfCategoryMeta[nonPdfTool.category].label, accent: nonPdfCategoryMeta[nonPdfTool.category].accent };
+                return null;
+              }).filter(Boolean) as { slug: string; name: string; description: string; icon: React.ElementType; href: string; cat: string; accent: string }[];
+              if (!favItems.length) return null;
+              return (
+                <section className="mb-10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Star size={12} className="text-primary fill-primary" />
+                    <div className="section-flag">FAVORITES</div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                    {favItems.map(t => (
+                      <ToolCard key={t.slug} {...t} categoryLabel={t.cat} isFav={true} onToggleFav={toggleFav} />
+                    ))}
+                  </div>
+                  <div className="rule-thin mt-6" />
+                </section>
+              );
+            })()}
+
             {/* ── Recently Used ────────────────────────────────────── */}
             {history.length > 0 && (() => {
               const recentItems = history.slice(0, 4).map(h => {
@@ -285,7 +330,7 @@ export default function Index() {
                   <div className="section-flag mb-4">RECENTLY USED</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
                     {recentItems.map(t => (
-                      <ToolCard key={t.slug} {...t} categoryLabel={t.cat} />
+                      <ToolCard key={t.slug} {...t} categoryLabel={t.cat} isFav={isFavorite(t.slug)} onToggleFav={toggleFav} />
                     ))}
                   </div>
                   <div className="rule-thin mt-6" />
@@ -309,7 +354,7 @@ export default function Index() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
                         {catTools.map(t => (
                           <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon}
-                            href={`/tool/${t.slug}`} categoryLabel={meta.label} accent={meta.accent} />
+                            href={`/tool/${t.slug}`} categoryLabel={meta.label} accent={meta.accent} slug={t.slug} isFav={isFavorite(t.slug)} onToggleFav={toggleFav} />
                         ))}
                       </div>
                     </section>
@@ -333,7 +378,7 @@ export default function Index() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
                     {catTools.map(t => (
                       <ToolCard key={t.slug} name={t.name} description={t.description} icon={t.icon}
-                        href={`/tools/${t.slug}`} categoryLabel={meta.label} accent={meta.accent} />
+                        href={`/tools/${t.slug}`} categoryLabel={meta.label} accent={meta.accent} slug={t.slug} isFav={isFavorite(t.slug)} onToggleFav={toggleFav} />
                     ))}
                   </div>
                 </div>
