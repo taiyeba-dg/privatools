@@ -44,11 +44,16 @@ export function EditorialMasthead() {
                 <Link
                   to={link.href}
                   className={cn(
-                    "px-2 py-1 transition-colors whitespace-nowrap",
+                    "px-2 py-1 transition-colors whitespace-nowrap inline-flex items-center gap-1.5",
                     location.pathname === link.href && "active"
                   )}
                 >
                   {link.label}
+                  {link.label === "PIPELINE" && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 text-[8px] font-bold tracking-wider bg-primary text-primary-foreground rounded-sm leading-none">
+                      NEW
+                    </span>
+                  )}
                 </Link>
               </span>
             ))}

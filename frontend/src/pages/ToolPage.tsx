@@ -3,7 +3,7 @@ import { useEffect, useRef, Suspense, lazy, type ComponentType } from "react";
 import { toolBySlug, tools, categoryMeta, type Category } from "@/data/tools";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Shield, ChevronRight, Github, ExternalLink, ArrowUpRight, ArrowRight, Lock, BookOpen } from "lucide-react";
+import { Shield, ChevronRight, Github, ExternalLink, ArrowUpRight, ArrowRight, Lock, BookOpen, GitBranch } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
@@ -344,10 +344,19 @@ export default function ToolPage() {
               <p className="font-serif-body text-base sm:text-lg text-foreground/75 leading-relaxed max-w-xl">{tool.longDescription || tool.description}</p>
             </div>
 
-            <div className="editorial-insert p-4 sm:p-6 mb-8">
+            <div className="editorial-insert p-4 sm:p-6 mb-4">
               <Suspense fallback={<ToolLoadingCard />}>
                 <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
               </Suspense>
+            </div>
+
+            <div className="flex items-center gap-2 mb-8 px-1">
+              <GitBranch size={12} className="text-primary shrink-0" />
+              <p className="font-mono-meta text-[10px] text-muted-foreground">
+                Need multiple operations?{" "}
+                <Link to="/pipeline" className="text-primary hover:underline font-semibold">Try Pipeline</Link>
+                {" "}— chain tools together in one go.
+              </p>
             </div>
 
             <div className="mt-10 mb-4">

@@ -51,8 +51,11 @@ export function MobileNav() {
                                 strokeWidth={isActive ? 2 : 1.75}
                                 className={cn(isActive ? "text-primary" : "text-muted-foreground")}
                             />
-                            <span className={cn("text-[10px]", isActive ? "text-primary font-semibold" : "text-muted-foreground")}>
+                            <span className={cn("text-[10px] relative", isActive ? "text-primary font-semibold" : "text-muted-foreground")}>
                                 {item.label}
+                                {item.label === "Pipeline" && (
+                                    <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-primary" />
+                                )}
                             </span>
                             {isActive && (
                                 <span className="w-1 h-1 rounded-full bg-primary" />

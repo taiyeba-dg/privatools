@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, X, ArrowRight, Shield } from "lucide-react";
+import { Search, X, ArrowRight, Shield, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
@@ -136,6 +136,46 @@ export default function Index() {
               );
             })}
           </div>
+        </section>
+
+        {/* ── Pipeline Callout ──────────────────────────────────────── */}
+        <section className="py-6">
+          <Link
+            to="/pipeline"
+            className="group block rounded-lg border border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/40 transition-all p-5 sm:p-6"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/15">
+                  <GitBranch size={20} className="text-primary" />
+                </div>
+                <div className="flex items-center gap-1.5 sm:hidden">
+                  <span className="font-heading text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                    Pipeline
+                  </span>
+                  <span className="px-1.5 py-0.5 text-[8px] font-bold tracking-wider bg-primary text-primary-foreground rounded-sm leading-none">
+                    NEW
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 hidden sm:flex">
+                  <span className="font-heading text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                    Chain Tools Together with Pipeline
+                  </span>
+                  <span className="px-1.5 py-0.5 text-[8px] font-bold tracking-wider bg-primary text-primary-foreground rounded-sm leading-none">
+                    NEW
+                  </span>
+                </div>
+                <p className="font-serif-body text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  Run multiple operations in sequence — merge, compress, watermark, and more — all in one go. No other tool offers this.
+                </p>
+              </div>
+              <span className="font-sans-ui text-xs font-semibold text-primary whitespace-nowrap inline-flex items-center gap-1 shrink-0">
+                Try Pipeline <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
+          </Link>
         </section>
 
         <div className="rule-thin" />
