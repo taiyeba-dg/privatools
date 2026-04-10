@@ -25,7 +25,7 @@ def set_permissions(input_path: str, owner_password: str = "",
         pdf.save(
             str(output_path),
             encryption=pikepdf.Encryption(
-                owner=owner_password or "owner123",
+                owner=owner_password or "defaultpdfowner",
                 user="",
                 allow=perms,
             ),

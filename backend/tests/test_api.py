@@ -3,7 +3,7 @@ Pytest test suite for PrivaTools backend API.
 Tests key endpoints with output validation — not just HTTP 200 checks.
 
 Requires a running server:
-    cd '/Users/lakshya/Downloads/priva tool'
+    cd /path/to/privatools
     python3 -m uvicorn backend.app.main:app --port 8000 &
     python3 -m pytest backend/tests/test_api.py -v
 """
