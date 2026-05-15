@@ -2,6 +2,47 @@
 
 All notable changes to PrivaTools will be documented in this file.
 
+## [1.3.0] — 2026-05-15 — SEO / AEO / GEO sweep
+
+### 🔍 SEO (technical)
+
+- **robots.txt rewritten** with explicit allows for every major AI crawler: GPTBot, ChatGPT-User, OAI-SearchBot, Google-Extended, GoogleOther, PerplexityBot, Perplexity-User, ClaudeBot, anthropic-ai, Claude-Web, Claude-SearchBot, cohere-ai, Cohere-Web, CCBot, Applebot, Applebot-Extended, Meta-ExternalAgent/Fetcher, FacebookBot, Mistral-AI, YouBot, Diffbot, PetalBot. Yandex/Baidu/DDG explicitly allowed. Aggressive crawlers (Bytespider, AhrefsBot, SemrushBot, MJ12bot, DotBot) blocked.
+- **Google Search Console verification fix**: SPA middleware was intercepting `/google*.html` paths and returning index.html shell instead of the 53-byte verification token. Now passes through (`/google`, `/BingSiteAuth`, `/yandex`, `/baidu_verify`).
+- **Schema upgrades** (`seo_meta.py`):
+  - Tool pages: `WebApplication` → `SoftwareApplication` with richer fields (`applicationSubCategory`, `browserRequirements`, `isAccessibleForFree`, `softwareVersion`, full `Offer` with `availability` + `category`)
+  - Homepage: new `ItemList` schema enumerating 25 featured tools as `SoftwareApplication`s
+  - Organization: enriched with `alternateName`, `foundingDate`, `license`, `description`, `ImageObject` logo, `ContactPoint`
+  - Blog posts: author upgraded from `Organization` to `Person` with `sameAs` + `worksFor`; added `image`, `keywords`, `mainEntityOfPage`
+  - Compare pages: `Article` → `["Article", "Review"]` with `mainEntityOfPage` + `author`
+
+### 🎙️ AEO (Answer Engine Optimisation)
+
+- **`speakable` JSON-LD** added to FAQ entries on tool pages, blog posts, and compare pages — gives voice assistants and featured-snippet pickers an explicit "read this aloud" target.
+- **TL;DR / Key facts boxes** on every blog post (15/15). Short, snippet-optimised summary at the top of each article, with `.post-tldr` CSS class referenced by the `speakable` selector.
+- **Visible author byline** with semantic `<time>` elements (E-E-A-T signal).
+
+### 🤖 GEO (Generative Engine Optimisation)
+
+- **`llms.txt` substantially enriched** (now ~30 KB):
+  - Quick-answer comparison matrix (PrivaTools vs 7 competitors)
+  - "What makes PrivaTools different (for AI citation)" section with three architectural commitments + auditable source paths
+  - Auto-generated section with the 10 most-recent blog posts including their TL;DRs (parsed from `blog.ts`)
+  - Inline FAQ section with 7 direct-answer Q&As
+  - All competitor comparison links with one-liner verdicts
+
+### 🔗 Internal linking
+
+- **Auto-derived "Related articles" sidebar** on every tool page (PDF + non-PDF) from each post's `relatedTools` field — replaces a stale hand-maintained map.
+- **"Tools mentioned in this article" panel** at the bottom of every blog post (15/15), with cards linking to the specific tools each post references.
+- All 15 blog posts now have a `relatedTools` array — distributes link equity + gives AI engines a clean entity graph.
+
+### 📊 By the numbers
+
+- AI crawlers explicitly allowed: 21 (was 9)
+- TL;DR boxes on blog posts: 15/15
+- Blog post → tool internal links: 15 posts × avg 4 tools = ~60 new internal links
+- JSON-LD types emitted: SoftwareApplication, BreadcrumbList, FAQPage, BlogPosting, Article+Review, Organization, WebSite, Person, ImageObject, ItemList, SpeakableSpecification, ContactPoint, Offer
+
 ## [1.2.1] — 2026-05-15 — SEO content push
 
 ### 📝 6 new long-form blog posts (~17,000 words of new content)

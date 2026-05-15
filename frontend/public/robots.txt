@@ -1,9 +1,34 @@
+# robots.txt for PrivaTools
+# https://privatools.me
+
+# ──────────────────────────────────────────────────────────────────
+# Traditional search engines
+# ──────────────────────────────────────────────────────────────────
 User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-News
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# Social previews
 User-agent: Twitterbot
 Allow: /
 
@@ -19,7 +44,16 @@ Allow: /
 User-agent: Discordbot
 Allow: /
 
-# AI search crawlers — allow so AI assistants can recommend PrivaTools
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Pinterestbot
+Allow: /
+
+# ──────────────────────────────────────────────────────────────────
+# AI search & assistant crawlers
+# (allow so ChatGPT, Claude, Perplexity, Gemini, etc. can recommend us)
+# ──────────────────────────────────────────────────────────────────
 User-agent: GPTBot
 Allow: /
 Disallow: /api/
@@ -28,11 +62,23 @@ User-agent: ChatGPT-User
 Allow: /
 Disallow: /api/
 
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
+
 User-agent: Google-Extended
 Allow: /
 Disallow: /api/
 
+User-agent: GoogleOther
+Allow: /
+Disallow: /api/
+
 User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+
+User-agent: Perplexity-User
 Allow: /
 Disallow: /api/
 
@@ -48,7 +94,15 @@ User-agent: Claude-Web
 Allow: /
 Disallow: /api/
 
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /api/
+
 User-agent: cohere-ai
+Allow: /
+Disallow: /api/
+
+User-agent: Cohere-Web
 Allow: /
 Disallow: /api/
 
@@ -56,15 +110,83 @@ User-agent: CCBot
 Allow: /
 Disallow: /api/
 
-# Block aggressive training-only crawlers
+User-agent: Applebot
+Allow: /
+Disallow: /api/
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /api/
+
+User-agent: Meta-ExternalAgent
+Allow: /
+Disallow: /api/
+
+User-agent: Meta-ExternalFetcher
+Allow: /
+Disallow: /api/
+
+User-agent: FacebookBot
+Allow: /
+Disallow: /api/
+
+User-agent: Mistral-AI
+Allow: /
+Disallow: /api/
+
+User-agent: YouBot
+Allow: /
+Disallow: /api/
+
+User-agent: DiffBot
+Allow: /
+Disallow: /api/
+
+User-agent: Diffbot
+Allow: /
+Disallow: /api/
+
+User-agent: PetalBot
+Allow: /
+Disallow: /api/
+
+# ──────────────────────────────────────────────────────────────────
+# Blocked: aggressive training-only crawlers / archive scrapers
+# ──────────────────────────────────────────────────────────────────
 User-agent: ia_archiver
 Disallow: /
 
 User-agent: Bytespider
 Disallow: /
 
+User-agent: ImagesiftBot
+Disallow: /
+
+User-agent: omgili
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+# ──────────────────────────────────────────────────────────────────
+# Default: allow everything except API endpoints
+# ──────────────────────────────────────────────────────────────────
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /assets/
+Crawl-delay: 1
 
+# ──────────────────────────────────────────────────────────────────
+# Discovery
+# ──────────────────────────────────────────────────────────────────
 Sitemap: https://privatools.me/sitemap.xml

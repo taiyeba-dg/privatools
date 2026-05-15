@@ -3,10 +3,18 @@ export interface BlogPost {
   title: string;
   description: string;
   publishedAt: string;
+  updatedAt?: string;
   readTime: string;
   tags: string[];
   body: string;
   author?: string;
+  /** Short, snippet-optimised summary rendered at the top of the post and
+   *  used in the `speakable` JSON-LD selector for voice/AEO/GEO surfaces. */
+  tldr?: string;
+  /** Slugs of related tools to surface in the article's "Tools mentioned"
+   *  panel. Drives internal linking + gives AI engines a concrete entity
+   *  graph for the post. */
+  relatedTools?: string[];
 }
 
 export const blogPosts: BlogPost[] = [
@@ -17,6 +25,9 @@ export const blogPosts: BlogPost[] = [
       "Learn how to reduce PDF file size by up to 90% without visible quality loss. Three methods compared: online tools, desktop apps, and command-line.",
     publishedAt: "2026-03-22",
     readTime: "5 min read",
+    tldr:
+      "Use lossy compression at a balanced setting (PrivaTools' 'Recommended' level) to cut PDF size by 60–90% with no visible quality loss. Lossless saves only 5–30% but never touches image data. For maximum reduction, drop image DPI to 96 and lower JPEG quality.",
+    relatedTools: ["compress-pdf", "batch-compress-pdf", "web-optimize-pdf"],
     tags: ["PDF", "Compression", "How-To"],
     body: `
 <p>PDF files can balloon to enormous sizes — especially scanned documents, presentations, and forms with embedded images. Emailing a 50&nbsp;MB PDF frustrates everyone involved. The good news: you can typically cut that size by 60–90% without any visible loss in quality.</p>
@@ -86,6 +97,9 @@ export const blogPosts: BlogPost[] = [
       "Step-by-step guide to combining multiple PDF files online for free. Drag, drop, reorder, and merge — no software, no account, no watermarks.",
     publishedAt: "2026-03-22",
     readTime: "4 min read",
+    tldr:
+      "Drop 2+ PDFs into a free merger like PrivaTools, drag-reorder, click Merge, download. No software, no account, no watermarks. Files are deleted from the server immediately after the response.",
+    relatedTools: ["merge-pdf", "organize-pages", "image-to-pdf"],
     tags: ["PDF", "Merge", "How-To"],
     body: `
 <p>Whether you're assembling a report from multiple chapters, combining signed contract pages, or packaging several scanned receipts into one file — merging PDFs is one of the most common file tasks. Here's how to do it online for free, without downloading anything.</p>
@@ -141,6 +155,9 @@ export const blogPosts: BlogPost[] = [
       "We tested 8 free PDF tool suites in 2026. Honest verdict on which are truly free, which have hidden limits, and which respect your privacy.",
     publishedAt: "2026-03-22",
     readTime: "8 min read",
+    tldr:
+      "In 2026: PrivaTools (100% free, open source, 152+ tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.",
+    relatedTools: ["merge-pdf", "compress-pdf", "edit-pdf", "ocr-pdf", "pdf-to-word"],
     tags: ["PDF", "Comparison", "Review"],
     body: `
 <p>Searching for "free PDF tools" returns hundreds of options — but many aren't truly free. Some limit you to 2 tasks per day. Others add watermarks unless you pay. A few quietly upload your documents to their servers and retain them indefinitely. This guide cuts through the noise.</p>
@@ -207,6 +224,9 @@ export const blogPosts: BlogPost[] = [
       "Three ways to remove or bypass a PDF password you own — online tool, Adobe Acrobat, and command-line — explained step by step.",
     publishedAt: "2026-03-22",
     readTime: "4 min read",
+    tldr:
+      "If you know the password: PrivaTools Unlock PDF or qpdf --password=… --decrypt. If you don't, you can't legally bypass it. 'Print to PDF' from a viewer is a workaround for owner-password-only PDFs.",
+    relatedTools: ["unlock-pdf", "protect-pdf", "set-permissions"],
     tags: ["PDF", "Security", "How-To"],
     body: `
 <p>PDF passwords come in two varieties, and understanding which type you're dealing with determines which removal method works.</p>
@@ -271,6 +291,9 @@ export const blogPosts: BlogPost[] = [
       "5 ways to convert .docx files to PDF without Microsoft Office — online tools, Google Docs, LibreOffice — plus which preserves formatting best.",
     publishedAt: "2026-03-22",
     readTime: "5 min read",
+    tldr:
+      "Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: PrivaTools Word to PDF or Office to PDF. Google Docs preserves layout fairly well. python-docx + reportlab works for plain text but loses complex formatting.",
+    relatedTools: ["word-to-pdf", "office-to-pdf", "pdf-to-word"],
     tags: ["PDF", "Convert", "How-To"],
     body: `
 <p>Converting a Word document to PDF is one of the most common file tasks — and one of the easiest to do for free. Here are five methods, from fastest to most control, with honest notes on which preserves formatting best.</p>
@@ -357,6 +380,9 @@ export const blogPosts: BlogPost[] = [
       "Step-by-step guide to editing PDF text, images, and annotations online without creating an account. Compare 5 free methods.",
     publishedAt: "2026-03-29",
     readTime: "5 min read",
+    tldr:
+      "Sejda has the best free PDF text editor (3 tasks/hour). PrivaTools' Edit PDF adds annotations, text boxes, and drawings without a quota. PDFescape's free tier limits 10 MB / 100 pages.",
+    relatedTools: ["edit-pdf", "annotate-pdf", "fill-form", "watermark"],
     tags: ["PDF", "Edit", "How-To"],
     body: `
 <p>Need to add a sentence to a contract, fix a typo on a form, or annotate a report? Editing a PDF used to require expensive desktop software. Today you can do it in a browser for free — no account, no download, no watermark.</p>
@@ -421,6 +447,9 @@ export const blogPosts: BlogPost[] = [
       "Three ways to split PDF files for free: by page range, by file size, and by bookmarks. No software needed, no sign-up.",
     publishedAt: "2026-03-29",
     readTime: "4 min read",
+    tldr:
+      "Three approaches: by page range (Split PDF), by file size for email attachment caps (Split by Size), by bookmarks/chapters (Split by Bookmarks). All free on PrivaTools, no sign-up.",
+    relatedTools: ["split-pdf", "split-by-bookmarks", "split-by-size", "split-by-text", "extract-pages"],
     tags: ["PDF", "Split", "How-To"],
     body: `
 <p>Whether you need to extract a few pages from a long report, break a document into email-friendly chunks, or separate chapters from a textbook — splitting a PDF is straightforward with the right tool.</p>
@@ -486,6 +515,9 @@ export const blogPosts: BlogPost[] = [
       "Learn how to permanently black out names, SSNs, addresses, and confidential text in PDFs. Understand why covering text with black boxes isn't enough.",
     publishedAt: "2026-03-29",
     readTime: "5 min read",
+    tldr:
+      "Drawing black rectangles over text doesn't redact — the text is still in the file. Use real redaction (PrivaTools Redact PDF or Smart Redact) which permanently removes the underlying content. Always verify with text extraction afterwards.",
+    relatedTools: ["redact-pdf", "smart-redact", "strip-metadata", "sanitize-pdf"],
     tags: ["PDF", "Security", "Redaction", "How-To"],
     body: `
 <p>PDF redaction permanently removes sensitive information from a document — names, Social Security numbers, financial data, addresses, or any confidential text. But there's a critical distinction between <em>real</em> redaction and simply drawing a black box over text.</p>
@@ -547,6 +579,9 @@ export const blogPosts: BlogPost[] = [
       "We tested 7 free online PDF editors in 2026. Here's which ones are truly free, which add watermarks, and which respect your privacy.",
     publishedAt: "2026-03-29",
     readTime: "7 min read",
+    tldr:
+      "PrivaTools wins on unrestricted free editing with privacy. Sejda has the best text editor (limited free). PDF24 has the most features but uploads to their cloud. Adobe Acrobat Online is good but mostly paywalled.",
+    relatedTools: ["edit-pdf", "annotate-pdf", "fill-form", "sign-pdf"],
     tags: ["PDF", "Editor", "Comparison", "Review"],
     body: `
 <p>Every online PDF editor claims to be free. Most aren't — at least not in any meaningful way. After testing seven popular options, here's what we found.</p>
@@ -620,6 +655,9 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-05-15",
     readTime: "9 min read",
     author: "PrivaTools Team",
+    tldr:
+      "Browser-side summarizers (PrivaTools Summarize PDF using distilbart-cnn in WebAssembly) keep your PDF local — verify with DevTools → Network. Cloud summarizers (Smallpdf, Adobe AI) upload it. A 100-page PDF summarises in 3–6 minutes locally on a modern laptop.",
+    relatedTools: ["summarize-pdf", "smart-redact", "pdf-to-text"],
     tags: ["AI", "PDF", "Privacy", "How-To"],
     body: `
 <p>Long PDFs are everywhere — research papers, contracts, legal filings, technical docs, financial reports. Reading them end-to-end is rarely the highest-value use of your time. AI summarization promises to give you the gist in seconds. But there's a catch most people miss: <strong>uploading a PDF to a cloud AI service hands the entire document to that service</strong>, often forever.</p>
@@ -712,6 +750,9 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-05-15",
     readTime: "12 min read",
     author: "PrivaTools Team",
+    tldr:
+      "Top iLovePDF alternatives in 2026: PrivaTools (152+ tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.",
+    relatedTools: ["merge-pdf", "compress-pdf", "split-pdf", "edit-pdf"],
     tags: ["Comparison", "PDF", "Alternatives", "iLovePDF"],
     body: `
 <p>iLovePDF processes 50+ million PDFs a month, which makes it one of the most popular PDF tool suites on the web. But its free tier is heavily restricted, every file uploads to their servers, the UI is plastered with ads, and a free account is required for anything non-trivial. If any of those bother you, you're not alone — and you have great alternatives.</p>
@@ -806,6 +847,9 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-05-15",
     readTime: "8 min read",
     author: "PrivaTools Team",
+    tldr:
+      "Real redaction permanently removes the underlying content using a redaction annotation + apply step (PyMuPDF, Acrobat Pro). Black-rectangle annotations don't — the text remains and copy-pastes straight through. Always verify with text extraction.",
+    relatedTools: ["redact-pdf", "smart-redact", "strip-metadata", "view-exif", "sanitize-pdf"],
     tags: ["PDF", "Privacy", "Redaction", "Security"],
     body: `
 <p>Public redaction failures are embarrassingly common. Lawyers, governments, and corporations have all leaked confidential information by "redacting" PDFs with black rectangles drawn on top of the text — text that is still right there, copy-pasteable to anyone with five minutes of curiosity.</p>
@@ -904,6 +948,9 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-05-15",
     readTime: "10 min read",
     author: "PrivaTools Team",
+    tldr:
+      "Most free online PDF tools log your IP + file hash, fire 5–10 third-party trackers per visit, and retain files for hours-to-indefinitely. Use open-source tools (PrivaTools, Stirling-PDF) where the data flow is auditable.",
+    relatedTools: ["smart-redact", "strip-metadata", "summarize-pdf"],
     tags: ["Privacy", "PDF", "Security", "Tracking"],
     body: `
 <p>The PDF tool market is worth several billion dollars. None of the leading "free" services make their money from selling subscriptions — they make it from advertising, data licensing, and conversion funnels. Your file becomes the product.</p>
@@ -1014,6 +1061,9 @@ export const blogPosts: BlogPost[] = [
     publishedAt: "2026-05-15",
     readTime: "7 min read",
     author: "PrivaTools Team",
+    tldr:
+      "Fastest cross-platform: PrivaTools (HEIC to PDF / JPG / PNG online). Mac: Preview → File → Export. Windows 11: install HEIF Image Extensions from Microsoft Store. CLI: brew install libheif + heif-convert. Always strip EXIF before sharing publicly.",
+    relatedTools: ["heic-to-pdf", "heic-to-jpg", "heic-to-png", "image-converter", "remove-exif"],
     tags: ["HEIC", "Image", "Conversion", "How-To"],
     body: `
 <p>If you've ever tried to email a photo from your iPhone to someone on Windows, you've met HEIC — Apple's High Efficiency Image Container format. It cuts file sizes in half compared to JPEG, but most non-Apple software can't open it. Photos arrive as broken thumbnails or won't import at all.</p>
@@ -1123,6 +1173,9 @@ done</code></pre>
     publishedAt: "2026-05-15",
     readTime: "8 min read",
     author: "PrivaTools Team",
+    tldr:
+      "A JWT is header.payload.signature, each base64url-encoded JSON. Decoding reveals the claims; verifying needs the issuer's key. Use a browser-side decoder (PrivaTools JWT Decoder) — never paste production JWTs into a server-side decoder.",
+    relatedTools: ["jwt-decoder", "base64", "regex-tester", "hash-generator"],
     tags: ["JWT", "Developer", "Security", "How-To"],
     body: `
 <p>If you've worked with modern web auth, you've seen tokens that look like this:</p>
@@ -1239,4 +1292,28 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))
 
 export function getBlogPost(slug: string): BlogPost | undefined {
   return blogPosts.find((p) => p.slug === slug);
+}
+
+/**
+ * Reverse-lookup: posts that explicitly list a tool slug in their
+ * `relatedTools` field. Used by the tool-page "Related articles" sidebar
+ * for internal linking + AI engine entity-graph.
+ *
+ * Computed once at module load (small N), sorted by published date desc.
+ */
+const _postsByTool: Record<string, BlogPost[]> = (() => {
+  const m: Record<string, BlogPost[]> = {};
+  for (const p of blogPosts) {
+    for (const slug of p.relatedTools || []) {
+      (m[slug] ||= []).push(p);
+    }
+  }
+  for (const k of Object.keys(m)) {
+    m[k].sort((a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt));
+  }
+  return m;
+})();
+
+export function postsForTool(slug: string, limit = 4): BlogPost[] {
+  return (_postsByTool[slug] || []).slice(0, limit);
 }

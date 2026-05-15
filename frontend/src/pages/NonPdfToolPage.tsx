@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useRef, Suspense, lazy, type ComponentType } from "react";
 import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta, type NonPdfCategory } from "@/data/non-pdf-tools";
+import { postsForTool } from "@/data/blog";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight, ArrowRight, Lock } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
@@ -316,6 +317,23 @@ export default function NonPdfToolPage() {
                 </div>
               </div>
             )}
+
+            {(() => {
+              const posts = slug ? postsForTool(slug, 4) : [];
+              if (posts.length === 0) return null;
+              return (
+                <div className="editorial-insert p-5">
+                  <h3 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related articles</h3>
+                  <div className="space-y-0.5">
+                    {posts.map(p => (
+                      <Link key={p.slug} to={`/blog/${p.slug}`} className="block px-2 py-2 hover:bg-card/60 transition-colors group">
+                        <span className="font-serif-body text-sm text-muted-foreground group-hover:text-foreground transition-colors leading-snug block">{p.title}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="editorial-insert p-5">
               <div className="flex items-center gap-2 mb-2">

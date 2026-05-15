@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useRef, Suspense, lazy, type ComponentType } from "react";
 import { toolBySlug, tools, categoryMeta, type Category } from "@/data/tools";
+import { postsForTool } from "@/data/blog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, Github, ExternalLink, ArrowUpRight, ArrowRight, Lock, BookOpen, GitBranch } from "lucide-react";
@@ -506,19 +507,30 @@ export default function ToolPage() {
               </span>
             </a>
 
-            {slug && TOOL_BLOG_LINKS[slug] && TOOL_BLOG_LINKS[slug].length > 0 && (
-              <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Related articles</h3>
-                <div className="space-y-0.5">
-                  {TOOL_BLOG_LINKS[slug].map(post => (
-                    <Link key={post.slug} to={`/blog/${post.slug}`} className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-secondary/60 transition-colors group">
-                      <BookOpen size={13} strokeWidth={1.75} className="text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
-                      <span className="text-[12px] text-foreground/80 group-hover:text-foreground transition-colors flex-1 leading-snug">{post.title}</span>
-                    </Link>
-                  ))}
+            {slug && (() => {
+              // Posts that mention this tool in their relatedTools array.
+              // Falls back to the hand-curated TOOL_BLOG_LINKS for any tool
+              // that doesn't yet have any blog post linking back to it.
+              const derived = postsForTool(slug, 4);
+              const fallback = TOOL_BLOG_LINKS[slug] || [];
+              const posts = derived.length > 0
+                ? derived.map(p => ({ slug: p.slug, title: p.title }))
+                : fallback;
+              if (posts.length === 0) return null;
+              return (
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Related articles</h3>
+                  <div className="space-y-0.5">
+                    {posts.map(post => (
+                      <Link key={post.slug} to={`/blog/${post.slug}`} className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-secondary/60 transition-colors group">
+                        <BookOpen size={13} strokeWidth={1.75} className="text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
+                        <span className="text-[12px] text-foreground/80 group-hover:text-foreground transition-colors flex-1 leading-snug">{post.title}</span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       </section>

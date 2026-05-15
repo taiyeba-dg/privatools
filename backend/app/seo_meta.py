@@ -512,6 +512,52 @@ def get_jsonld_for_path(path: str) -> dict | None:
     ]
 
     if path == "/":
+        # ItemList of headline tools — gives Google a clean enumerated grid
+        # of WebApplications that AI engines can also cite as "what does the
+        # site offer". We include a curated top-25 rather than all 152.
+        featured_slugs = [
+            ("merge-pdf", "/tool/merge-pdf"),
+            ("split-pdf", "/tool/split-pdf"),
+            ("compress-pdf", "/tool/compress-pdf"),
+            ("pdf-to-word", "/tool/pdf-to-word"),
+            ("pdf-to-excel", "/tool/pdf-to-excel"),
+            ("pdf-to-jpg", "/tool/pdf-to-jpg"),
+            ("jpg-to-pdf", "/tool/jpg-to-pdf"),
+            ("edit-pdf", "/tool/edit-pdf"),
+            ("sign-pdf", "/tool/sign-pdf"),
+            ("ocr-pdf", "/tool/ocr-pdf"),
+            ("protect-pdf", "/tool/protect-pdf"),
+            ("unlock-pdf", "/tool/unlock-pdf"),
+            ("rotate-pdf", "/tool/rotate-pdf"),
+            ("watermark", "/tool/watermark"),
+            ("redact-pdf", "/tool/redact-pdf"),
+            ("smart-redact", "/tool/smart-redact"),
+            ("summarize-pdf", "/tool/summarize-pdf"),
+            ("highlight-pdf", "/tool/highlight-pdf"),
+            ("image-compressor", "/tools/image-compressor"),
+            ("image-converter", "/tools/image-converter"),
+            ("heic-to-jpg", "/tools/heic-to-jpg"),
+            ("video-converter", "/tools/video-converter"),
+            ("audio-converter", "/tools/audio-converter"),
+            ("jwt-decoder", "/tools/jwt-decoder"),
+            ("regex-tester", "/tools/regex-tester"),
+        ]
+        featured = []
+        for i, (slug, urlpath) in enumerate(featured_slugs, start=1):
+            tool_name, tool_desc = _PDF_TOOLS.get(slug) or _NONPDF_TOOLS.get(slug) or (slug.replace("-", " ").title(), "")
+            featured.append({
+                "@type": "ListItem",
+                "position": i,
+                "item": {
+                    "@type": "SoftwareApplication",
+                    "name": tool_name,
+                    "url": BASE_URL + urlpath,
+                    "applicationCategory": "UtilitiesApplication",
+                    "operatingSystem": "Any (browser-based)",
+                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+                },
+            })
+
         return {
             "@context": "https://schema.org",
             "@graph": [
@@ -521,6 +567,7 @@ def get_jsonld_for_path(path: str) -> dict | None:
                     "url": BASE_URL,
                     "name": "PrivaTools",
                     "description": description,
+                    "inLanguage": "en",
                     "publisher": {"@id": f"{BASE_URL}/#organization"},
                     "potentialAction": {
                         "@type": "SearchAction",
@@ -532,36 +579,91 @@ def get_jsonld_for_path(path: str) -> dict | None:
                     "@type": "Organization",
                     "@id": f"{BASE_URL}/#organization",
                     "name": "PrivaTools",
+                    "alternateName": ["PrivaTools.me", "Priva Tools"],
                     "url": BASE_URL,
-                    "logo": f"{BASE_URL}/icons/icon-192.png",
-                    "sameAs": ["https://github.com/taiyeba-dg/privatools"],
+                    "logo": {
+                        "@type": "ImageObject",
+                        "url": f"{BASE_URL}/icons/icon-512.png",
+                        "width": 512,
+                        "height": 512,
+                    },
+                    "email": "hello@privatools.me",
+                    "foundingDate": "2026-03-01",
+                    "description": "Free, open-source, privacy-first file tools — PDF, image, video, audio, and developer utilities. MIT-licensed and self-hostable via Docker.",
+                    "license": "https://opensource.org/licenses/MIT",
+                    "sameAs": [
+                        "https://github.com/taiyeba-dg/privatools",
+                        "https://privatools.me",
+                    ],
+                    "contactPoint": {
+                        "@type": "ContactPoint",
+                        "email": "hello@privatools.me",
+                        "contactType": "customer support",
+                        "availableLanguage": ["English"],
+                    },
+                },
+                {
+                    "@type": "ItemList",
+                    "name": "Featured tools",
+                    "description": "A curated subset of the 152+ free PDF, image, video, audio, and developer tools on PrivaTools.",
+                    "numberOfItems": len(featured),
+                    "itemListElement": featured,
                 },
             ],
         }
 
-    if path.startswith("/tool/"):
-        slug = path[len("/tool/"):]
-        name = _PDF_TOOLS.get(slug, (slug.replace("-", " ").title(), ""))[0]
+    if path.startswith("/tool/") or path.startswith("/tools/"):
+        prefix = "/tool/" if path.startswith("/tool/") else "/tools/"
+        slug = path[len(prefix):]
+        if prefix == "/tool/":
+            name = _PDF_TOOLS.get(slug, (slug.replace("-", " ").title(), ""))[0]
+            category = "BusinessApplication"  # PDF utilities — knowledge-work / business category
+        else:
+            name = _NONPDF_TOOLS.get(slug, (slug.replace("-", " ").title(), ""))[0]
+            category = "UtilitiesApplication"
+
         breadcrumbs.append({"@type": "ListItem", "position": 2, "name": name, "item": canonical_url})
+
+        # SoftwareApplication is more specific than WebApplication and is the
+        # recommended type for installable / web-based file tools per Google's
+        # rich-results docs.
         graph: list[dict] = [
             {
-                "@type": "WebApplication",
+                "@type": "SoftwareApplication",
+                "@id": f"{canonical_url}#app",
                 "name": f"{name} — PrivaTools",
                 "url": canonical_url,
                 "description": description,
-                "applicationCategory": "UtilitiesApplication",
-                "operatingSystem": "Any (browser-based)",
-                "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+                "applicationCategory": category,
+                "applicationSubCategory": "PDF & file tools",
+                "operatingSystem": "Web Browser (any)",
+                "browserRequirements": "Requires JavaScript and a modern browser (Chrome, Firefox, Safari, Edge).",
+                "isAccessibleForFree": True,
+                "permissions": "No permissions required",
+                "softwareVersion": "1.2",
+                "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD",
+                    "availability": "https://schema.org/InStock",
+                    "category": "Free",
+                },
                 "provider": {"@id": f"{BASE_URL}/#organization"},
                 "datePublished": "2026-03-15",
-                "dateModified": "2026-03-29",
+                "dateModified": "2026-05-15",
+                "inLanguage": "en",
             },
             {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
         ]
-        # FAQPage schema (HowTo removed — deprecated by Google Sep 2023)
+        # FAQPage schema. We attach `speakable` so voice assistants (Google
+        # Assistant, Alexa) can read the Q&A aloud.
         if slug in TOOL_FAQ:
             graph.append({
                 "@type": "FAQPage",
+                "speakable": {
+                    "@type": "SpeakableSpecification",
+                    "cssSelector": [".tool-faq", "h2", "h3"],
+                },
                 "mainEntity": [
                     {
                         "@type": "Question",
@@ -573,40 +675,6 @@ def get_jsonld_for_path(path: str) -> dict | None:
             })
         return {"@context": "https://schema.org", "@graph": graph}
 
-    if path.startswith("/tools/"):
-        slug = path[len("/tools/"):]
-        name = _NONPDF_TOOLS.get(slug, (slug.replace("-", " ").title(), ""))[0]
-        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": name, "item": canonical_url})
-        graph2: list[dict] = [
-            {
-                "@type": "WebApplication",
-                "name": f"{name} — PrivaTools",
-                "url": canonical_url,
-                "description": description,
-                "applicationCategory": "UtilitiesApplication",
-                "operatingSystem": "Any (browser-based)",
-                "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
-                "provider": {"@id": f"{BASE_URL}/#organization"},
-                "datePublished": "2026-03-15",
-                "dateModified": "2026-03-29",
-            },
-            {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
-        ]
-        # FAQPage schema (HowTo removed — deprecated by Google Sep 2023)
-        if slug in TOOL_FAQ:
-            graph2.append({
-                "@type": "FAQPage",
-                "mainEntity": [
-                    {
-                        "@type": "Question",
-                        "name": faq["q"],
-                        "acceptedAnswer": {"@type": "Answer", "text": faq["a"]},
-                    }
-                    for faq in TOOL_FAQ[slug]
-                ],
-            })
-        return {"@context": "https://schema.org", "@graph": graph2}
-
     if path.startswith("/compare/"):
         breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Compare", "item": f"{BASE_URL}/compare"})
         breadcrumbs.append({"@type": "ListItem", "position": 3, "name": title, "item": canonical_url})
@@ -614,12 +682,27 @@ def get_jsonld_for_path(path: str) -> dict | None:
             "@context": "https://schema.org",
             "@graph": [
                 {
-                    "@type": "Article",
+                    "@type": ["Article", "Review"],
                     "headline": title,
                     "description": description,
                     "url": canonical_url,
-                    "dateModified": "2026-03-22",
+                    "datePublished": "2026-03-22",
+                    "dateModified": "2026-05-15",
+                    "inLanguage": "en",
+                    "author": {
+                        "@type": "Organization",
+                        "name": "PrivaTools",
+                        "url": BASE_URL,
+                    },
                     "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "mainEntityOfPage": {
+                        "@type": "WebPage",
+                        "@id": canonical_url,
+                    },
+                    "speakable": {
+                        "@type": "SpeakableSpecification",
+                        "cssSelector": ["h1", "h2", ".tagline"],
+                    },
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
             ],
@@ -639,10 +722,29 @@ def get_jsonld_for_path(path: str) -> dict | None:
                         "headline": post["title"],
                         "description": post["description"],
                         "url": canonical_url,
+                        "image": f"{BASE_URL}/api/og-image?p={path}",
                         "datePublished": post["publishedAt"],
                         "dateModified": post["publishedAt"],
-                        "author": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL},
+                        "inLanguage": "en",
+                        "wordCount": post.get("wordCount"),
+                        "keywords": ", ".join(post.get("tags", [])),
+                        "author": {
+                            "@type": "Person",
+                            "@id": f"{BASE_URL}/about#author",
+                            "name": post.get("author") or "PrivaTools Team",
+                            "url": f"{BASE_URL}/about",
+                            "sameAs": ["https://github.com/taiyeba-dg/privatools"],
+                            "worksFor": {"@id": f"{BASE_URL}/#organization"},
+                        },
                         "publisher": {"@id": f"{BASE_URL}/#organization"},
+                        "mainEntityOfPage": {
+                            "@type": "WebPage",
+                            "@id": canonical_url,
+                        },
+                        "speakable": {
+                            "@type": "SpeakableSpecification",
+                            "cssSelector": ["h1", ".post-tldr", "h2"],
+                        },
                     },
                     {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
                 ],
