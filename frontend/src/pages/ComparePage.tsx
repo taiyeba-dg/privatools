@@ -386,7 +386,7 @@ export default function ComparePage() {
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/60 bg-accent/[0.04]">
-                    <td className="py-3 pr-4 font-heading font-bold text-foreground">PrivaTools <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded bg-accent/15 text-accent text-[9px] font-bold">US</span></td>
+                    <td className="py-3 pr-4 font-heading font-bold text-foreground">PrivaTools <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded bg-accent/25 text-foreground text-[9px] font-bold border border-accent/40">US</span></td>
                     <td className="text-center px-2"><Check size={14} className="inline text-emerald-500" /></td>
                     <td className="text-center px-2"><Check size={14} className="inline text-emerald-500" /></td>
                     <td className="text-center px-2"><Check size={14} className="inline text-emerald-500" /></td>

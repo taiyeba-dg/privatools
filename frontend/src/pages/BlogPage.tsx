@@ -110,7 +110,7 @@ export default function BlogPage() {
             <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-0">
               <div className="p-8 sm:p-10">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/15 border border-accent/30 text-accent text-[10px] font-bold uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/25 border border-accent/40 text-foreground text-[10px] font-bold uppercase tracking-wider">
                     <Sparkles size={10} /> Featured
                   </span>
                   {featured.tags.slice(0, 2).map(t => {
