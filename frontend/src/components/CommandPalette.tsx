@@ -46,9 +46,148 @@ const SYNONYMS: Record<string, string> = {
     "audio-merge":      "join combine concat audio tracks",
     "video-merge":      "join combine concat videos",
     "batch-compress-pdf": "bulk multiple zip many",
+    // New synonyms — better coverage for common phrasings + competitor naming
+    "edit-pdf":         "modify change update annotate text",
+    "sign-pdf":         "signature handwritten signature sign electronic",
+    "esign-pdf":        "electronic signature docusign hellosign",
+    "annotate-pdf":     "notes comment markup pen",
+    "stamp-pdf":        "draft confidential approved rubber stamp",
+    "whiteout-pdf":     "erase delete redact white cover",
+    "auto-crop":        "trim margins white space cropper bounding box",
+    "deskew-pdf":       "straighten skew tilt rotate angle scan",
+    "repair-pdf":       "fix damaged corrupted broken recover",
+    "flatten-pdf":      "merge layers freeze annotations content",
+    "remove-blank-pages":"empty white delete clean",
+    "reverse-pdf":      "order backwards last first invert",
+    "booklet-pdf":      "imposition saddle stitch print layout",
+    "grayscale-pdf":    "black white bw monochrome desaturate",
+    "invert-colors":    "negative dark mode reverse colors",
+    "nup":              "n-up multi-page sheet print layout 2up 4up",
+    "split-in-half":    "two columns down middle horizontal vertical",
+    "split-by-bookmarks":"chapters sections by toc",
+    "split-by-size":    "by mb max kilobytes file size limit",
+    "split-by-text":    "by phrase by string search divider",
+    "set-permissions":  "owner password disable copy print",
+    "strip-metadata":   "remove metadata clean privacy gps exif",
+    "sanitize-pdf":     "remove javascript scripts malware safe",
+    "pdfa-validator":   "pdfa archival iso validation check",
+    "verify-signature": "digital signature check verify authentic",
+    "metadata":         "title author keywords properties subject",
+    "delete-annotations":"remove comments notes clean",
+    "add-attachment":   "embed file attach inside pdf",
+    "add-hyperlinks":   "links clickable url anchor reference",
+    "add-shapes":       "rectangle circle ellipse line polygon",
+    "page-numbers":     "numbering pagination print order",
+    "header-footer":    "running headers running footers top bottom text",
+    "bates-numbering":  "legal discovery prefix sequence litigation",
+    "bookmarks":        "outline toc table of contents index",
+    "transparent-background":"alpha clear see through transparency",
+    "web-optimize-pdf": "linearize fast web view streaming",
+    "form-creator":     "fillable form fields acroform text checkbox",
+    "compare-pdf":      "diff difference compare versions changes",
+    "alternate-mix":    "interleave shuffle mix front back",
+    "overlay":          "overlay stamp watermark superimpose layer",
+    "pdf-to-jpg":       "convert jpg jpeg image picture",
+    "pdf-to-png":       "convert png transparent picture",
+    "pdf-to-pptx":      "powerpoint slides presentation",
+    "pdf-to-text":      "txt plain extract content",
+    "pdf-to-html":      "web html web export",
+    "pdf-to-rtf":       "rich text format word legacy",
+    "pdf-to-markdown":  "md markdown github readme docs",
+    "pdf-to-epub":      "ebook kindle reader book",
+    "pdf-to-svg":       "vector scalable graphics",
+    "pdf-to-pdfa":      "archival iso archive long term",
+    "extract-tables":   "table csv rows columns data scrape",
+    "extract-images":   "embedded photos pictures scrape get",
+    "word-to-pdf":      "docx ms word convert export",
+    "excel-to-pdf":     "xlsx ms excel spreadsheet convert",
+    "pptx-to-pdf-convert":"powerpoint slides deck convert",
+    "txt-to-pdf":       "text plain convert",
+    "markdown-to-pdf":  "md markdown convert pdf",
+    "csv-to-pdf":       "csv table data convert",
+    "json-to-pdf":      "json convert document",
+    "xml-to-pdf":       "xml convert document",
+    "epub-to-pdf":      "ebook kindle to pdf",
+    "rtf-to-pdf":       "rich text convert",
+    "odt-to-pdf":       "openoffice libreoffice convert",
+    "html-to-pdf":      "webpage url to pdf print page",
+    "office-to-pdf":    "doc docx xls xlsx ppt pptx convert",
+    "jpg-to-pdf":       "image photo picture to pdf",
+    "png-to-pdf":       "image graphic transparent to pdf",
+    "heic-to-pdf":      "iphone apple photo to pdf",
+    "webp-to-pdf":      "google webp to pdf",
+    "tiff-to-pdf":      "scan tiff to pdf",
+    "bmp-to-pdf":       "bitmap windows to pdf",
+    "gif-to-pdf":       "gif image to pdf",
+    "svg-to-pdf":       "vector svg to pdf",
+    // Non-PDF
+    "image-converter":  "format convert jpg png webp avif tiff bmp gif",
+    "resize-crop-image":"resize scale crop dimensions size",
+    "image-watermark":  "watermark stamp brand image logo",
+    "remove-exif":      "exif metadata gps strip clean privacy",
+    "view-exif":        "metadata gps camera info",
+    "generate-favicon": "favicon icon ico website",
+    "make-collage":     "collage grid mosaic photo album",
+    "merge-images":     "join combine concat horizontal vertical",
+    "image-ocr":        "text extract from picture recognize",
+    "video-converter":  "convert format mp4 mov webm avi mkv",
+    "video-resizer":    "resize scale dimensions width height",
+    "video-thumbnail":  "preview screenshot still image cover",
+    "video-to-pdf":     "frames pages slideshow",
+    "trim-media":       "cut clip slice shorten",
+    "gif-to-mp4":       "convert gif to video mp4",
+    "add-subtitles":    "subtitle srt caption burn in",
+    "subtitle-converter":"srt vtt ass convert subtitles format",
+    "extract-archive":  "unzip extract zip tar gz files",
+    "create-zip":       "zip archive compress files into one",
+    "url-to-pdf":       "save webpage to pdf url print",
+    // Phase 7 new tools
+    "mute-video":       "remove audio silent strip soundtrack",
+    "reverse-video":    "backwards play in reverse rewind",
+    "video-speed":      "speed up slow down fast forward 2x slow motion",
+    "audio-trim":       "cut clip slice shorten audio",
+    "image-palette":    "color palette dominant colors extract designer",
+    "pixelate-image":   "censor blur mosaic obscure privacy face",
+    // v1.4.0 aliases
+    "jpg-to-png":       "convert format lossless transparency",
+    "png-to-jpg":       "convert format smaller photo",
+    "jpg-to-webp":      "convert smaller google modern format",
+    "png-to-webp":      "convert smaller google modern",
+    "tiff-to-jpg":      "scan convert smaller",
+    "tiff-to-png":      "scan convert lossless",
+    "bmp-to-jpg":       "windows bitmap convert smaller",
+    "bmp-to-png":       "windows bitmap convert lossless",
+    "gif-to-jpg":       "first frame convert image",
+    "gif-to-png":       "first frame convert lossless",
+    "webp-to-jpg":      "google webp convert universal",
+    "webp-to-png":      "google webp convert lossless",
+    "heic-to-png":      "iphone apple convert universal",
+    "heic-to-jpg":      "iphone apple convert universal",
+    "m4a-to-mp3":       "iphone voice memo convert universal",
+    "mp4-to-mp3":       "extract audio from video",
+    "mov-to-mp4":       "apple quicktime convert universal",
+    "avi-to-mp4":       "legacy windows convert modern",
+    "webm-to-mp4":      "google convert universal apple compatible",
+    "mp4-to-webm":      "convert smaller open web vp9",
+    // Browser-only dev tools
+    "yaml-to-json":     "kubernetes yaml convert config",
+    "json-to-yaml":     "kubernetes config convert",
+    "case-converter":   "camelcase snake kebab title upper lower",
+    "jwt-decoder":      "json web token decode parse",
+    "regex-tester":     "regular expression pattern match test",
+    "timestamp-converter":"unix epoch iso 8601 date time",
+    "uuid-generator":   "guid v4 v7 random id unique",
+    "password-generator":"password random secure strong",
+    "lorem-ipsum":      "placeholder dummy text greek latin",
+    "word-counter":     "words characters sentences paragraphs",
+    "csv-json":         "csv to json convert format",
+    "markdown-html":    "md html convert preview rendering",
+    "text-diff":        "compare text difference changes",
+    "generate-barcode": "barcode ean upc code128 qr",
 };
 
-// Build searchable index once
+// Build searchable index once. We pre-lowercase everything and bake
+// popularity into the tool itself so the scoring loop stays tight.
 const allTools = [
     ...tools.map(t => ({
         slug: t.slug, name: t.name, description: t.description, icon: t.icon,
@@ -56,6 +195,11 @@ const allTools = [
         iconBg: categoryMeta[t.category as Category]?.iconBg ?? "bg-blue-500/10",
         iconColor: categoryMeta[t.category as Category]?.iconColor ?? "text-blue-400",
         synonyms: SYNONYMS[t.slug] ?? "",
+        nameLower: t.name.toLowerCase(),
+        descLower: t.description.toLowerCase(),
+        synLower: (SYNONYMS[t.slug] ?? "").toLowerCase(),
+        slugTokens: t.slug.split("-"),
+        popularity: (t as { popularity?: number }).popularity ?? 999,
     })),
     ...nonPdfTools.map(t => ({
         slug: t.slug, name: t.name, description: t.description, icon: t.icon,
@@ -63,6 +207,11 @@ const allTools = [
         iconBg: nonPdfCategoryMeta[t.category as NonPdfCategory]?.iconBg ?? "bg-pink-500/10",
         iconColor: nonPdfCategoryMeta[t.category as NonPdfCategory]?.iconColor ?? "text-pink-400",
         synonyms: SYNONYMS[t.slug] ?? "",
+        nameLower: t.name.toLowerCase(),
+        descLower: t.description.toLowerCase(),
+        synLower: (SYNONYMS[t.slug] ?? "").toLowerCase(),
+        slugTokens: t.slug.split("-"),
+        popularity: (t as { popularity?: number }).popularity ?? 999,
     })),
 ];
 
@@ -102,10 +251,11 @@ export default function CommandPalette() {
         }
     }, [open]);
 
-    // Search results
+    // Search results — multi-token fuzzy scoring with popularity tiebreaker.
     const results = useMemo(() => {
         if (!query.trim()) {
-            // Show recent tools when no query
+            // Show recent tools when no query — otherwise the most popular
+            // ones (since tools are already sorted by popularity).
             if (history.length > 0) {
                 return history.slice(0, 8).map(h => {
                     const tool = allTools.find(t => t.slug === h.slug);
@@ -115,21 +265,44 @@ export default function CommandPalette() {
             return allTools.slice(0, 8);
         }
         const q = query.toLowerCase().trim();
-        // Score: name match > slug match > synonym match > description match.
+        const qDash = q.replace(/\s+/g, "-");
+        // Split query into tokens — "to pdf" → ["to", "pdf"]. Drops 1-letter
+        // tokens so "a pdf" doesn't blow up scoring.
+        const tokens = q.split(/[\s,]+/).filter(t => t.length >= 2);
         const scored: { tool: typeof allTools[number]; score: number }[] = [];
         for (const t of allTools) {
-            const name = t.name.toLowerCase();
             let score = 0;
-            if (name === q) score = 100;
-            else if (name.startsWith(q)) score = 80;
-            else if (name.includes(q)) score = 60;
-            else if (t.slug.includes(q.replace(/\s+/g, "-"))) score = 50;
-            else if (t.synonyms.includes(q)) score = 40;
-            else if (t.description.toLowerCase().includes(q)) score = 20;
-            if (score > 0) scored.push({ tool: t, score });
+            // 1. Exact / prefix / contains on the name.
+            if (t.nameLower === q) score = 1000;
+            else if (t.nameLower.startsWith(q)) score = 800;
+            else if (t.nameLower.includes(q)) score = 600;
+            // 2. Slug match — converts "merge pdf" → "merge-pdf".
+            else if (t.slug === qDash) score = 700;
+            else if (t.slug.includes(qDash)) score = 500;
+            // 3. Synonym contains (whole phrase).
+            else if (t.synLower.includes(q)) score = 400;
+            // 4. Multi-token AND — every query word matches name, slug, or
+            //    synonyms. Higher score for more tokens.
+            else if (tokens.length >= 2) {
+                const haystack = `${t.nameLower} ${t.slug} ${t.synLower}`;
+                const matched = tokens.filter(tok => haystack.includes(tok)).length;
+                if (matched === tokens.length) score = 300 + matched * 20;
+                else if (matched >= 1 && matched === tokens.length - 1) score = 100 + matched * 10;
+            }
+            // 5. Description fallback.
+            else if (t.descLower.includes(q)) score = 200;
+            // 6. Slug-token match — "pdf" → all "pdf-*" tools.
+            else if (t.slugTokens.includes(q)) score = 250;
+
+            if (score > 0) {
+                // Popularity tiebreaker: lower rank (= more popular) gets a
+                // small boost — bounded so it never outranks a real match.
+                score += Math.max(0, 50 - (t.popularity / 5));
+                scored.push({ tool: t, score });
+            }
         }
         scored.sort((a, b) => b.score - a.score);
-        return scored.slice(0, 12).map(s => s.tool);
+        return scored.slice(0, 16).map(s => s.tool);
     }, [query, history]);
 
     // Keyboard navigation
