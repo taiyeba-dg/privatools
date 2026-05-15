@@ -116,7 +116,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 # SPA SEO middleware — inject per-route meta tags into index.html responses
 # ---------------------------------------------------------------------------
-_SKIP_SEO_PREFIXES = ("/api/", "/sitemap", "/robots", "/manifest", "/sw.js", "/icons", "/assets", "/favicon", "/og-image", "/llms")
+_SKIP_SEO_PREFIXES = (
+    "/api/", "/sitemap", "/robots", "/manifest", "/sw.js",
+    "/icons", "/assets", "/favicon", "/og-image", "/llms",
+    # Search-engine site verification files — must serve their actual content
+    # (a short token), not the SPA index.html shell. Adding generic prefixes
+    # so future verification files for the same engines don't need a redeploy.
+    "/google", "/BingSiteAuth", "/yandex", "/baidu_verify",
+)
 _STATIC_EXTENSIONS = {
     ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
     ".ico", ".woff", ".woff2", ".ttf", ".otf", ".map", ".json",
