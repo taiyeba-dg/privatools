@@ -19,6 +19,26 @@ def safe_filename(name: str | None, fallback: str = "file") -> str:
     return clean if clean else fallback
 
 
+def unique_arcname(arcname: str, seen: dict) -> str:
+    """Return an arcname that doesn't collide with previously-seen entries.
+
+    When callers upload several files with the same name (common when
+    dragging copies from email/cloud), the resulting ZIP otherwise contains
+    multiple entries with identical names — only one survives in most
+    extractors. Suffix duplicates with an incrementing counter so they all
+    land as distinct files:
+        report.pdf → report.pdf, report_2.pdf, report_3.pdf, ...
+    """
+    if arcname not in seen:
+        seen[arcname] = 1
+        return arcname
+    seen[arcname] += 1
+    stem, _, ext = arcname.rpartition(".")
+    if stem:
+        return f"{stem}_{seen[arcname]}.{ext}"
+    return f"{arcname}_{seen[arcname]}"
+
+
 async def read_upload(
     file: UploadFile,
     *,

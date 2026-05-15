@@ -6,7 +6,7 @@ from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
-from ..utils.route_helpers import safe_filename, read_upload
+from ..utils.route_helpers import safe_filename, read_upload, unique_arcname
 from ..services import protect_service
 
 router = APIRouter()
@@ -74,9 +74,10 @@ async def protect_pdf(
         # Multiple files: return a ZIP
         zip_path = str(get_temp_path(f"protected_{uuid.uuid4().hex}.zip"))
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            seen: dict[str, int] = {}
             for i, out in enumerate(output_paths):
                 original_name = safe_filename(files[i].filename, f"file_{i+1}.pdf")
-                arcname = f"protected_{original_name}"
+                arcname = unique_arcname(f"protected_{original_name}", seen)
                 zf.write(out, arcname)
 
         cleanup = BackgroundTask(remove_files, *input_paths, *output_paths, zip_path)

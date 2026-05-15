@@ -6,7 +6,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
-from ..utils.route_helpers import safe_filename, read_upload
+from ..utils.route_helpers import safe_filename, read_upload, unique_arcname
 from ..services import strip_metadata_service
 
 router = APIRouter()
@@ -51,9 +51,10 @@ async def strip_metadata(files: List[UploadFile] = File(...)):
         # Multiple files: return a ZIP
         zip_path = str(get_temp_path(f"stripped_{uuid.uuid4().hex}.zip"))
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            seen: dict[str, int] = {}
             for i, out in enumerate(output_paths):
                 original_name = safe_filename(files[i].filename, f"file_{i+1}.pdf")
-                arcname = f"stripped_{original_name}"
+                arcname = unique_arcname(f"stripped_{original_name}", seen)
                 zf.write(out, arcname)
 
         cleanup = BackgroundTask(remove_files, *input_paths, *output_paths, zip_path)

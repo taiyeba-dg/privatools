@@ -58,25 +58,36 @@ async def batch_compress_pdf(
             raise HTTPException(400, f"{f.filename} is not a valid PDF")
         pdf_data.append((safe_filename(f.filename, "document.pdf"), data))
 
-    # Compress in parallel using thread pool
+    # Compress in parallel using thread pool. Key by (index, name) so multiple
+    # uploads sharing the same filename (common when users drag in copies from
+    # email/cloud) don't collide and silently overwrite each other in the dict.
     zip_path = _temp_path(".zip")
-    results = {}
+    results = []  # list of (filename, compressed_bytes) — index-keyed
     futures = {
-        _pool.submit(_compress_single_pdf, data, level): name
-        for name, data in pdf_data
+        _pool.submit(_compress_single_pdf, data, level): (i, name)
+        for i, (name, data) in enumerate(pdf_data)
     }
     for future in as_completed(futures):
-        name = futures[future]
+        i, name = futures[future]
         try:
-            results[name] = future.result()
+            results.append((i, name, future.result()))
         except Exception as exc:
             raise HTTPException(500, f"Failed to compress {name}: {str(exc)}")
 
-    # Write ZIP
+    # Write ZIP — disambiguate duplicate filenames by suffixing the index.
+    results.sort(key=lambda t: t[0])  # preserve upload order
+    seen: dict[str, int] = {}
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for name, compressed in results.items():
+        for _, name, compressed in results:
             stem = Path(name).stem
-            zf.writestr(f"{stem}_compressed.pdf", compressed)
+            entry_base = f"{stem}_compressed.pdf"
+            if entry_base in seen:
+                seen[entry_base] += 1
+                entry_name = f"{stem}_compressed_{seen[entry_base]}.pdf"
+            else:
+                seen[entry_base] = 1
+                entry_name = entry_base
+            zf.writestr(entry_name, compressed)
 
     return FileResponse(
         str(zip_path),
