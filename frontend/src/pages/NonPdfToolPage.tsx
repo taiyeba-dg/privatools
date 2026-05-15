@@ -68,6 +68,11 @@ const LazyJwtDecoderUI         = lazyNamed(() => import("@/components/tool-ui/Ut
 const LazyRegexTesterUI        = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "RegexTesterUI");
 const LazyTimestampConverterUI = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "TimestampConverterUI");
 
+// v1.4.0 browser-only converters
+const LazyYamlToJsonUI       = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "YamlToJsonConverterUI");
+const LazyJsonToYamlUI       = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "JsonToYamlConverterUI");
+const LazyCaseConverterUI    = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "CaseConverterUI");
+
 // Round-U dedicated UIs (formerly fell through to GenericUI)
 const LazyMultiFileUI       = lazyNamed(() => import("@/components/tool-ui/MultiFileUI"), "MultiFileUI");
 const LazyAudioConverterUI  = lazyNamed(() => import("@/components/tool-ui/AudioConverterUI"), "AudioConverterUI");
@@ -198,6 +203,44 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webp" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "png" }} />;
     case "heic-to-png":
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".heic,.heif" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "png" }} />;
+    // v1.4.0 — additional image-converter aliases
+    case "jpg-to-png":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".jpg,.jpeg" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "png" }} />;
+    case "png-to-jpg":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".png" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "jpeg" }} />;
+    case "jpg-to-webp":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".jpg,.jpeg" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "webp" }} />;
+    case "png-to-webp":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".png" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "webp" }} />;
+    case "tiff-to-jpg":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".tif,.tiff" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "jpeg" }} />;
+    case "tiff-to-png":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".tif,.tiff" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "png" }} />;
+    case "bmp-to-jpg":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".bmp" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "jpeg" }} />;
+    case "bmp-to-png":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".bmp" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "png" }} />;
+    case "gif-to-jpg":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".gif" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "jpeg" }} />;
+    case "gif-to-png":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".gif" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "png" }} />;
+    // v1.4.0 — audio/video converter aliases (preset format/target_format)
+    case "m4a-to-mp3":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".m4a" slug={slug} apiEndpoint="/audio-converter" params={{ format: "mp3", bitrate: "192k" }} />;
+    case "mp4-to-mp3":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp4" slug={slug} apiEndpoint="/extract-audio" params={{ format: "mp3" }} />;
+    case "mov-to-mp4":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mov" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "mp4" }} />;
+    case "avi-to-mp4":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".avi" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "mp4" }} />;
+    case "webm-to-mp4":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webm" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "mp4" }} />;
+    case "mp4-to-webm":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".mp4" slug={slug} apiEndpoint="/video-converter" params={{ target_format: "webm" }} />;
+    // v1.4.0 — browser-only dev converters
+    case "yaml-to-json":     return <LazyYamlToJsonUI />;
+    case "json-to-yaml":     return <LazyJsonToYamlUI />;
+    case "case-converter":   return <LazyCaseConverterUI />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }

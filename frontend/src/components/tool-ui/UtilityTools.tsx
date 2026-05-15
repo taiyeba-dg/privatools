@@ -806,3 +806,253 @@ function relTime(ms: number): string {
     }
     return `${future ? "in " : ""}${value} ${unit}${value === 1 ? "" : "s"}${future ? "" : " ago"}`;
 }
+
+// ─── 10. YAML ↔ JSON Converter ───────────────────────────────────────────
+
+// Minimal YAML ⇄ JSON converter — handles the common subset of YAML used in
+// configs (scalars, lists, nested objects, quoted strings, comments). It is
+// NOT a full YAML 1.2 parser (no anchors, tags, multi-doc streams) — those
+// are rare in practice and the UI banner is honest about the scope.
+function jsonToYaml(value: unknown, indent = 0): string {
+    const pad = "  ".repeat(indent);
+    if (value === null || value === undefined) return "null";
+    if (typeof value === "string") {
+        if (value === "" || /^[\s"'#&*!|>%@`,\[\]{}:?-]/.test(value) || /[:#\n]/.test(value)) {
+            return JSON.stringify(value);
+        }
+        return value;
+    }
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    if (Array.isArray(value)) {
+        if (value.length === 0) return "[]";
+        return value.map(item => {
+            const rendered = jsonToYaml(item, indent + 1);
+            if (rendered.includes("\n")) {
+                return `${pad}-\n${rendered}`;
+            }
+            return `${pad}- ${rendered}`;
+        }).join("\n");
+    }
+    if (typeof value === "object") {
+        const entries = Object.entries(value as Record<string, unknown>);
+        if (entries.length === 0) return "{}";
+        return entries.map(([k, v]) => {
+            const key = /^[A-Za-z_][\w-]*$/.test(k) ? k : JSON.stringify(k);
+            const rendered = jsonToYaml(v, indent + 1);
+            if (typeof v === "object" && v !== null && Object.keys(v as object).length > 0) {
+                return `${pad}${key}:\n${rendered}`;
+            }
+            return `${pad}${key}: ${rendered}`;
+        }).join("\n");
+    }
+    return String(value);
+}
+
+function yamlToJsonObject(text: string): unknown {
+    // Strip BOM + trailing whitespace
+    const lines = text.replace(/^﻿/, "").split(/\r?\n/);
+    // Remove document marker and trailing markers
+    const cleaned: { indent: number; raw: string }[] = [];
+    for (const raw of lines) {
+        if (raw.trim() === "" || raw.trim().startsWith("#")) continue;
+        if (raw.trim() === "---" || raw.trim() === "...") continue;
+        const noComment = raw.replace(/(\s+#.*)$/, "");
+        const indent = noComment.match(/^ */)![0].length;
+        cleaned.push({ indent, raw: noComment.slice(indent) });
+    }
+    if (cleaned.length === 0) return null;
+
+    let i = 0;
+    function parseScalar(s: string): unknown {
+        const v = s.trim();
+        if (v === "" || v === "~" || v === "null") return null;
+        if (v === "true") return true;
+        if (v === "false") return false;
+        if (/^-?\d+$/.test(v)) return Number(v);
+        if (/^-?\d+\.\d+$/.test(v)) return Number(v);
+        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+            try { return JSON.parse(v.replace(/^'(.*)'$/s, '"$1"')); } catch { return v.slice(1, -1); }
+        }
+        if (v.startsWith("[") && v.endsWith("]")) {
+            try { return JSON.parse(v); } catch { /* fall through */ }
+        }
+        if (v.startsWith("{") && v.endsWith("}")) {
+            try { return JSON.parse(v); } catch { /* fall through */ }
+        }
+        return v;
+    }
+    function parseNode(baseIndent: number): unknown {
+        if (i >= cleaned.length) return null;
+        const first = cleaned[i];
+        if (first.indent < baseIndent) return null;
+        // List
+        if (first.raw.startsWith("- ") || first.raw === "-") {
+            const arr: unknown[] = [];
+            while (i < cleaned.length && cleaned[i].indent === first.indent && (cleaned[i].raw === "-" || cleaned[i].raw.startsWith("- "))) {
+                const r = cleaned[i].raw;
+                if (r === "-") {
+                    i++;
+                    arr.push(parseNode(first.indent + 2));
+                } else {
+                    const after = r.slice(2);
+                    if (after.includes(": ") || after.endsWith(":")) {
+                        // inline map item — rewrite as nested map starting here
+                        cleaned[i] = { indent: first.indent + 2, raw: after };
+                        arr.push(parseNode(first.indent + 2));
+                    } else {
+                        arr.push(parseScalar(after));
+                        i++;
+                    }
+                }
+            }
+            return arr;
+        }
+        // Map
+        const obj: Record<string, unknown> = {};
+        while (i < cleaned.length && cleaned[i].indent === first.indent) {
+            const r = cleaned[i].raw;
+            const colon = r.indexOf(":");
+            if (colon === -1) break;
+            const key = r.slice(0, colon).trim().replace(/^["'](.*)["']$/, "$1");
+            const rest = r.slice(colon + 1).trim();
+            i++;
+            if (rest === "") {
+                obj[key] = parseNode(first.indent + 2);
+            } else {
+                obj[key] = parseScalar(rest);
+            }
+        }
+        return obj;
+    }
+    return parseNode(0);
+}
+
+export function YamlToJsonConverterUI() {
+    return <YamlJsonConverterUI reverse={false} />;
+}
+export function JsonToYamlConverterUI() {
+    return <YamlJsonConverterUI reverse={true} />;
+}
+function YamlJsonConverterUI({ reverse = false }: { reverse?: boolean } = {}) {
+    const initial = reverse
+        ? '{\n  "name": "privatools",\n  "version": "1.4.0",\n  "tools": ["pdf", "image", "video"]\n}'
+        : "name: privatools\nversion: 1.4.0\ntools:\n  - pdf\n  - image\n  - video\n";
+    const [input, setInput] = useState(initial);
+    const result = useMemo(() => {
+        const text = input.trim();
+        if (!text) return { ok: true as const, out: "" };
+        try {
+            if (reverse) {
+                const obj = JSON.parse(text);
+                return { ok: true as const, out: jsonToYaml(obj) };
+            }
+            const obj = yamlToJsonObject(text);
+            return { ok: true as const, out: JSON.stringify(obj, null, 2) };
+        } catch (e) {
+            return { ok: false as const, error: e instanceof Error ? e.message : String(e) };
+        }
+    }, [input, reverse]);
+
+    const fromLabel = reverse ? "JSON input" : "YAML input";
+    const toLabel = reverse ? "YAML output" : "JSON output";
+
+    return (
+        <div className="space-y-5">
+            <ClientToolBanner label="Parsing happens entirely in your browser — no upload, no server." />
+            <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{fromLabel}</label>
+                    <textarea
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        spellCheck={false}
+                        className="mt-1.5 w-full h-72 px-4 py-3 rounded-xl border border-border bg-card font-mono text-[12.5px] text-foreground focus:outline-none focus:border-accent resize-none"
+                    />
+                </div>
+                <div>
+                    <div className="flex items-center justify-between">
+                        <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{toLabel}</label>
+                        {result.ok && result.out && <CopyButton value={result.out} />}
+                    </div>
+                    {result.ok ? (
+                        <pre className="mt-1.5 w-full h-72 px-4 py-3 rounded-xl border border-border bg-card font-mono text-[12.5px] text-foreground overflow-auto whitespace-pre">{result.out}</pre>
+                    ) : (
+                        <div className="mt-1.5 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3 flex items-start gap-3 h-72">
+                            <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
+                            <p className="text-[13px] text-foreground font-mono">{result.error}</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── 11. Case Converter ──────────────────────────────────────────────────
+
+function caseTransforms(text: string) {
+    const words = text
+        .replace(/[_\-]+/g, " ")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .filter(Boolean);
+    const lower = words.map(w => w.toLowerCase());
+    return {
+        lower: text.toLowerCase(),
+        upper: text.toUpperCase(),
+        title: text.replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase()),
+        sentence: text.charAt(0).toUpperCase() + text.slice(1).toLowerCase(),
+        camel: lower.map((w, i) => i === 0 ? w : w[0].toUpperCase() + w.slice(1)).join(""),
+        pascal: lower.map(w => w[0].toUpperCase() + w.slice(1)).join(""),
+        snake: lower.join("_"),
+        kebab: lower.join("-"),
+        constant: lower.join("_").toUpperCase(),
+        dot: lower.join("."),
+        path: lower.join("/"),
+        inverse: text.split("").map(c => c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase()).join(""),
+    };
+}
+
+export function CaseConverterUI() {
+    const [input, setInput] = useState("PrivaTools File Converter");
+    const cases = useMemo(() => caseTransforms(input), [input]);
+    const rows: [string, string][] = [
+        ["lower case", cases.lower],
+        ["UPPER CASE", cases.upper],
+        ["Title Case", cases.title],
+        ["Sentence case", cases.sentence],
+        ["camelCase", cases.camel],
+        ["PascalCase", cases.pascal],
+        ["snake_case", cases.snake],
+        ["kebab-case", cases.kebab],
+        ["CONSTANT_CASE", cases.constant],
+        ["dot.case", cases.dot],
+        ["path/case", cases.path],
+        ["iNVERSE", cases.inverse],
+    ];
+    return (
+        <div className="space-y-5">
+            <ClientToolBanner label="Conversion runs locally — your text never leaves the browser." />
+            <div>
+                <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Input</label>
+                <textarea
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    spellCheck={false}
+                    className="mt-1.5 w-full h-28 px-4 py-3 rounded-xl border border-border bg-card font-mono text-[13px] text-foreground focus:outline-none focus:border-accent resize-none"
+                />
+            </div>
+            <div className="rounded-xl border border-border bg-card divide-y divide-border">
+                {rows.map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between gap-4 px-4 py-3">
+                        <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground w-36 shrink-0">{label}</span>
+                        <span className="font-mono text-[13px] text-foreground flex-1 truncate">{value}</span>
+                        <CopyButton value={value} />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

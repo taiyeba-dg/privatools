@@ -71,6 +71,23 @@ NON_PDF_TOOLS = [
     "generate-favicon", "make-collage", "generate-barcode",
     "url-to-pdf", "qr-reader", "merge-images",
     "image-upscaler", "audio-converter",
+    # v1.2.0 additions
+    "webp-to-jpg", "webp-to-png", "heic-to-png", "view-exif",
+    "jwt-decoder", "regex-tester", "timestamp-converter",
+    # v1.4.0 additions — image converter aliases
+    "jpg-to-png", "png-to-jpg", "jpg-to-webp", "png-to-webp",
+    "tiff-to-jpg", "tiff-to-png", "bmp-to-jpg", "bmp-to-png",
+    "gif-to-jpg", "gif-to-png",
+    # v1.4.0 additions — audio/video converter aliases
+    "m4a-to-mp3", "mp4-to-mp3", "mov-to-mp4", "avi-to-mp4",
+    "webm-to-mp4", "mp4-to-webm",
+    # v1.4.0 additions — browser-only dev converters
+    "yaml-to-json", "json-to-yaml", "case-converter",
+]
+
+# v1.2.0 PDF additions (sitemap was missing these)
+_PDF_V12 = [
+    "web-optimize-pdf", "split-by-text", "pdf-to-html", "pdf-to-rtf",
 ]
 
 COMPARE_PAGES = [
@@ -136,6 +153,8 @@ async def sitemap():
 
     # Tool pages — use launch date
     for slug in PDF_TOOLS:
+        xml += _entry(f"{BASE_URL}/tool/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
+    for slug in _PDF_V12:
         xml += _entry(f"{BASE_URL}/tool/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")
     for slug in NON_PDF_TOOLS:
         xml += _entry(f"{BASE_URL}/tools/{slug}", _TOOLS_LAUNCH_DATE, "0.8", "weekly")

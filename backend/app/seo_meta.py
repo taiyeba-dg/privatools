@@ -470,6 +470,28 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "jwt-decoder":        ("JWT Decoder",        "Decode a JWT online for free — paste any JSON Web Token and instantly see its header, payload, and signature decoded as readable JSON. Highlights expiry, algorithm, and standard claims. All decoding happens in your browser; tokens never leave."),
     "regex-tester":       ("Regex Tester",       "Test regular expressions online for free — paste a regex and a test string to see every match highlighted in real time, along with captured groups. Supports flags (g, i, m, s, u, y). Works entirely in your browser."),
     "timestamp-converter": ("Timestamp Converter", "Convert between Unix timestamps and human-readable dates online for free — paste an epoch (seconds or milliseconds) or an ISO 8601 string and see all formats side-by-side, in your local time and UTC. Pure-browser, never logs your data."),
+    # v1.4.0 — image converter aliases (route to /image-converter)
+    "jpg-to-png":         ("JPG to PNG",         "Convert JPG to PNG online for free — change JPEG photos to lossless PNG, preserving every detail and supporting transparency on re-edits. Drag-and-drop multiple files, processed and discarded server-side."),
+    "png-to-jpg":         ("PNG to JPG",         "Convert PNG to JPG online for free — turn lossless PNGs into compact JPEGs for faster pages and smaller email attachments. Batch upload, no watermarks, no sign-up."),
+    "jpg-to-webp":        ("JPG to WebP",        "Convert JPG to WebP online for free — shrink JPEG photos by 25-35% with Google's modern WebP codec while keeping visual quality. Perfect for faster page loads."),
+    "png-to-webp":        ("PNG to WebP",        "Convert PNG to WebP online for free — convert lossless PNGs to WebP for dramatically smaller files while keeping transparency. Ideal for web assets and icons."),
+    "tiff-to-jpg":        ("TIFF to JPG",        "Convert TIFF to JPG online for free — turn high-resolution TIFFs (the scan and pro-photo standard) into compact JPEGs you can email, post, or upload anywhere."),
+    "tiff-to-png":        ("TIFF to PNG",        "Convert TIFF to PNG online for free — convert multi-page or single-page TIFFs to web-friendly PNG while preserving alpha and color depth."),
+    "bmp-to-jpg":         ("BMP to JPG",         "Convert BMP to JPG online for free — shrink Windows bitmap files (often 10-50× larger than JPEG) into compact JPEGs without quality loss for most photos."),
+    "bmp-to-png":         ("BMP to PNG",         "Convert BMP to PNG online for free — turn uncompressed Windows BMPs into compressed lossless PNGs, ideal for screenshots, icons, and pixel art."),
+    "gif-to-jpg":         ("GIF to JPG",         "Convert GIF to JPG online for free — extract the first frame of a GIF and save it as a smaller JPEG. Great for sharing static stills on platforms that don't support GIF."),
+    "gif-to-png":         ("GIF to PNG",         "Convert GIF to PNG online for free — convert single-frame GIFs to lossless PNG with full transparency support. Drag-and-drop, batch-friendly."),
+    # v1.4.0 — audio/video converter aliases
+    "m4a-to-mp3":         ("M4A to MP3",         "Convert M4A to MP3 online for free — turn Apple's M4A audio (iTunes purchases, voice memos) into universally-supported MP3 at your chosen bitrate. Powered by FFmpeg."),
+    "mp4-to-mp3":         ("MP4 to MP3",         "Convert MP4 to MP3 online for free — extract the audio track from any MP4 video and save it as an MP3 file. Perfect for music videos, podcasts, and recorded lectures."),
+    "mov-to-mp4":         ("MOV to MP4",         "Convert MOV to MP4 online for free — change Apple QuickTime MOV files to the universally-compatible MP4 (H.264). Works on every platform without re-encoding the audio if compatible."),
+    "avi-to-mp4":         ("AVI to MP4",         "Convert AVI to MP4 online for free — modernize old AVI videos to H.264 MP4 for streaming-friendly playback on phones, browsers, and modern TVs."),
+    "webm-to-mp4":        ("WebM to MP4",        "Convert WebM to MP4 online for free — turn Google's WebM (VP8/VP9) into H.264 MP4 for compatibility with iOS, older Android, and editing software."),
+    "mp4-to-webm":        ("MP4 to WebM",        "Convert MP4 to WebM online for free — re-encode MP4 video as WebM (VP9) for smaller files and royalty-free open-web streaming."),
+    # v1.4.0 — browser-only developer converters
+    "yaml-to-json":       ("YAML to JSON",       "Convert YAML to JSON online for free — paste any YAML and instantly see the equivalent JSON, validated and pretty-printed. Runs 100% in your browser, never uploads."),
+    "json-to-yaml":       ("JSON to YAML",       "Convert JSON to YAML online for free — paste any JSON and see clean YAML with proper indentation, ready to drop into a Kubernetes, GitHub Actions, or Docker Compose file. Pure-browser."),
+    "case-converter":     ("Case Converter",     "Convert text case online for free — instantly transform any string between camelCase, snake_case, kebab-case, PascalCase, CONSTANT_CASE, Title Case, sentence case, and more. Browser-only, never uploads."),
 }
 
 

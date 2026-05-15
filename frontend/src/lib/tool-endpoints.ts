@@ -62,6 +62,24 @@ const TOOL_ENDPOINT_OVERRIDES: Record<string, string> = {
   "webp-to-jpg":      "/image-converter",
   "webp-to-png":      "/image-converter",
   "heic-to-png":      "/image-converter",
+  // v1.4.0 image converter aliases
+  "jpg-to-png":       "/image-converter",
+  "png-to-jpg":       "/image-converter",
+  "jpg-to-webp":      "/image-converter",
+  "png-to-webp":      "/image-converter",
+  "tiff-to-jpg":      "/image-converter",
+  "tiff-to-png":      "/image-converter",
+  "bmp-to-jpg":       "/image-converter",
+  "bmp-to-png":       "/image-converter",
+  "gif-to-jpg":       "/image-converter",
+  "gif-to-png":       "/image-converter",
+  // v1.4.0 audio/video converter aliases
+  "m4a-to-mp3":       "/audio-converter",
+  "mp4-to-mp3":       "/extract-audio",
+  "mov-to-mp4":       "/video-converter",
+  "avi-to-mp4":       "/video-converter",
+  "webm-to-mp4":      "/video-converter",
+  "mp4-to-webm":      "/video-converter",
 };
 
 const CONTENT_TYPE_EXTENSION_MAP: Record<string, string> = {

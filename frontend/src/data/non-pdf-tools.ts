@@ -347,6 +347,126 @@ export const nonPdfTools: NonPdfTool[] = [
     longDescription: "Convert between Unix timestamps and human-readable dates online for free — paste an epoch (seconds or milliseconds) or an ISO 8601 string and see all formats side-by-side, in your local time and UTC. Pure-browser, never logs your data.",
     category: "developer", clientOnly: true, accepts: "", outputLabel: "converted timestamp",
   },
+
+  // ── v1.4.0 image format converter aliases ────────────────────────────────
+  {
+    slug: "jpg-to-png", icon: RefreshCw, name: "JPG to PNG",
+    description: "Convert JPG to PNG online — lossless conversion",
+    longDescription: "Convert JPG to PNG online for free — lossless conversion preserving every pixel. PNG supports transparency and lossless compression, ideal for graphics, logos, and screenshots. No upload to third parties; processed and discarded immediately.",
+    category: "image", accepts: ".jpg,.jpeg", outputLabel: "image.png",
+  },
+  {
+    slug: "png-to-jpg", icon: RefreshCw, name: "PNG to JPG",
+    description: "Convert PNG to JPG for smaller file size",
+    longDescription: "Convert PNG to JPG online for free — change PNG images to JPEG, typically 3–5x smaller in file size. JPEG uses lossy compression which is invisible at normal viewing sizes. Perfect for email attachments and web upload limits. Transparent pixels become white.",
+    category: "image", accepts: ".png", outputLabel: "image.jpg",
+  },
+  {
+    slug: "jpg-to-webp", icon: RefreshCw, name: "JPG to WebP",
+    description: "Convert JPG to WebP for smaller, web-optimized files",
+    longDescription: "Convert JPG to WebP online for free — WebP is Google's modern image format, typically 25–35% smaller than JPEG at equivalent quality. Supported by all modern browsers. Ideal for faster website page loads.",
+    category: "image", accepts: ".jpg,.jpeg", outputLabel: "image.webp",
+  },
+  {
+    slug: "png-to-webp", icon: RefreshCw, name: "PNG to WebP",
+    description: "Convert PNG to WebP — smaller files, transparency preserved",
+    longDescription: "Convert PNG to WebP online for free — WebP supports transparency like PNG but with 25–50% smaller file sizes. Perfect for web graphics and PWAs. Lossless mode available for pixel-perfect output.",
+    category: "image", accepts: ".png", outputLabel: "image.webp",
+  },
+  {
+    slug: "tiff-to-jpg", icon: RefreshCw, name: "TIFF to JPG",
+    description: "Convert TIFF to JPG for sharing and email",
+    longDescription: "Convert TIFF to JPG online for free — TIFF is a large, lossless format used in archival and pro photography; JPEG is universally compatible. Typical 5–10x size reduction. Multi-page TIFF supported — each page becomes a separate JPG.",
+    category: "image", accepts: ".tif,.tiff", outputLabel: "image.jpg",
+  },
+  {
+    slug: "tiff-to-png", icon: RefreshCw, name: "TIFF to PNG",
+    description: "Convert TIFF to PNG — lossless, transparency preserved",
+    longDescription: "Convert TIFF to PNG online for free — both are lossless formats, but PNG is universally supported in browsers and modern software. Transparency channel preserved when present.",
+    category: "image", accepts: ".tif,.tiff", outputLabel: "image.png",
+  },
+  {
+    slug: "bmp-to-jpg", icon: RefreshCw, name: "BMP to JPG",
+    description: "Convert BMP bitmap to JPG — massive size reduction",
+    longDescription: "Convert BMP to JPG online for free — BMP is the uncompressed Windows bitmap format and is HUGE. JPEG conversion typically gives 50–100x smaller files with no visible quality loss at standard viewing sizes.",
+    category: "image", accepts: ".bmp", outputLabel: "image.jpg",
+  },
+  {
+    slug: "bmp-to-png", icon: RefreshCw, name: "BMP to PNG",
+    description: "Convert BMP bitmap to PNG — lossless, much smaller",
+    longDescription: "Convert BMP to PNG online for free — PNG is also lossless but uses efficient compression. Output files are typically 5–10x smaller than the BMP source with zero pixel data loss.",
+    category: "image", accepts: ".bmp", outputLabel: "image.png",
+  },
+  {
+    slug: "gif-to-jpg", icon: RefreshCw, name: "GIF to JPG",
+    description: "Convert GIF to JPG (uses the first frame)",
+    longDescription: "Convert GIF to JPG online for free — extracts the first frame of an animated GIF (or the single frame of a static GIF) as a JPEG. Useful for thumbnails, social media uploads, or anywhere GIF isn't supported.",
+    category: "image", accepts: ".gif", outputLabel: "image.jpg",
+  },
+  {
+    slug: "gif-to-png", icon: RefreshCw, name: "GIF to PNG",
+    description: "Convert GIF to PNG (preserves transparency)",
+    longDescription: "Convert GIF to PNG online for free — extracts the first frame as a PNG, preserving transparency. PNG offers much higher color fidelity than GIF's 256-color limit.",
+    category: "image", accepts: ".gif", outputLabel: "image.png",
+  },
+
+  // ── v1.4.0 audio/video converter aliases ────────────────────────────────
+  {
+    slug: "m4a-to-mp3", icon: Music, name: "M4A to MP3",
+    description: "Convert iPhone M4A voice memos and audio to MP3",
+    longDescription: "Convert M4A to MP3 online for free — M4A is Apple's audio format (used by iPhone Voice Memos and iTunes); MP3 plays everywhere. Powered by FFmpeg with configurable bitrate. Files up to 200 MB supported.",
+    category: "video-audio", accepts: ".m4a", outputLabel: "audio.mp3",
+  },
+  {
+    slug: "mp4-to-mp3", icon: Music, name: "MP4 to MP3",
+    description: "Extract audio from MP4 video and save as MP3",
+    longDescription: "Convert MP4 to MP3 online for free — extract the audio track from any MP4 video and save it as an MP3 file. Useful for ripping music from YouTube downloads, podcast clips, or lecture recordings. Configurable bitrate.",
+    category: "video-audio", accepts: ".mp4", outputLabel: "audio.mp3",
+  },
+  {
+    slug: "mov-to-mp4", icon: Film, name: "MOV to MP4",
+    description: "Convert Apple MOV video to universally-supported MP4",
+    longDescription: "Convert MOV to MP4 online for free — MOV is Apple's QuickTime container; MP4 plays on every device including Windows, Android, web browsers, and social media. H.264 video + AAC audio for best compatibility.",
+    category: "video-audio", accepts: ".mov", outputLabel: "video.mp4",
+  },
+  {
+    slug: "avi-to-mp4", icon: Film, name: "AVI to MP4",
+    description: "Convert legacy AVI video to modern MP4",
+    longDescription: "Convert AVI to MP4 online for free — AVI is the old Microsoft container that's poorly supported by modern devices. MP4 plays everywhere and is typically 30–50% smaller. Powered by FFmpeg with H.264 encoding.",
+    category: "video-audio", accepts: ".avi", outputLabel: "video.mp4",
+  },
+  {
+    slug: "webm-to-mp4", icon: Film, name: "WebM to MP4",
+    description: "Convert WebM (Google) video to MP4",
+    longDescription: "Convert WebM to MP4 online for free — WebM is YouTube's web-streaming format; MP4 is needed for editing software, iMessage, social media uploads, and older devices. Quality preserved through H.264 encoding.",
+    category: "video-audio", accepts: ".webm", outputLabel: "video.mp4",
+  },
+  {
+    slug: "mp4-to-webm", icon: Film, name: "MP4 to WebM",
+    description: "Convert MP4 to WebM for web embedding",
+    longDescription: "Convert MP4 to WebM online for free — WebM (VP9 video + Opus audio) produces 30–50% smaller files than MP4 at equivalent quality. Native HTML5 video support in all modern browsers without a transcoding step on your server.",
+    category: "video-audio", accepts: ".mp4", outputLabel: "video.webm",
+  },
+
+  // ── v1.4.0 browser-only developer converters ────────────────────────────
+  {
+    slug: "yaml-to-json", icon: Braces, name: "YAML to JSON",
+    description: "Convert YAML to JSON entirely in your browser",
+    longDescription: "Convert YAML to JSON online for free — paste any YAML (Kubernetes manifest, GitHub Actions workflow, Docker Compose) and instantly get the equivalent JSON. Validates YAML syntax. Runs entirely in your browser — your config never touches a server.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "JSON output",
+  },
+  {
+    slug: "json-to-yaml", icon: Braces, name: "JSON to YAML",
+    description: "Convert JSON to YAML in your browser",
+    longDescription: "Convert JSON to YAML online for free — paste JSON and get the equivalent YAML in a clean, human-readable format. Perfect for migrating configs to Kubernetes or Ansible. Pure-browser conversion.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "YAML output",
+  },
+  {
+    slug: "case-converter", icon: Type, name: "Case Converter",
+    description: "Convert text between UPPER, lower, Title, camelCase, snake_case, kebab-case",
+    longDescription: "Convert text case online for free — translate between UPPERCASE, lowercase, Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, and more. Live preview as you type. Runs entirely in your browser.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "converted text",
+  },
 ];
 
 export const nonPdfToolBySlug = Object.fromEntries(nonPdfTools.map(t => [t.slug, t]));

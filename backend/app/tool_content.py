@@ -331,6 +331,84 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert and download", "text": "Click Convert. The tool decodes via libheif and writes a PNG that opens in every browser and image editor."},
     ],
 
+    # ── v1.4.0 — additional format converter aliases ─────────────────────
+    "jpg-to-png": [
+        {"name": "Upload a JPG image", "text": "Drag or select one or more .jpg / .jpeg files."},
+        {"name": "Convert and download", "text": "Click Convert. PrivaTools re-encodes the JPEG as a lossless PNG, preserving every pixel and supporting transparency in re-edits."},
+    ],
+    "png-to-jpg": [
+        {"name": "Upload a PNG image", "text": "Drop one or more PNG files — up to 200 MB total."},
+        {"name": "Convert and download", "text": "Click Convert. Transparency is flattened to white and the result is saved as a JPEG at quality 85 — typically 70–90% smaller than the source PNG."},
+    ],
+    "jpg-to-webp": [
+        {"name": "Upload a JPG", "text": "Select a JPEG file from camera, phone, or web."},
+        {"name": "Convert and download", "text": "Click Convert. PrivaTools encodes the image as WebP, typically saving 25–35% in file size at the same visual quality."},
+    ],
+    "png-to-webp": [
+        {"name": "Upload a PNG", "text": "Drop a PNG — transparency is preserved in the WebP output."},
+        {"name": "Convert and download", "text": "Click Convert. The result is a WebP that is usually 60–80% smaller than the source PNG."},
+    ],
+    "tiff-to-jpg": [
+        {"name": "Upload a TIFF", "text": "Select a .tif or .tiff file from a scanner or photo library."},
+        {"name": "Convert and download", "text": "Click Convert. The first page (for multi-page TIFFs) is re-encoded as a JPEG at quality 85."},
+    ],
+    "tiff-to-png": [
+        {"name": "Upload a TIFF", "text": "Select a .tif or .tiff file."},
+        {"name": "Convert and download", "text": "Click Convert. The image is decoded with libtiff and written as a lossless PNG with full color depth preserved."},
+    ],
+    "bmp-to-jpg": [
+        {"name": "Upload a BMP", "text": "Drop a Windows bitmap (.bmp) file."},
+        {"name": "Convert and download", "text": "Click Convert. The uncompressed BMP is re-encoded as a JPEG — typically 10–50× smaller for photographs."},
+    ],
+    "bmp-to-png": [
+        {"name": "Upload a BMP", "text": "Drop a Windows bitmap file (any depth: 1-bit, 8-bit, 24-bit, or 32-bit)."},
+        {"name": "Convert and download", "text": "Click Convert. The BMP is re-encoded as a compressed lossless PNG, ideal for screenshots and pixel art."},
+    ],
+    "gif-to-jpg": [
+        {"name": "Upload a GIF", "text": "Drop a GIF file. For animated GIFs, only the first frame is converted."},
+        {"name": "Convert and download", "text": "Click Convert. PrivaTools extracts the first frame, flattens transparency to white, and saves as JPEG."},
+    ],
+    "gif-to-png": [
+        {"name": "Upload a GIF", "text": "Drop a GIF — single-frame GIFs convert cleanly with transparency preserved."},
+        {"name": "Convert and download", "text": "Click Convert. The first frame becomes a lossless PNG, perfect for icons and animated avatars converted to stills."},
+    ],
+    "m4a-to-mp3": [
+        {"name": "Upload an M4A audio file", "text": "Drop a .m4a file (iTunes purchases, GarageBand exports, iPhone voice memos)."},
+        {"name": "Convert and download", "text": "Click Convert. FFmpeg re-encodes the AAC audio inside the M4A container as a 192 kbps MP3, compatible with every player on earth."},
+    ],
+    "mp4-to-mp3": [
+        {"name": "Upload an MP4 video", "text": "Drop an MP4 file up to 200 MB — music videos, lecture recordings, podcasts, anything with audio."},
+        {"name": "Extract audio and download", "text": "Click Convert. PrivaTools extracts the audio track and re-encodes it as MP3, perfect for offline listening on any device."},
+    ],
+    "mov-to-mp4": [
+        {"name": "Upload a MOV", "text": "Drop a QuickTime .mov file (the default format for iPhone/Mac screen recordings)."},
+        {"name": "Convert and download", "text": "Click Convert. FFmpeg remuxes (or re-encodes when needed) the streams into an MP4 with H.264 video — universally playable."},
+    ],
+    "avi-to-mp4": [
+        {"name": "Upload an AVI", "text": "Drop an .avi video — typical for older Windows captures."},
+        {"name": "Convert and download", "text": "Click Convert. The result is an MP4 with H.264 video and AAC audio, ready for streaming on phones, browsers, and modern TVs."},
+    ],
+    "webm-to-mp4": [
+        {"name": "Upload a WebM video", "text": "Drop a WebM file (VP8 or VP9). Browser screen recorders and many web exports use WebM by default."},
+        {"name": "Convert and download", "text": "Click Convert. The video is re-encoded as H.264 MP4 for compatibility with iOS, older Android, and most editing software."},
+    ],
+    "mp4-to-webm": [
+        {"name": "Upload an MP4 video", "text": "Drop an .mp4 file (H.264 or H.265)."},
+        {"name": "Convert and download", "text": "Click Convert. The video is re-encoded as VP9 WebM — smaller files at the same quality, ideal for HTML5 video on the open web."},
+    ],
+    "yaml-to-json": [
+        {"name": "Paste YAML", "text": "Drop any YAML document into the left textarea — a Kubernetes manifest, GitHub Actions workflow, Docker Compose file, or any configuration."},
+        {"name": "Read JSON instantly", "text": "Equivalent JSON appears on the right, pretty-printed and validated. Click Copy to grab it. 100% in your browser — your config never touches our servers."},
+    ],
+    "json-to-yaml": [
+        {"name": "Paste JSON", "text": "Drop valid JSON into the left textarea."},
+        {"name": "Read YAML instantly", "text": "Clean YAML with proper indentation appears on the right, ready to paste into a Kubernetes, GitHub Actions, or Compose file. Click Copy to grab it. Pure-browser conversion."},
+    ],
+    "case-converter": [
+        {"name": "Paste your text", "text": "Drop any string — a variable name, sentence, or paragraph — into the input box."},
+        {"name": "Copy any case format", "text": "All 12 case variants (camelCase, snake_case, kebab-case, PascalCase, CONSTANT_CASE, Title Case, sentence case, dot.case, path/case, and more) appear instantly. Click Copy on the one you want."},
+    ],
+
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
     "add-attachment": [
         {"name": "Upload the host PDF", "text": "Drop the PDF you want to embed a file inside (up to 500 MB)."},
@@ -1113,6 +1191,103 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What's HEIC and why convert it?", "a": "HEIC (High Efficiency Image Container) is Apple's image format from iOS 11 onward. It's space-efficient but not widely supported outside Apple's ecosystem. PNG works everywhere."},
         {"q": "Is PNG better than JPG for HEIC conversion?", "a": "If you need transparency or are doing further editing: yes. For sharing on the web or attaching to emails: JPG is fine and 3–5x smaller."},
         {"q": "Are EXIF tags preserved?", "a": "Most are stripped during conversion (since PNG and HEIC have different metadata formats). If you need to preserve EXIF, use HEIC to JPG instead and the standard EXIF block survives."},
+    ],
+
+    # ── v1.4.0 — additional format converter aliases ─────────────────────
+    "jpg-to-png": [
+        {"q": "Why convert JPG to PNG?", "a": "PNG is lossless — every pixel of the source is preserved. Use PNG when you plan to do further editing (each JPG save degrades the image) or when you need transparency in compositing."},
+        {"q": "Will the PNG be larger?", "a": "Yes — typically 3–10× larger, because PNG is lossless while JPG is compressed. For photos, JPG is usually a better choice unless you specifically need lossless quality."},
+        {"q": "Does it preserve metadata?", "a": "Standard EXIF data is preserved when possible. Color profiles (sRGB, Adobe RGB) are written into the PNG header."},
+    ],
+    "png-to-jpg": [
+        {"q": "Why convert PNG to JPG?", "a": "JPG files are 70–90% smaller than equivalent PNGs for photographs — perfect when you need to email, upload, or post images without bandwidth penalties."},
+        {"q": "What happens to transparency?", "a": "JPG doesn't support transparency. Transparent pixels are flattened to white. If you need to preserve transparency, use PNG to WebP instead."},
+        {"q": "Will I lose quality?", "a": "JPG is lossy, but at quality 85 (our default) the difference is essentially invisible. Re-saving the same JPG repeatedly does degrade — convert once, then keep the original PNG as a master."},
+    ],
+    "jpg-to-webp": [
+        {"q": "Why convert JPG to WebP?", "a": "WebP files are typically 25–35% smaller than JPGs at the same visual quality. That speeds up page loads and saves bandwidth, especially for image-heavy sites."},
+        {"q": "Will every browser display WebP?", "a": "Yes — every major browser supports WebP since 2020 (Chrome, Firefox, Safari 14+, Edge). For maximum compatibility with very old browsers or email clients, use JPG."},
+        {"q": "Is WebP a lossy format?", "a": "It can be either. Our default is lossy WebP for best compression. Lossless WebP is also supported but produces larger files."},
+    ],
+    "png-to-webp": [
+        {"q": "Why convert PNG to WebP?", "a": "Lossless WebP is typically 25% smaller than PNG; lossy WebP is dramatically smaller. Either way, you save bandwidth — useful for web assets, icons, and product images."},
+        {"q": "Is transparency preserved?", "a": "Yes. WebP supports an alpha channel exactly like PNG, so transparent areas come through unchanged."},
+        {"q": "When should I stay with PNG?", "a": "If you need maximum compatibility with very old software, PDF generators, or print pipelines — PNG is supported everywhere."},
+    ],
+    "tiff-to-jpg": [
+        {"q": "Why convert TIFF to JPG?", "a": "TIFF files from scanners are often 10–50 MB each. JPG shrinks them to a few hundred KB, perfect for email and online sharing where quality at 85% is indistinguishable."},
+        {"q": "What about multi-page TIFFs?", "a": "Only the first page is converted to JPG. To handle multi-page TIFFs, use our TIFF to PDF tool instead — it preserves all pages."},
+        {"q": "Will I lose quality?", "a": "Some, but at our default quality of 85, the difference is essentially invisible at typical viewing sizes."},
+    ],
+    "tiff-to-png": [
+        {"q": "Why convert TIFF to PNG?", "a": "TIFF is excellent for archival but heavyweight and not browser-friendly. PNG is universally supported and still lossless — perfect for sharing scanned documents online."},
+        {"q": "Is the conversion lossless?", "a": "Yes. Both TIFF and PNG are lossless image formats, so no pixel data is lost. The PNG is typically 30–60% smaller because PNG's compression is more efficient for typical scan content."},
+        {"q": "Will multi-page TIFFs be handled?", "a": "Only the first page is converted. For multi-page TIFF archives, use our TIFF to PDF tool to preserve every page."},
+    ],
+    "bmp-to-jpg": [
+        {"q": "Why convert BMP to JPG?", "a": "BMP files are uncompressed and can be 10–50× larger than the same image as JPG. Converting saves enormous space with virtually no visible quality difference for photos."},
+        {"q": "What about screenshots in BMP?", "a": "For screenshots and pixel art, consider BMP to PNG instead — PNG is lossless and handles sharp edges better than JPG."},
+        {"q": "Are old Windows BMPs supported?", "a": "Yes. All standard BMP variants (1-bit, 4-bit, 8-bit, 16-bit, 24-bit, 32-bit, RLE-compressed) are supported."},
+    ],
+    "bmp-to-png": [
+        {"q": "Why convert BMP to PNG?", "a": "PNG is lossless like BMP but uses compression — typically 70–90% smaller files. PNG is also the standard format for web and modern software."},
+        {"q": "Will my screenshots look identical?", "a": "Yes — pixel-perfect identical. PNG uses lossless compression, so no pixel data changes."},
+        {"q": "What about indexed-color BMPs?", "a": "Supported. 1-bit, 4-bit, and 8-bit palette BMPs convert to indexed-color PNGs preserving the original palette."},
+    ],
+    "gif-to-jpg": [
+        {"q": "What about animated GIFs?", "a": "Only the first frame is converted. To extract every frame as JPGs, use a dedicated GIF frame extractor — coming soon to PrivaTools."},
+        {"q": "Will transparency be preserved?", "a": "No — JPG doesn't support transparency. Transparent pixels in the source GIF become white in the JPG."},
+        {"q": "Why convert GIF to JPG anyway?", "a": "GIFs are limited to 256 colors and can be larger than JPGs of the same single frame. JPG is ideal when you only need a static still and want smaller file size."},
+    ],
+    "gif-to-png": [
+        {"q": "What about animated GIFs?", "a": "Only the first frame is converted to PNG. For animated GIFs, consider converting to a video format like MP4 or WebM using our GIF to MP4 tool."},
+        {"q": "Will transparency be preserved?", "a": "Yes — PNG fully supports transparency, so transparent areas of the GIF come through cleanly."},
+        {"q": "Is the conversion lossless?", "a": "Yes. Both GIF and PNG are lossless formats, so the first frame is reproduced pixel-perfectly."},
+    ],
+    "m4a-to-mp3": [
+        {"q": "Why convert M4A to MP3?", "a": "M4A (AAC inside an MP4 container) isn't universally supported — older car stereos, some Android players, and many legacy devices won't play it. MP3 works everywhere."},
+        {"q": "Will the audio quality drop?", "a": "Slightly. M4A's AAC codec is more efficient than MP3, so at the same bitrate AAC sounds better. Our 192 kbps default produces a result that's indistinguishable from the source for casual listening."},
+        {"q": "Does it work for iPhone voice memos?", "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here."},
+    ],
+    "mp4-to-mp3": [
+        {"q": "Does this work for any MP4?", "a": "Yes — as long as the MP4 has an audio track. Music videos, lecture recordings, podcasts, screen recordings with narration, all work."},
+        {"q": "What about file size?", "a": "MP3 audio is dramatically smaller than the original video. A 1 GB video file typically becomes a 5–15 MB MP3."},
+        {"q": "Is the video kept?", "a": "No — only the audio track is extracted. If you also need the video, keep the original MP4."},
+    ],
+    "mov-to-mp4": [
+        {"q": "Why convert MOV to MP4?", "a": "MOV is Apple's QuickTime format. While Macs play it natively, Windows, Android, and most streaming platforms prefer MP4. The codecs inside are often identical (H.264), so conversion is fast and lossless."},
+        {"q": "Will I lose quality?", "a": "Usually no — when streams are compatible, we remux the file (no re-encoding), preserving the original bytes exactly. If re-encoding is needed, we use high-quality settings."},
+        {"q": "Does it preserve audio?", "a": "Yes. The audio track (typically AAC) is kept intact."},
+    ],
+    "avi-to-mp4": [
+        {"q": "Why convert AVI to MP4?", "a": "AVI is an old Microsoft container with poor support for modern codecs and metadata. MP4 is the universal standard — every modern device, browser, and editor plays it."},
+        {"q": "What if my AVI uses DivX or Xvid?", "a": "FFmpeg re-encodes the video to H.264 inside the MP4 container, so any source codec is handled."},
+        {"q": "Will the file get bigger or smaller?", "a": "Usually similar or smaller. Old AVIs often used inefficient codecs; modern H.264 typically achieves the same quality at a smaller size."},
+    ],
+    "webm-to-mp4": [
+        {"q": "Why convert WebM to MP4?", "a": "WebM (VP8/VP9 codecs) isn't supported on iOS Safari, older Android, or in many editing programs. MP4 with H.264 is universal."},
+        {"q": "Does the audio survive?", "a": "Yes. WebM's Opus or Vorbis audio is re-encoded to AAC inside the MP4 container."},
+        {"q": "Will I lose quality?", "a": "Re-encoding always sacrifices a tiny amount of quality, but at high bitrates the result is visually identical to the source."},
+    ],
+    "mp4-to-webm": [
+        {"q": "Why convert MP4 to WebM?", "a": "WebM uses VP9, which is royalty-free and often produces smaller files than H.264 at the same quality. Ideal for hosting video on the open web."},
+        {"q": "Will every browser play it?", "a": "Every modern desktop browser plays WebM. Safari on iOS supports it from iOS 16 onward. For maximum compatibility, MP4 is still safer."},
+        {"q": "How much smaller will it be?", "a": "Typically 20–40% smaller than the equivalent MP4 at the same visible quality."},
+    ],
+    "yaml-to-json": [
+        {"q": "Is it 100% in my browser?", "a": "Yes. The YAML never leaves your device — no server roundtrip, no logs, no analytics on the content."},
+        {"q": "Which YAML features are supported?", "a": "All common config features: scalars, lists, nested maps, quoted strings, comments, multi-line strings, and flow-style arrays and objects. Anchors, tags, and multi-doc streams are not supported — those are rare in practice."},
+        {"q": "What if my YAML has a parse error?", "a": "The error message appears in the output area with line context. Fix the YAML and the conversion updates instantly."},
+    ],
+    "json-to-yaml": [
+        {"q": "Is it 100% in my browser?", "a": "Yes. The JSON never leaves your device — pure-browser conversion, no upload."},
+        {"q": "Will it format the YAML correctly?", "a": "Yes — proper indentation (2 spaces), keys with special characters get quoted, lists get the bullet-point style by default. Output is ready to paste into a Kubernetes or GitHub Actions file."},
+        {"q": "What if the JSON is invalid?", "a": "An error appears in the output area. Fix the JSON and the conversion updates live."},
+    ],
+    "case-converter": [
+        {"q": "Which case formats are supported?", "a": "12: lowercase, UPPERCASE, Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, dot.case, path/case, and iNVERSE."},
+        {"q": "Will it handle existing camelCase or snake_case input correctly?", "a": "Yes. The tool detects word boundaries from underscores, hyphens, spaces, and lowercase→uppercase transitions, so converting between any two cases works correctly."},
+        {"q": "Does it run in my browser?", "a": "Yes — 100%. Your text never leaves the page. Useful for renaming variables, generating CSS class names, or normalizing identifiers without exposing them to a server."},
     ],
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
