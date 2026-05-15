@@ -330,6 +330,473 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Upload a HEIC image", "text": "Select a HEIC or HEIF file (e.g., from an iPhone photo export)."},
         {"name": "Convert and download", "text": "Click Convert. The tool decodes via libheif and writes a PNG that opens in every browser and image editor."},
     ],
+
+    # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
+    "add-attachment": [
+        {"name": "Upload the host PDF", "text": "Drop the PDF you want to embed a file inside (up to 500 MB)."},
+        {"name": "Add the file to attach", "text": "Drop any file — image, spreadsheet, .zip, even another PDF. PrivaTools embeds it without altering the visible content."},
+        {"name": "Download the result", "text": "Click Attach. The output PDF has your file embedded as an attachment; readers like Acrobat show it in the Attachments panel."},
+    ],
+    "add-hyperlinks": [
+        {"name": "Upload your PDF", "text": "Select a PDF up to 500 MB."},
+        {"name": "Define each link", "text": "Specify the page, rectangle coordinates (x, y, width, height in PDF points), and target URL. Coordinates use the PDF coordinate system where (0,0) is bottom-left."},
+        {"name": "Download the linked PDF", "text": "Click Add Links. PrivaTools embeds clickable hyperlink annotations at each rectangle, opening the target URL on click in any PDF reader."},
+    ],
+    "add-shapes": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB."},
+        {"name": "Define shapes", "text": "For each shape, specify type (rectangle, ellipse, line, polygon), page number, coordinates, color, and stroke width."},
+        {"name": "Apply and download", "text": "Click Add Shapes. The shapes are drawn directly onto the page content; they survive copy-paste, printing, and PDF/A conversion."},
+    ],
+    "alternate-mix": [
+        {"name": "Upload two PDFs", "text": "Select two PDFs to interleave. They don't need the same page count."},
+        {"name": "Choose mode", "text": "Alternate: page 1A, 1B, 2A, 2B… Reverse-alternate: same, but the second PDF is reversed first (useful for double-sided scans where the back side scans bottom-to-top)."},
+        {"name": "Download the mixed PDF", "text": "Click Mix. The output is a single PDF with pages interleaved from both inputs."},
+    ],
+    "annotate-pdf": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Add annotations", "text": "Use the toolbar to add highlights, underlines, strikethroughs, sticky notes, and text boxes. Each annotation has a position, page, content, and color."},
+        {"name": "Save and download", "text": "Click Save. Annotations are added as standard PDF annotation objects — they appear in every PDF reader and can be edited later."},
+    ],
+    "auto-crop": [
+        {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB. Best for scanned documents with consistent margins."},
+        {"name": "Let auto-detection scan", "text": "PrivaTools analyses the bounding box of actual content on each page using PyMuPDF — ignoring whitespace, page numbers in margins, and scan-edge artifacts."},
+        {"name": "Download the cropped PDF", "text": "Click Auto Crop. Each page's MediaBox is shrunk to the detected content bounding box, eliminating dead margins."},
+    ],
+    "bates-numbering": [
+        {"name": "Upload the PDF (or batch)", "text": "Drop a PDF up to 500 MB. Multi-PDF Bates batches are coming."},
+        {"name": "Configure the Bates format", "text": "Set the prefix (e.g. BATES), starting number, padding digits (e.g. 0001), and position on the page (top/bottom × left/center/right)."},
+        {"name": "Download with stamps", "text": "Click Apply. PrivaTools stamps each page with the next Bates number — e.g. BATES0001, BATES0002, etc."},
+    ],
+    "bmp-to-pdf": [
+        {"name": "Upload BMP images", "text": "Drop one or many .bmp files. BMP is the legacy Windows bitmap format — uncompressed and lossless."},
+        {"name": "Choose page size", "text": "Letter (8.5 × 11 in) or A4 (210 × 297 mm). Each BMP scales to fit the page while preserving aspect ratio."},
+        {"name": "Download the PDF", "text": "Click Convert. All input images are combined into a single PDF, one image per page in upload order."},
+    ],
+    "booklet-pdf": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. The page count is automatically padded to a multiple of 4 with blanks if needed."},
+        {"name": "PrivaTools reorders pages for saddle-stitch", "text": "For an 8-page booklet, the output order is 8,1, 2,7, 6,3, 4,5 — so when printed double-sided and folded in half, the pages read in sequence."},
+        {"name": "Download and print double-sided", "text": "Print the result two pages per sheet, double-sided, then fold in half. You get a perfect-bound booklet."},
+    ],
+    "compare-pdf": [
+        {"name": "Upload two PDFs", "text": "The first is the baseline; the second is the revised version."},
+        {"name": "Choose comparison mode", "text": "Text: word-level diff. Visual: side-by-side rendered pages with changes highlighted."},
+        {"name": "Download or view the diff", "text": "PrivaTools returns a report PDF with additions in green and deletions in red, plus a summary of changed pages and word counts."},
+    ],
+    "crop-pdf": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Set crop margins", "text": "Specify top / bottom / left / right margins to remove, in PDF points (1 pt = 1/72 inch)."},
+        {"name": "Download the cropped PDF", "text": "Click Crop. Each page's MediaBox + CropBox is shrunk by the specified margins."},
+    ],
+    "delete-annotations": [
+        {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Strip annotations", "text": "Click Delete. PrivaTools removes every annotation object (highlights, comments, sticky notes, form fields, links)."},
+        {"name": "Download the cleaned PDF", "text": "The visible page content is unchanged; all interactive annotations are gone."},
+    ],
+    "delete-pages": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Specify pages to remove", "text": "Comma-separated list and/or ranges, e.g. '2, 5, 10-12'. The remaining pages keep their relative order."},
+        {"name": "Download the trimmed PDF", "text": "Click Delete. PrivaTools returns a PDF with those pages removed; bookmarks pointing to deleted pages are rewritten to the next valid page."},
+    ],
+    "deskew-pdf": [
+        {"name": "Upload a scanned PDF", "text": "Drop a scanned PDF up to 500 MB. Works best on documents where text lines are visible."},
+        {"name": "PrivaTools detects skew per page", "text": "The algorithm analyses the text line angle on each page and computes the rotation needed to straighten it."},
+        {"name": "Download the deskewed PDF", "text": "Each page is rotated by its detected angle (typically -5° to +5°) and the corners are cropped to fit. Result: text rows are perfectly horizontal."},
+    ],
+    "esign-pdf": [
+        {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Draw or type your signature", "text": "Use the canvas to draw with a finger or stylus, or type your name in a handwriting font."},
+        {"name": "Place and apply", "text": "Drag the signature to where you want it, resize as needed, click Sign. The PDF is returned with the signature stamped on the selected page."},
+    ],
+    "excel-to-pdf": [
+        {"name": "Upload an .xlsx file", "text": "Drop an Excel workbook up to 500 MB."},
+        {"name": "PrivaTools converts each sheet to a PDF page", "text": "Cell values, formulas (as computed), formatting, and column widths are preserved. Each worksheet becomes one or more pages depending on content size."},
+        {"name": "Download the PDF", "text": "Click Convert. The output PDF has one section per worksheet."},
+    ],
+    "extract-images": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "PrivaTools pulls out every image", "text": "Each embedded image (raster or vector) is extracted at its native resolution, with original format preserved (JPEG, PNG, TIFF, etc.)."},
+        {"name": "Download as ZIP", "text": "All extracted images are bundled into a ZIP archive, named by page and order."},
+    ],
+    "extract-pages": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Specify pages to keep", "text": "Comma-separated list and/or ranges, e.g. '1, 3-5, 10'. Only those pages will be in the output."},
+        {"name": "Download the extract", "text": "Click Extract. The output PDF contains only the specified pages in their original order."},
+    ],
+    "fill-form": [
+        {"name": "Upload a fillable PDF form", "text": "Drop a PDF with AcroForm fields up to 500 MB. The tool detects form fields automatically."},
+        {"name": "Fill in the values", "text": "Provide a JSON object mapping field names to values: text strings for text fields, true/false for checkboxes, option labels for radio buttons / dropdowns."},
+        {"name": "Download the filled form", "text": "Click Fill. The PDF is returned with values populated. Field structure is preserved so the form can be filled again later."},
+    ],
+    "gif-to-pdf": [
+        {"name": "Upload GIF images", "text": "Drop one or many .gif files. Animated GIFs use only the first frame."},
+        {"name": "Choose page size", "text": "Letter or A4. Each GIF scales to fit while preserving aspect ratio."},
+        {"name": "Download the PDF", "text": "All GIFs are combined into one PDF, one image per page in upload order."},
+    ],
+    "grayscale-pdf": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Convert all content to grayscale", "text": "PrivaTools renders each page at the source DPI, converts to single-channel grayscale, and re-embeds. Text, images, and vector content all become greyscale."},
+        {"name": "Download the grayscale PDF", "text": "File size typically drops 30–50% because color channels are eliminated."},
+    ],
+    "header-footer": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Enter header and footer text", "text": "Optional left/center/right slots for both header and footer. Use placeholders like {page}, {total}, {date} for dynamic content."},
+        {"name": "Apply and download", "text": "Click Apply. The text is stamped at the top and bottom of every page in the chosen font size."},
+    ],
+    "heic-to-pdf": [
+        {"name": "Upload HEIC images", "text": "Drop one or many .heic / .heif files (e.g. from iPhone photos)."},
+        {"name": "Choose page size", "text": "Letter or A4. Each HEIC is decoded via libheif and scaled to fit."},
+        {"name": "Download the PDF", "text": "All images become one PDF, one photo per page. EXIF metadata is stripped by default."},
+    ],
+    "invert-colors": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. 150 DPI is the default; 300 for archival, 96 for web previews."},
+        {"name": "Download the inverted PDF", "text": "Each page is rendered, inverted (white↔black, colors mapped to complements), and re-embedded."},
+    ],
+    "jpg-to-pdf": [
+        {"name": "Upload JPG images", "text": "Drop one or many .jpg / .jpeg files up to 500 MB total."},
+        {"name": "Choose page size", "text": "Letter or A4. Each JPG scales to fit while preserving aspect ratio. Orientation auto-detected from EXIF."},
+        {"name": "Download the PDF", "text": "All photos become a single PDF, one per page in upload order. EXIF GPS / camera metadata is stripped."},
+    ],
+    "markdown-to-pdf": [
+        {"name": "Upload a Markdown file", "text": "Drop a .md file up to 500 MB."},
+        {"name": "PrivaTools renders to HTML, then PDF", "text": "Standard Markdown syntax: headings, lists, links, images, code blocks, tables, blockquotes. GitHub-flavored extensions supported."},
+        {"name": "Download the styled PDF", "text": "The output has a clean typographic style with proper headings, monospace code, and clickable links."},
+    ],
+    "metadata": [
+        {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "View the metadata", "text": "PrivaTools displays the document's Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, and any custom XMP fields."},
+        {"name": "Decide what to do next", "text": "If you want to strip the metadata, use Strip Metadata. To set new values, use Update Metadata."},
+    ],
+    "nup": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose pages-per-sheet", "text": "2, 4, 6, 8, 9, or 16. Each input page is shrunk to fit; output pages are filled left-to-right, top-to-bottom."},
+        {"name": "Download the n-up PDF", "text": "Use this to save paper when printing or to create thumbnail-style overviews."},
+    ],
+    "odt-to-pdf": [
+        {"name": "Upload an .odt file", "text": "Drop an OpenDocument Text file (LibreOffice / OpenOffice) up to 500 MB."},
+        {"name": "PrivaTools renders via LibreOffice headless", "text": "Fonts, styles, embedded images, tables, footnotes, and bibliography are preserved."},
+        {"name": "Download the PDF", "text": "Click Convert. The output PDF matches the on-screen rendering closely."},
+    ],
+    "organize-pages": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB. Each page renders as a thumbnail."},
+        {"name": "Drag and rearrange", "text": "Reorder, rotate, or delete pages visually. Use Duplicate to repeat a page."},
+        {"name": "Apply and download", "text": "Click Save. The output PDF has pages in your specified order."},
+    ],
+    "overlay": [
+        {"name": "Upload the base PDF", "text": "The PDF that forms the background."},
+        {"name": "Upload the overlay PDF", "text": "A PDF whose pages will be layered on top of the base."},
+        {"name": "Choose mode and download", "text": "Overlay: foreground on top. Underlay: behind. Stamp: applied to every page repeatedly. Output: a merged PDF with the overlay rendered onto each base page."},
+    ],
+    "page-numbers": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose position and starting number", "text": "Position: top-left/top-center/top-right/bottom-left/bottom-center/bottom-right. Starting number: defaults to 1, but use any integer to continue a multi-document sequence."},
+        {"name": "Apply and download", "text": "PrivaTools stamps each page with its number in the chosen position and font size."},
+    ],
+    "pdf-to-bmp": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose DPI", "text": "Higher DPI gives sharper output. 150 DPI for screen, 300 for print, 600 for archival."},
+        {"name": "Download a ZIP of BMPs", "text": "Each page becomes one BMP file. BMP is uncompressed so files are LARGE — typically 5-30 MB per page at 300 DPI."},
+    ],
+    "pdf-to-epub": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. Works best on text-heavy PDFs with a clear structure."},
+        {"name": "PrivaTools extracts text and reflows it", "text": "Headings, paragraphs, lists, and embedded images are identified and converted into EPUB chapter structure."},
+        {"name": "Download the EPUB", "text": "Open in any e-reader (Kindle, Apple Books, calibre) for a reflowable reading experience."},
+    ],
+    "pdf-to-gif": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose DPI", "text": "Lower DPI for smaller files; GIF is limited to 256 colors so detail loss is acceptable for previews."},
+        {"name": "Download a ZIP of GIFs", "text": "Each page becomes one GIF file. Useful for embedding PDF previews in legacy systems."},
+    ],
+    "pdf-to-jpg": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose DPI and quality", "text": "DPI: 96 (preview), 150 (default), 300 (print). JPEG quality: 70-95."},
+        {"name": "Download a ZIP of JPGs", "text": "Each page becomes one JPG file. Multi-page PDFs return as ZIP; single-page PDFs return as a single JPG."},
+    ],
+    "pdf-to-markdown": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. Text-heavy PDFs convert best."},
+        {"name": "PrivaTools extracts and structures text", "text": "Headings, paragraphs, lists, code blocks, and tables are identified by typographic cues (font size, weight, indentation)."},
+        {"name": "Download the .md file", "text": "Open in any Markdown editor for editing or further conversion to HTML / EPUB / DOCX."},
+    ],
+    "pdf-to-png": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose DPI", "text": "Higher DPI = sharper PNG. 96 for screen, 150 default, 300 for print archival."},
+        {"name": "Download a ZIP of PNGs", "text": "Each page becomes one PNG file with lossless compression. PNG preserves transparency if present."},
+    ],
+    "pdf-to-pptx": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "PrivaTools creates one slide per page", "text": "Each page is rendered to an image and placed as the slide background. Text is also extracted as separate slide text boxes for editability."},
+        {"name": "Download the .pptx file", "text": "Open in PowerPoint / Keynote / Google Slides for further editing."},
+    ],
+    "pdf-to-tiff": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose DPI", "text": "Higher DPI = sharper TIFF. 300 DPI is standard for archival; 600 for high-resolution professional output."},
+        {"name": "Download the TIFF", "text": "PrivaTools produces a single multi-page TIFF (one image per PDF page) or a ZIP of individual TIFFs."},
+    ],
+    "pdfa-validator": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB to check whether it conforms to PDF/A archive standards."},
+        {"name": "PrivaTools runs a conformance check", "text": "Tests against PDF/A-1, PDF/A-2, and PDF/A-3 requirements: embedded fonts, color profiles, no JavaScript, no encryption, no external references."},
+        {"name": "Read the validation report", "text": "Either 'compliant' with the highest PDF/A level achieved, or a list of specific violations preventing compliance."},
+    ],
+    "png-to-pdf": [
+        {"name": "Upload PNG images", "text": "Drop one or many .png files up to 500 MB total."},
+        {"name": "Choose page size", "text": "Letter or A4. Transparency in PNGs renders against a white page background."},
+        {"name": "Download the PDF", "text": "All images become a single PDF, one per page. Lossless — PNG pixels map directly to PDF image objects."},
+    ],
+    "pptx-to-pdf-convert": [
+        {"name": "Upload a .pptx file", "text": "Drop a PowerPoint presentation up to 500 MB."},
+        {"name": "Each slide becomes one PDF page", "text": "PrivaTools renders fonts, animations (first state), embedded images, and SmartArt diagrams."},
+        {"name": "Download the PDF", "text": "The output preserves slide aspect ratio (16:9 or 4:3 as designed)."},
+    ],
+    "qr-code": [
+        {"name": "Enter the data to encode", "text": "URL, contact card (vCard), wifi credentials, plain text, or any string up to ~2,500 characters."},
+        {"name": "Choose size and format", "text": "Pixel dimensions of the output QR. Format: PNG (raster) or SVG (vector, scales infinitely)."},
+        {"name": "Download the QR", "text": "PrivaTools generates a QR code with error correction level L (default; supports up to 7% damage)."},
+    ],
+    "remove-blank-pages": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. Best for scanned documents with intermittent blank pages."},
+        {"name": "Set sensitivity", "text": "1-99. Higher values delete only entirely-blank pages; lower values also delete pages with very little content (good for scanner artifacts)."},
+        {"name": "Download the cleaned PDF", "text": "PrivaTools removes pages whose content density is below the threshold."},
+    ],
+    "repair-pdf": [
+        {"name": "Upload the corrupt PDF", "text": "Drop a PDF up to 500 MB that won't open or shows errors in your viewer."},
+        {"name": "PrivaTools rebuilds the file structure", "text": "Uses pikepdf to parse the PDF tolerantly, recover damaged cross-reference tables, and rewrite the file with a clean structure."},
+        {"name": "Download the repaired PDF", "text": "Most viewer-breaking issues (broken xref, missing trailer, corrupted streams) are fixable."},
+    ],
+    "resize-pdf": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose target page size", "text": "A4, Letter, Legal, Tabloid, or custom dimensions in millimeters/inches."},
+        {"name": "Download the resized PDF", "text": "PrivaTools scales each page's MediaBox to the target. Content is preserved at relative position; aspect ratio is maintained."},
+    ],
+    "reverse-pdf": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Reverse the page order", "text": "Page N becomes page 1, page N-1 becomes page 2, etc."},
+        {"name": "Download the reversed PDF", "text": "Useful for fixing back-to-front scans, creating countdown documents, or reverse-chronological annual reports."},
+    ],
+    "rtf-to-pdf": [
+        {"name": "Upload an .rtf file", "text": "Drop a Rich Text Format file (Word, WordPad, TextEdit, Pages all save in RTF)."},
+        {"name": "PrivaTools renders to PDF", "text": "Bold, italic, underline, paragraph styles, lists, tables, and embedded images transfer faithfully."},
+        {"name": "Download the PDF", "text": "Click Convert. Open in any PDF viewer."},
+    ],
+    "sanitize-pdf": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB containing potentially risky elements."},
+        {"name": "PrivaTools removes risky content", "text": "Strips embedded JavaScript, executable links to external apps, embedded files marked for auto-launch, and hidden 'flash' (deprecated SWF) content."},
+        {"name": "Download the sanitized PDF", "text": "Visible content is preserved; security-risky elements are gone."},
+    ],
+    "set-permissions": [
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Set an owner password and permissions", "text": "Choose which operations are allowed for users without the owner password: print, copy text, modify, annotate."},
+        {"name": "Download the protected PDF", "text": "Anyone without the owner password is limited to the allowed operations. The PDF itself still opens without a password (use Protect PDF if you want a user password too)."},
+    ],
+    "split-by-bookmarks": [
+        {"name": "Upload a PDF with bookmarks", "text": "Drop a PDF whose Table of Contents uses bookmarks to mark chapters/sections."},
+        {"name": "PrivaTools splits at every top-level bookmark", "text": "Each section between consecutive bookmarks becomes its own PDF file."},
+        {"name": "Download the ZIP", "text": "Each chapter is named after its bookmark text (sanitized for filesystem safety)."},
+    ],
+    "stamp-pdf": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Choose a stamp", "text": "Preset: APPROVED, CONFIDENTIAL, COPY, DRAFT, FINAL, NOT APPROVED, SAMPLE, VOID. Or custom: your own text."},
+        {"name": "Set opacity and position", "text": "Opacity 0-1 (default 0.5). Position: top/middle/bottom × left/center/right. Click Apply."},
+    ],
+    "strip-metadata": [
+        {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."},
+        {"name": "PrivaTools removes all metadata", "text": "Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, all XMP fields, and any custom-defined metadata."},
+        {"name": "Download the clean PDF (or ZIP)", "text": "Single file → single PDF; multiple files → ZIP. Visible content is unchanged."},
+    ],
+    "svg-to-pdf": [
+        {"name": "Upload SVG images", "text": "Drop one or many .svg files. Vector content scales infinitely."},
+        {"name": "Choose page size", "text": "Letter or A4. Each SVG scales proportionally to fit while preserving aspect ratio."},
+        {"name": "Download the PDF", "text": "All SVGs become one PDF, one per page. Vector content stays vector — no rasterization."},
+    ],
+    "tiff-to-pdf": [
+        {"name": "Upload TIFF images", "text": "Drop .tif / .tiff files. Multi-page TIFFs are supported and each page becomes a PDF page."},
+        {"name": "Choose page size", "text": "Letter or A4. Single-page TIFFs scale; multi-page TIFFs preserve their per-page sizes."},
+        {"name": "Download the PDF", "text": "All TIFFs become one PDF. Compression (LZW, Deflate, JPEG inside TIFF) is converted to PDF-native equivalents."},
+    ],
+    "transparent-background": [
+        {"name": "Upload a PDF (or image)", "text": "Drop a PDF up to 500 MB. PrivaTools renders each page and detects the background color."},
+        {"name": "Set threshold", "text": "How close to pure white (or off-white) should be treated as background. 240 (default) catches most scanned documents."},
+        {"name": "Download with transparency", "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds."},
+    ],
+    "verify-signature": [
+        {"name": "Upload a signed PDF", "text": "Drop a PDF with one or more digital signatures."},
+        {"name": "PrivaTools verifies each signature", "text": "Checks that the signed content hasn't been modified since signing, the certificate chain is intact, and the signing date is consistent."},
+        {"name": "Read the report", "text": "For each signature: signer name, signing time, certificate authority, validity status (valid / modified / expired / untrusted CA)."},
+    ],
+    "webp-to-pdf": [
+        {"name": "Upload WebP images", "text": "Drop one or many .webp files up to 500 MB total."},
+        {"name": "Choose page size", "text": "Letter or A4. Transparency in WebP is rendered against a white page background."},
+        {"name": "Download the PDF", "text": "All images become one PDF in upload order. WebP's smaller size is reflected in a smaller PDF."},
+    ],
+    "whiteout-pdf": [
+        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
+        {"name": "Draw white-out rectangles", "text": "Specify region(s) per page to cover with white (or chosen color). Content underneath is permanently hidden from view."},
+        {"name": "Download the cleaned PDF", "text": "Hidden regions are covered with the chosen color in the rendered output."},
+    ],
+    "add-subtitles": [
+        {"name": "Upload a video", "text": "Drop an MP4/MOV/MKV file up to 500 MB."},
+        {"name": "Upload an SRT subtitle file", "text": "Standard SubRip Text format with timestamps and dialogue."},
+        {"name": "Choose to burn-in or soft-encode and download", "text": "Burn-in: subtitles are rendered into the video pixels (permanent, plays everywhere). Soft: subtitles are a separate track (toggleable in supporting players)."},
+    ],
+    "audio-merge": [
+        {"name": "Upload audio files", "text": "Drop 2 or more audio files (MP3, WAV, OGG, FLAC, AAC). Maximum 200 MB per file."},
+        {"name": "Reorder if needed", "text": "Drag thumbnails to set the concatenation order."},
+        {"name": "Download the merged audio", "text": "FFmpeg concatenates the files into one output. Format defaults to the first input's format."},
+    ],
+    "color-converter": [
+        {"name": "Enter a color in any format", "text": "HEX (#FF5733), RGB (255, 87, 51), HSL (10, 100%, 60%), or named (coral, tomato, etc.)."},
+        {"name": "PrivaTools shows the same color in every format", "text": "Live conversion: HEX, RGB, RGBA, HSL, HSLA, HSV, CMYK, and named-color match (if any)."},
+        {"name": "Copy the value you need", "text": "Click any value to copy. Runs entirely in your browser — no network roundtrip."},
+    ],
+    "create-zip": [
+        {"name": "Upload files", "text": "Drop multiple files of any type, up to 500 MB total."},
+        {"name": "Optional password protection", "text": "Add a password to encrypt the archive (AES-256). Recipients need the password to extract."},
+        {"name": "Download the ZIP", "text": "All files are bundled into a single .zip with their original filenames and extensions."},
+    ],
+    "csv-json": [
+        {"name": "Paste your CSV or JSON", "text": "Or upload a file. Auto-detects the format."},
+        {"name": "Click Convert", "text": "CSV → JSON: each row becomes an object using the first row as keys. JSON → CSV: array of objects → rows; keys → header."},
+        {"name": "Copy or download the result", "text": "Runs entirely in your browser. Your data never leaves your device."},
+    ],
+    "extract-archive": [
+        {"name": "Upload a ZIP file", "text": "Drop a .zip archive up to 500 MB."},
+        {"name": "PrivaTools extracts and returns each file", "text": "All files inside are extracted and bundled into a folder-style download."},
+        {"name": "Download the extracted folder as a ZIP", "text": "Or download individual files from the result preview."},
+    ],
+    "extract-audio": [
+        {"name": "Upload a video file", "text": "Drop an MP4/MOV/MKV/WebM file up to 500 MB."},
+        {"name": "Choose output format", "text": "MP3 (universal), WAV (uncompressed), OGG (open), FLAC (lossless), AAC (high quality)."},
+        {"name": "Download the audio track", "text": "FFmpeg extracts the audio stream and re-encodes (or copies, for matching formats) to the chosen format."},
+    ],
+    "generate-barcode": [
+        {"name": "Enter the data to encode", "text": "The string or number you want to encode. Format limits vary (e.g. EAN-13 needs exactly 12-13 digits)."},
+        {"name": "Choose barcode type", "text": "Code 128 (most flexible), Code 39, EAN-13 (retail), UPC-A (US retail), QR code (also available via the QR tool)."},
+        {"name": "Download as PNG", "text": "Configurable size; ready for printing on labels or embedding in documents."},
+    ],
+    "generate-favicon": [
+        {"name": "Upload a square image", "text": "PNG, JPG, or SVG. PrivaTools resizes to favicon dimensions automatically."},
+        {"name": "PrivaTools generates the favicon bundle", "text": "Multiple resolutions (16×16, 32×32, 48×48, 192×192, 512×512) plus Apple Touch Icon + manifest.json + meta tags HTML snippet."},
+        {"name": "Download the bundle", "text": "Drop into your site's public/ folder, paste the meta tags into <head>."},
+    ],
+    "gif-to-mp4": [
+        {"name": "Upload an animated GIF", "text": "Drop a .gif file up to 500 MB."},
+        {"name": "PrivaTools converts via FFmpeg", "text": "GIF frames become MP4 frames at the source frame rate. H.264 codec for universal compatibility."},
+        {"name": "Download the MP4", "text": "Typically 5-10x smaller than the source GIF, with smoother playback."},
+    ],
+    "hash-generator": [
+        {"name": "Type or paste your input", "text": "Or upload a file. Files are read into the browser via FileReader."},
+        {"name": "Choose hash algorithm", "text": "MD5, SHA-1, SHA-256, SHA-384, SHA-512. SHA-256 is the modern recommendation."},
+        {"name": "Copy the hex digest", "text": "Runs entirely in your browser using the Web Crypto API. Input never leaves your machine."},
+    ],
+    "image-converter": [
+        {"name": "Upload an image", "text": "PNG, JPG, WebP, BMP, TIFF, GIF, HEIC."},
+        {"name": "Choose target format", "text": "Convert to any other supported format. Quality slider available for JPG output."},
+        {"name": "Download the converted image", "text": "Dimensions preserved; metadata stripped by default."},
+    ],
+    "image-ocr": [
+        {"name": "Upload an image", "text": "JPG, PNG, TIFF, WebP up to 500 MB."},
+        {"name": "Select OCR language", "text": "17 Tesseract languages available: English, French, German, Spanish, Italian, Portuguese, Dutch, Russian, Polish, Turkish, Japanese, Korean, Chinese Simplified, Chinese Traditional, Arabic, Hindi, Vietnamese."},
+        {"name": "Download as text or JSON", "text": "Plain text: all detected text. JSON: text + per-word bounding boxes for layout-aware processing."},
+    ],
+    "image-watermark": [
+        {"name": "Upload an image", "text": "JPG, PNG, WebP up to 500 MB."},
+        {"name": "Enter watermark text and styling", "text": "Text, opacity (0-1), position (corners or center), font size."},
+        {"name": "Download the watermarked image", "text": "PrivaTools overlays the text at the chosen position with the chosen opacity. Original is unchanged."},
+    ],
+    "json-xml-formatter": [
+        {"name": "Paste JSON or XML", "text": "Or upload a file. Auto-detects format from braces / tags."},
+        {"name": "Click Format", "text": "Adds indentation, proper line breaks, sorted keys (optional). Removes extra whitespace."},
+        {"name": "Copy or download the result", "text": "Runs entirely in your browser."},
+    ],
+    "lorem-ipsum": [
+        {"name": "Choose paragraphs, sentences, or words", "text": "Specify how much placeholder text you need."},
+        {"name": "Click Generate", "text": "Standard Lorem Ipsum (Cicero's De Finibus, scrambled) — the publishing industry standard since the 1500s."},
+        {"name": "Copy and use in your mockups", "text": "Runs entirely in your browser."},
+    ],
+    "make-collage": [
+        {"name": "Upload 2+ images", "text": "Drop multiple JPG/PNG/WebP images, up to 500 MB total."},
+        {"name": "Set columns + spacing + background", "text": "Columns: how wide the collage is. Spacing: gap between images. Background color: visible in the spacing."},
+        {"name": "Download the collage", "text": "PrivaTools arranges the images in a grid and outputs one JPG file."},
+    ],
+    "markdown-html": [
+        {"name": "Paste Markdown or HTML", "text": "Auto-detects direction. Markdown → HTML for publishing; HTML → Markdown for content extraction."},
+        {"name": "Click Convert", "text": "Standard CommonMark spec for Markdown. HTML converts to GitHub-flavored Markdown."},
+        {"name": "Copy the result", "text": "Runs entirely in your browser."},
+    ],
+    "merge-images": [
+        {"name": "Upload 2+ images", "text": "JPG, PNG, WebP — at least 2 files."},
+        {"name": "Choose direction", "text": "Vertical: top-to-bottom (good for screenshots in sequence). Horizontal: side-by-side (good for before/after)."},
+        {"name": "Download the merged image", "text": "Each input is scaled to a common dimension and concatenated."},
+    ],
+    "password-generator": [
+        {"name": "Choose length and character classes", "text": "Length 8-100. Include uppercase / lowercase / digits / symbols / exclude ambiguous (1lI0O)."},
+        {"name": "Click Generate", "text": "Uses Web Crypto API's secureRandomValues — cryptographically strong random."},
+        {"name": "Copy the password", "text": "Runs entirely in your browser. The password is never logged anywhere."},
+    ],
+    "qr-reader": [
+        {"name": "Upload an image with a QR code", "text": "JPG, PNG, WebP, or BMP. The QR code should be reasonably in-focus."},
+        {"name": "PrivaTools decodes via pyzbar", "text": "Detects the QR code anywhere in the image, regardless of orientation or partial occlusion (up to ~30%)."},
+        {"name": "Read the decoded data", "text": "Plain text, URL, vCard, WiFi credentials, or whatever the QR encoded."},
+    ],
+    "resize-crop-image": [
+        {"name": "Upload an image", "text": "JPG, PNG, WebP up to 500 MB."},
+        {"name": "Set target dimensions and mode", "text": "Resize: scale to fit (preserves aspect ratio with padding) or fill (crops to fill). Crop: cut to exact dimensions from the center."},
+        {"name": "Download the result", "text": "Single processed image at the specified dimensions."},
+    ],
+    "subtitle-converter": [
+        {"name": "Upload an SRT / VTT / ASS subtitle file", "text": "Auto-detects format from extension and content."},
+        {"name": "Choose target format", "text": "SRT (universal). VTT (web video). ASS (advanced styling)."},
+        {"name": "Download the converted subtitles", "text": "Runs entirely in your browser."},
+    ],
+    "svg-to-png": [
+        {"name": "Upload an SVG", "text": "Drop a .svg file."},
+        {"name": "Choose scale factor", "text": "1x = SVG native size. 2x, 3x, 4x for higher-resolution exports."},
+        {"name": "Download the PNG", "text": "PrivaTools rasterizes the vector via cairosvg at the chosen scale with anti-aliasing."},
+    ],
+    "url-encoder": [
+        {"name": "Paste a string, URL, or JWT", "text": "Auto-detects the input type."},
+        {"name": "Choose encode or decode", "text": "URL encode: spaces → %20, etc. URL decode: %20 → spaces. JWT decode: header.payload.signature → parsed JSON."},
+        {"name": "Copy the result", "text": "Runs entirely in your browser."},
+    ],
+    "url-to-pdf": [
+        {"name": "Enter the URL to convert", "text": "Any public web page."},
+        {"name": "PrivaTools fetches and renders", "text": "WeasyPrint loads the page (with CSS, images, fonts) and renders it as a print-quality PDF."},
+        {"name": "Download the PDF", "text": "Click Convert. Pagination follows print CSS rules; links remain clickable."},
+    ],
+    "uuid-generator": [
+        {"name": "Choose UUID version", "text": "v4 (random — most common). v1 (time + MAC — rare). v7 (time-sortable random — modern recommendation)."},
+        {"name": "Choose bulk count", "text": "1 to 1000 UUIDs at once."},
+        {"name": "Copy or download as text", "text": "Runs entirely in your browser using Web Crypto API."},
+    ],
+    "video-converter": [
+        {"name": "Upload a video", "text": "MP4, WebM, MOV, AVI, MKV — up to 500 MB."},
+        {"name": "Choose target format", "text": "MP4 (universal), WebM (open, smaller), MOV (Apple), AVI (legacy), MKV (open container)."},
+        {"name": "Download the converted video", "text": "FFmpeg transcodes via the appropriate codec (H.264 for MP4, VP9/Opus for WebM, etc.)."},
+    ],
+    "video-merge": [
+        {"name": "Upload 2+ videos", "text": "MP4 / MOV / MKV / WebM, up to 500 MB each."},
+        {"name": "Reorder if needed", "text": "Drag to set concatenation order."},
+        {"name": "Download the merged video", "text": "FFmpeg concatenates the videos. If audio formats differ, audio is re-encoded to AAC."},
+    ],
+    "video-resizer": [
+        {"name": "Upload a video", "text": "MP4 / MOV / MKV / WebM up to 500 MB."},
+        {"name": "Choose preset", "text": "480p (SD), 720p (HD), 1080p (Full HD), 1440p (QHD), 2160p (4K)."},
+        {"name": "Download the resized video", "text": "FFmpeg scales the video to the target height while preserving aspect ratio."},
+    ],
+    "video-thumbnail": [
+        {"name": "Upload a video", "text": "MP4 / MOV / MKV / WebM up to 500 MB."},
+        {"name": "Choose timestamp", "text": "Time in seconds (e.g. 5.5 = 5.5 seconds in). Default is the middle of the video."},
+        {"name": "Download the frame as PNG", "text": "FFmpeg extracts the exact frame at that timestamp."},
+    ],
+    "video-to-pdf": [
+        {"name": "Upload a video", "text": "MP4 / MOV / MKV / WebM up to 500 MB."},
+        {"name": "Choose number of frames", "text": "3-30. PrivaTools picks evenly-spaced keyframes across the video."},
+        {"name": "Download the PDF", "text": "Each frame becomes one PDF page. Useful for storyboards, content review, or accessibility."},
+    ],
+    "word-counter": [
+        {"name": "Paste your text", "text": "Or type directly. Counter updates as you type."},
+        {"name": "Read live stats", "text": "Word count, character count (with/without spaces), sentence count, paragraph count, reading time at 200 wpm."},
+        {"name": "Optional metrics", "text": "Average word length, longest word, most-frequent words."},
+    ],
 }
 
 
@@ -646,5 +1113,472 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What's HEIC and why convert it?", "a": "HEIC (High Efficiency Image Container) is Apple's image format from iOS 11 onward. It's space-efficient but not widely supported outside Apple's ecosystem. PNG works everywhere."},
         {"q": "Is PNG better than JPG for HEIC conversion?", "a": "If you need transparency or are doing further editing: yes. For sharing on the web or attaching to emails: JPG is fine and 3–5x smaller."},
         {"q": "Are EXIF tags preserved?", "a": "Most are stripped during conversion (since PNG and HEIC have different metadata formats). If you need to preserve EXIF, use HEIC to JPG instead and the standard EXIF block survives."},
+    ],
+
+    # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
+    "add-attachment": [
+        {"q": "What's the difference between an attachment and embedding?", "a": "An attachment is a file stored inside the PDF that the reader can open separately. Embedding means inlining content (images, fonts) into the page itself. Use attachments when you want recipients to access the supporting file but keep the visible PDF clean."},
+        {"q": "Will email clients flag attached PDFs as suspicious?", "a": "No, attachments inside a PDF aren't visible to email gateway scanners as separate attachments — the file is part of the PDF structure. Most spam filters don't flag them."},
+        {"q": "How big can the embedded file be?", "a": "Up to the 500 MB total file limit. The PDF size grows by approximately the embedded file's size."},
+    ],
+    "add-hyperlinks": [
+        {"q": "Can I link to other pages in the same PDF?", "a": "Currently the tool supports external URLs. For internal page jumps, use the Bookmarks tool instead."},
+        {"q": "Are the links visible to the user?", "a": "The clickable rectangle is invisible by default. To add visible underlined link text, use the Edit PDF tool to draw the underline first."},
+        {"q": "Will hyperlinks survive printing or PDF/A conversion?", "a": "Hyperlinks don't print (they're interactive annotations) but they're preserved through most PDF/A conversions. PDF/A-1a strips them; PDF/A-2 keeps them."},
+    ],
+    "add-shapes": [
+        {"q": "Are shapes flattened into the page?", "a": "Yes — shapes become part of the page's content stream, not annotations. They can't be moved or deleted afterwards without re-editing the PDF."},
+        {"q": "Can I draw filled or only outlined shapes?", "a": "Both. Set fillColor for a filled shape; omit it and only the stroke renders. Set both for an outlined fill."},
+        {"q": "What about transparency?", "a": "Use a color with alpha (e.g., rgba(255,0,0,0.5)) or pass an opacity value (0–1)."},
+    ],
+    "alternate-mix": [
+        {"q": "When would I use this?", "a": "The classic case is double-sided scanning on a single-sided scanner: scan the odd pages, flip the stack, scan the even pages in reverse, then alternate-mix them with reverse-alternate."},
+        {"q": "What if the PDFs have different page counts?", "a": "PrivaTools alternates pages until one source is exhausted, then appends the remaining pages from the longer source at the end."},
+        {"q": "Does this preserve bookmarks?", "a": "No. Bookmarks from the originals are dropped because they would point to incorrect pages after interleaving."},
+    ],
+    "annotate-pdf": [
+        {"q": "Are annotations flattened?", "a": "By default no — they remain as editable annotations. If you want them permanently baked into the page, run the Flatten tool afterwards."},
+        {"q": "Can I attach sticky-note comments?", "a": "Yes. Add a note annotation with author + content; readers display it as an icon that opens a popup with the text on click."},
+        {"q": "Do annotations survive PDF/A conversion?", "a": "Some do (text, highlight, square) but interactive ones (file attachments, popup notes) get flattened or stripped depending on the PDF/A profile."},
+    ],
+    "auto-crop": [
+        {"q": "Will this make text run off the page?", "a": "No — the algorithm leaves a small safety margin around detected content. If a page has no content (blank), the original MediaBox is kept."},
+        {"q": "What if my PDF has different page sizes after scanning?", "a": "Auto-crop computes the bounding box per-page, so pages are independently cropped to their own content."},
+        {"q": "Will this affect printing?", "a": "After auto-crop, printing produces a smaller paper size. If you need the same paper size with less margin, use the Resize tool afterwards."},
+    ],
+    "bates-numbering": [
+        {"q": "What's Bates numbering used for?", "a": "Sequential page identification across legal discovery documents. Each page in a production gets a unique identifier so attorneys can reference exact pages."},
+        {"q": "Can I start the numbering at a value other than 1?", "a": "Yes — set start_number to any positive integer. This is the standard workflow for continuing a numbering scheme across multiple production batches."},
+        {"q": "Does it survive redaction?", "a": "Yes — Bates numbers are stamped directly onto the page content, so they remain after redaction (unless the redaction rectangle covers them)."},
+    ],
+    "bmp-to-pdf": [
+        {"q": "Why is the output PDF so much smaller than the BMPs?", "a": "BMP is uncompressed; PDF stores images in DCT (JPEG) or Flate format. A 5 MB BMP usually becomes a few hundred KB inside the PDF."},
+        {"q": "Will quality degrade?", "a": "By default the conversion is near-lossless using high-quality JPEG. For 100% lossless, convert via PNG first (PNG-to-PDF) — slightly larger output."},
+        {"q": "How many BMPs can I convert at once?", "a": "Up to the 500 MB total file limit. Several dozen images is routine."},
+    ],
+    "booklet-pdf": [
+        {"q": "Why is the order so strange?", "a": "Saddle-stitch binding folds the sheets in half — the front cover of sheet 1 carries pages 8 and 1, the back carries pages 2 and 7. The math is fixed by binding geometry."},
+        {"q": "What if my page count isn't a multiple of 4?", "a": "PrivaTools pads with blank pages at the end before computing the imposition order, so the booklet always works."},
+        {"q": "Can I use this for thick books?", "a": "Saddle-stitch caps at about 80 pages (20 sheets) because the inner pages start to creep. For longer documents use perfect binding (no imposition needed)."},
+    ],
+    "compare-pdf": [
+        {"q": "Does this work on scanned PDFs?", "a": "Only with OCR. Run OCR PDF on both files first so the text layer is present, then compare."},
+        {"q": "How accurate is the text diff?", "a": "Word-level diff handles reordering, insertion, deletion, and formatting changes. Diffs based on character runs would be noisier."},
+        {"q": "Can I compare more than two files?", "a": "Run Compare twice (A vs B, then B vs C) to chain a multi-revision comparison."},
+    ],
+    "crop-pdf": [
+        {"q": "Difference between Crop and Auto-Crop?", "a": "Crop uses your manual margins (same on every page). Auto-Crop detects each page's actual content bounding box automatically."},
+        {"q": "Will the cropped content be deleted from the file?", "a": "No — only the visible region changes. The full page content is still in the file. To permanently remove the cropped data, run Flatten or Sanitize afterwards."},
+        {"q": "How do I undo a crop?", "a": "Re-open the PDF in PrivaTools Crop with negative margins to expand the box, or run Flatten which bakes the current crop in."},
+    ],
+    "delete-annotations": [
+        {"q": "Will this remove form fields too?", "a": "Yes — form fields are a type of annotation. To preserve form structure but clear values, use the Fill Form tool with empty values instead."},
+        {"q": "Are hyperlinks deleted?", "a": "Yes — hyperlinks are link annotations. Use this to make a PDF completely 'read-only' as a static document."},
+        {"q": "Does this remove signatures?", "a": "Yes, signature annotations are removed too — which invalidates the cryptographic signature."},
+    ],
+    "delete-pages": [
+        {"q": "What happens to bookmarks pointing to deleted pages?", "a": "They're either dropped or rewritten to the nearest remaining page, depending on outline structure. The Bookmarks tool can be used afterwards to clean them up."},
+        {"q": "Can I delete page ranges?", "a": "Yes — use ranges like '5-12'. Mix single pages and ranges freely."},
+        {"q": "Will the page numbers update?", "a": "Visible page numbers (added with the Page Numbers tool) stay as they were rendered. The internal page indices reflect the new order."},
+    ],
+    "deskew-pdf": [
+        {"q": "My scans look fine — should I run deskew?", "a": "If the text appears tilted by more than ~0.5°, deskew helps OCR accuracy noticeably. For perfectly straight scans it's a no-op."},
+        {"q": "Will deskew add white margins?", "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills the margins with the surrounding background color (usually white)."},
+        {"q": "Should I deskew before or after OCR?", "a": "Always before. OCR engines are much more accurate on straight-line text."},
+    ],
+    "esign-pdf": [
+        {"q": "Is this a cryptographically valid signature?", "a": "No — this places a visual signature image, like signing paper. For cryptographically verifiable signatures, use the Sign PDF tool with a certificate."},
+        {"q": "Does my signature image stay on PrivaTools?", "a": "No. It's used only to render the output PDF and is deleted immediately afterwards."},
+        {"q": "Can I use a signature image I already have?", "a": "Yes — upload a transparent PNG of your signature instead of drawing one."},
+    ],
+    "excel-to-pdf": [
+        {"q": "Will my formulas be visible?", "a": "No — only computed values appear. The formulas themselves are not included (PDF has no formula concept)."},
+        {"q": "What about charts and images?", "a": "Charts render as static images. Embedded images are preserved at their original size."},
+        {"q": "How does it handle very wide sheets?", "a": "Wide sheets paginate across multiple PDF pages, with column headers repeated on each."},
+    ],
+    "extract-images": [
+        {"q": "Will the images be the original resolution?", "a": "Yes. PDF embeds images at the resolution set when the PDF was created — extraction recovers them unchanged."},
+        {"q": "What if the same image appears multiple times?", "a": "Each visual occurrence is extracted, even if it's the same underlying image data. Use deduplication after if needed."},
+        {"q": "Does it work on scanned PDFs?", "a": "Yes — each page of a scanned PDF is one big image. The tool extracts that page-image directly."},
+    ],
+    "extract-pages": [
+        {"q": "How is this different from Delete Pages?", "a": "Extract keeps the listed pages; Delete removes them. They're complementary — use whichever produces less typing."},
+        {"q": "Can I extract pages into separate files?", "a": "For one-file-per-page splitting, use the Split PDF tool with 'individual' mode."},
+        {"q": "Does this preserve bookmarks?", "a": "Bookmarks pointing to kept pages are preserved; those pointing to dropped pages are removed."},
+    ],
+    "fill-form": [
+        {"q": "How do I know what the form field names are?", "a": "Use the /api/fill-form/fields endpoint (or paste-then-inspect): PrivaTools returns the list of field names, types, and current values without filling anything."},
+        {"q": "Can I flatten the filled form?", "a": "Yes — run the Flatten tool afterwards to bake the values into the page content so they can't be edited."},
+        {"q": "Does this work on signed forms?", "a": "Filling a signed form invalidates the signature. Sign last, after filling."},
+    ],
+    "gif-to-pdf": [
+        {"q": "Do animated GIFs animate inside the PDF?", "a": "No — PDF doesn't support animation. Only the first frame is used. To convert animation to PDF, use GIF to MP4 then Video to PDF for keyframes."},
+        {"q": "How is transparency handled?", "a": "GIF transparent pixels render against a white page background. Use PNG-to-PDF if you need true alpha."},
+        {"q": "Can the GIF stay as a GIF inside the PDF?", "a": "PDF doesn't natively support GIF — the image is re-encoded as JPEG or Flate during embedding."},
+    ],
+    "grayscale-pdf": [
+        {"q": "Will text still be searchable?", "a": "Yes — the text layer is preserved. Only the rendered visuals change to grayscale."},
+        {"q": "Why convert to grayscale?", "a": "Cheaper printing on black-and-white printers, smaller file size, accessibility for color-blind readers, archival storage."},
+        {"q": "How does this differ from black-and-white?", "a": "Grayscale preserves shading (256 grey levels). True black-and-white (1-bit) is harsher but smaller — not currently offered as a separate option."},
+    ],
+    "header-footer": [
+        {"q": "Will the header/footer overlap existing content?", "a": "It might if your pages have content close to the edges. Use the Crop or Resize tool first to add margin space if needed."},
+        {"q": "Can I exclude the cover page?", "a": "Pages-to-affect parameter accepts ranges like '2-' to skip the first page or '2-N-1' to skip first + last."},
+        {"q": "Are these editable annotations or baked-in?", "a": "Baked into the page content. They can't be removed without re-editing — use Whiteout to cover them if needed later."},
+    ],
+    "heic-to-pdf": [
+        {"q": "Will the PDF be much larger than the HEIC?", "a": "Yes — HEIC is more efficient than JPEG. The PDF uses JPEG internally and is typically 2-3x the size of the source HEICs."},
+        {"q": "Does this preserve image quality?", "a": "Default JPEG quality is 90, which is visually indistinguishable. Lossless would require PNG-to-PDF and produce much larger files."},
+        {"q": "What happens to GPS metadata?", "a": "Stripped during conversion. Use View EXIF first if you want to record GPS coordinates before they're gone."},
+    ],
+    "invert-colors": [
+        {"q": "Why would I invert colors?", "a": "Dark-mode reading on tablets, contrast-flipped scanning of light text on dark backgrounds, or accessibility for users sensitive to bright whites."},
+        {"q": "Will the text still be searchable after?", "a": "Inverted pages become images, so the text layer is lost. To preserve searchability, OCR the inverted PDF afterwards."},
+        {"q": "Can I invert only certain pages?", "a": "Currently inversion applies to all pages. Run Extract Pages → Invert → Merge to apply selectively."},
+    ],
+    "jpg-to-pdf": [
+        {"q": "Will my photos lose quality?", "a": "Quality is preserved — JPGs are embedded as-is into the PDF. The PDF wrapper adds about 5% overhead."},
+        {"q": "Can I reorder the photos before conversion?", "a": "Yes — drag the thumbnails to your desired order before clicking Convert."},
+        {"q": "Does this preserve EXIF metadata?", "a": "GPS and camera metadata are stripped by default for privacy. PDF metadata (title, author) can be set separately with the Update Metadata tool."},
+    ],
+    "markdown-to-pdf": [
+        {"q": "Are images included?", "a": "Local image references in the Markdown are inlined if they're in the same upload; remote URLs are fetched at render time."},
+        {"q": "Can I customize the styling?", "a": "Not yet — the default style is GitHub-inspired (clean serif body, monospace code). Custom CSS is on the roadmap."},
+        {"q": "Does it handle code-block syntax highlighting?", "a": "Yes — fenced code blocks with language hints get tokenized and colored (Python, JS, SQL, Bash, etc.)."},
+    ],
+    "metadata": [
+        {"q": "What metadata does a typical PDF carry?", "a": "At minimum: producer (the software that created it) and creation date. Often also: author name, original filename, software version. Scanned PDFs may carry scanner model + driver."},
+        {"q": "Why does this matter for privacy?", "a": "Producer + Creator + Author fields can identify the person or machine that created a document — useful in forensics, problematic for whistleblowers."},
+        {"q": "Is XMP metadata shown too?", "a": "Yes — both the Info dictionary (old format) and XMP stream (new format) are inspected."},
+    ],
+    "nup": [
+        {"q": "Why is this called 'N-up'?", "a": "Print-industry terminology: '2-up' = 2 pages per sheet, '4-up' = 4 per sheet, etc. Saves paper and ink for review prints."},
+        {"q": "Are page numbers preserved?", "a": "Original page numbers (rendered on the page) shrink with the page. Add new page numbers afterwards if you need them readable."},
+        {"q": "What aspect ratio works best?", "a": "2-up and 8-up work well for landscape, 4-up and 9-up for portrait. Mismatches add whitespace around each sub-page."},
+    ],
+    "odt-to-pdf": [
+        {"q": "What about ODT-specific features (math equations, drawings)?", "a": "OpenDocument math (Formula) and drawings render correctly as the LibreOffice converter handles them natively."},
+        {"q": "Will fonts that aren't on the server cause problems?", "a": "Missing fonts get substituted. Embedded fonts in the ODT are honored."},
+        {"q": "Does it handle macros?", "a": "Macros are not executed — only the static document content is converted."},
+    ],
+    "organize-pages": [
+        {"q": "Can I rotate individual pages independently?", "a": "Yes — each thumbnail has its own rotate button. Rotations are 90° clockwise / counter-clockwise / 180°."},
+        {"q": "How is this different from Extract Pages?", "a": "Extract keeps a subset in original order. Organize lets you reorder, duplicate, rotate, and delete all in one pass."},
+        {"q": "Does it preserve bookmarks?", "a": "Bookmarks targeting deleted pages are removed; targeting reordered pages, they follow to the new position."},
+    ],
+    "overlay": [
+        {"q": "What's the difference between overlay and merge?", "a": "Merge concatenates files page-by-page. Overlay composites pages on top of each other — useful for adding letterheads, watermarks-from-PDF, or repeating templates."},
+        {"q": "Can I overlay only some pages?", "a": "By default it applies cycle-wise: if the overlay has 3 pages and the base has 10, the overlay repeats. For one-time overlay, use a base + overlay of equal length."},
+        {"q": "Does transparency work?", "a": "Yes — PDF supports transparency and the overlay's alpha is honored. White rectangles still cover what's beneath; transparent regions show base content through."},
+    ],
+    "page-numbers": [
+        {"q": "Can I use Roman numerals or letters?", "a": "Currently Arabic digits only. Roman / alpha numbering is on the roadmap."},
+        {"q": "How is this different from Bates numbering?", "a": "Page numbers are simple sequential digits. Bates numbers have a prefix, configurable padding, and are used in legal contexts."},
+        {"q": "Can I start from a specific page?", "a": "Yes — pages-to-affect lets you specify a starting page (e.g. exclude cover + TOC)."},
+    ],
+    "pdf-to-bmp": [
+        {"q": "Why are BMPs so much larger than PNG?", "a": "BMP stores every pixel uncompressed. PNG losslessly compresses to ~20% the size. Use BMP only when you specifically need uncompressed pixel data."},
+        {"q": "What's BMP good for?", "a": "Legacy Windows software that doesn't support modern formats; embedded systems; precise pixel manipulation."},
+        {"q": "Can I get just one page as BMP?", "a": "Extract that page first with Extract Pages, then convert."},
+    ],
+    "pdf-to-epub": [
+        {"q": "How accurate is the EPUB compared to the PDF?", "a": "Text and basic structure transfer well. Complex multi-column layouts, footnotes, and figure captions may need cleanup in calibre."},
+        {"q": "Does it preserve images?", "a": "Yes — embedded images are included as EPUB resources at original resolution."},
+        {"q": "Will the table of contents work?", "a": "If the PDF has bookmarks, they become the EPUB's TOC. Without bookmarks, the TOC is built from detected headings."},
+    ],
+    "pdf-to-gif": [
+        {"q": "Will the GIFs look good?", "a": "GIF's 256-color palette quantizes the page. Text remains readable but gradients and photos show banding. Use PNG for higher quality."},
+        {"q": "Does this make an animated GIF?", "a": "No — each page is one static GIF. To make a flipbook-style animation, use Video to GIF after converting to images and back."},
+        {"q": "How big are the output files?", "a": "Typically 30-100 KB per page at 96 DPI."},
+    ],
+    "pdf-to-jpg": [
+        {"q": "Why JPG instead of PNG?", "a": "JPG is smaller for photos and scanned content. Use PNG-to-PDF if your PDF has crisp text or graphics where compression artifacts would show."},
+        {"q": "What about transparency?", "a": "JPG doesn't support transparency. White pages render as white; transparent regions become white."},
+        {"q": "How long does it take?", "a": "Roughly 50-100 ms per page at 150 DPI. A 100-page PDF takes ~10 seconds."},
+    ],
+    "pdf-to-markdown": [
+        {"q": "How accurate is the structural detection?", "a": "Headings work well when source fonts are larger. Tables transfer if cells are clearly separated. Code-block detection is a heuristic — manual review recommended."},
+        {"q": "What about images?", "a": "Images are extracted to a sibling folder and referenced by Markdown image syntax."},
+        {"q": "Will hyperlinks be preserved?", "a": "Yes — PDF hyperlinks become Markdown links."},
+    ],
+    "pdf-to-png": [
+        {"q": "Why PNG instead of JPG?", "a": "PNG is lossless — text and graphics stay crisp. JPG compresses better for photos but introduces compression artifacts on text."},
+        {"q": "How big are the PNGs?", "a": "Roughly 200-500 KB per page at 150 DPI for typical text content; up to 2-3 MB at 300 DPI."},
+        {"q": "Does this preserve PDF transparency?", "a": "PDF transparency layers flatten during rasterization but the result PNG has alpha if the PDF page had transparent regions over the page background."},
+    ],
+    "pdf-to-pptx": [
+        {"q": "Will the text be editable in PowerPoint?", "a": "The extracted text overlay is editable. The underlying page image stays as a backdrop. For pixel-perfect editing, you may need to remove the backdrop and rebuild from the text."},
+        {"q": "What about embedded charts and graphics?", "a": "They appear as part of the page image. Re-creating editable charts requires manual recreation in PowerPoint."},
+        {"q": "Can I get one slide per section instead of per page?", "a": "Not directly — use Extract Pages to isolate the sections first, then convert."},
+    ],
+    "pdf-to-tiff": [
+        {"q": "Why TIFF for archival?", "a": "TIFF supports lossless compression (LZW, Deflate) and is the format of choice for long-term preservation in libraries and government archives."},
+        {"q": "Single multi-page TIFF or one per page?", "a": "Default is multi-page TIFF for compact archiving. Use the per-page option for compatibility with software that only reads single-page TIFFs."},
+        {"q": "Does it preserve text searchability?", "a": "TIFF is raster only — the text layer is lost. Use Sanitize PDF or PDF/A for archive while keeping text searchable."},
+    ],
+    "pdfa-validator": [
+        {"q": "What is PDF/A and why does it matter?", "a": "PDF/A is an ISO standard for long-term archival. It requires self-contained PDFs (all fonts embedded, no external scripts, no encryption) so the document will render identically in 50 years."},
+        {"q": "What's the difference between PDF/A-1, A-2, A-3?", "a": "A-1 is the strictest (no transparency, no XFA forms). A-2 adds transparency, JPEG 2000, and PDF attachments. A-3 allows arbitrary file attachments — useful for invoice + machine-readable data bundles."},
+        {"q": "If it's not PDF/A, can I convert it?", "a": "Yes — use the PDF to PDF/A tool which fixes the most common issues automatically (font embedding, color profile attachment)."},
+    ],
+    "png-to-pdf": [
+        {"q": "Will the PDF be larger than the PNGs?", "a": "Roughly the same — PNGs are already losslessly compressed, and PDF embeds them with minimal overhead."},
+        {"q": "How is transparency handled?", "a": "Transparent PNGs render over a white background. If you need true alpha through, use the Image to PDF generic tool with the keep-alpha option."},
+        {"q": "Is there a max number of images?", "a": "Practical limit is around 100 images per conversion before browser upload time becomes inconvenient. Backend limit is 500 MB total."},
+    ],
+    "pptx-to-pdf-convert": [
+        {"q": "Will animations be preserved?", "a": "PDF doesn't support animation. Each slide renders in its initial state. For animation, export to video first."},
+        {"q": "How are speaker notes handled?", "a": "Notes are not included in the PDF by default. We don't currently offer a 'with notes' option but it's on the roadmap."},
+        {"q": "What about embedded videos?", "a": "Videos render as a poster frame (the first frame). Use Extract Audio + Video to PDF for video-centric conversion."},
+    ],
+    "qr-code": [
+        {"q": "Can I customize colors?", "a": "Currently black-on-white only. Custom colors and logos in the center are on the roadmap."},
+        {"q": "How do I encode a URL with parameters?", "a": "Just paste the full URL. Special characters are encoded automatically inside the QR."},
+        {"q": "What's the maximum data I can encode?", "a": "Around 2,500 alphanumeric characters or 4,000 numeric digits at error correction level L. Higher EC levels reduce capacity."},
+    ],
+    "remove-blank-pages": [
+        {"q": "How does it detect 'blank'?", "a": "Each page is rendered to a low-res raster and analysed for pixel density. Pages with less than (100 - sensitivity)% non-white pixels are marked for removal."},
+        {"q": "Will pages with only a page number get deleted?", "a": "Depends on sensitivity. At sensitivity 95 (default), pages with isolated tiny content like page numbers are kept. At sensitivity 80, they may be removed."},
+        {"q": "What if a page has only a watermark?", "a": "The watermark counts as content. Use sensitivity 99 to only remove pages with no content at all."},
+    ],
+    "repair-pdf": [
+        {"q": "What kinds of damage can it fix?", "a": "Missing or corrupt cross-reference tables, broken trailers, dangling object references, slightly-truncated streams. Cannot recover from missing object data."},
+        {"q": "Will the repaired PDF look identical?", "a": "Yes if the damage was in metadata/structure. Visible content damage (cropped images, missing fonts) requires the original to fix."},
+        {"q": "Can it merge two damaged PDFs?", "a": "Repair each separately first, then use Merge."},
+    ],
+    "resize-pdf": [
+        {"q": "Will my content be cropped if I resize to a smaller page?", "a": "No — content scales proportionally. If you want to crop instead, use the Crop tool."},
+        {"q": "Difference between Resize and Crop?", "a": "Resize changes the page dimensions (scales content). Crop changes the visible region without scaling."},
+        {"q": "Does this affect text quality?", "a": "Text is vector-based in PDFs, so it scales perfectly. Only embedded raster images can lose quality on extreme upscale."},
+    ],
+    "reverse-pdf": [
+        {"q": "When would I use this?", "a": "Most common: rescue a scan where pages came out in reverse order. Also: countdown PDFs (10, 9, 8…), reverse-chronological logs."},
+        {"q": "Are bookmarks updated?", "a": "Yes — bookmarks pointing to page N are rewritten to point to page (total - N + 1)."},
+        {"q": "Will visible page numbers update?", "a": "Page numbers stamped with the Page Numbers tool are part of page content; they don't auto-update. Reverse first, then re-add page numbers."},
+    ],
+    "rtf-to-pdf": [
+        {"q": "What about RTF features like fields?", "a": "Calculated fields (page numbers, dates) render as their current values. Form fields aren't converted to PDF form fields — use Form Creator for that."},
+        {"q": "Does it preserve fonts?", "a": "Fonts referenced in the RTF are matched to server-installed fonts. Missing fonts fall back to a close visual equivalent."},
+        {"q": "How does this differ from DOCX-to-PDF?", "a": "RTF is an older Microsoft format. DOCX is a newer ZIP-based format. Both convert similarly but DOCX preserves more layout fidelity."},
+    ],
+    "sanitize-pdf": [
+        {"q": "What is sanitization protecting against?", "a": "Malicious PDFs that exploit reader vulnerabilities through embedded scripts or auto-launching attachments. Most modern readers are hardened against these, but defense in depth is wise."},
+        {"q": "Does this remove form fields?", "a": "No — form fields are kept (just JavaScript actions on them are stripped). Use Flatten or Delete Annotations to remove form structure."},
+        {"q": "Are hyperlinks removed?", "a": "Plain http/https links are kept. Links using non-web URI schemes (file:, mailto: with auto-execute, etc.) are stripped."},
+    ],
+    "set-permissions": [
+        {"q": "What's the difference between owner password and user password?", "a": "User password = required to OPEN. Owner password = required to override permissions (print, edit). Use Protect PDF for both; this tool sets only the owner password + permission flags."},
+        {"q": "How strong is the protection?", "a": "It's enforced by readers as a courtesy — Adobe Acrobat respects it strictly, some open-source readers ignore it. For real security, encrypt with a user password."},
+        {"q": "Can users still copy text?", "a": "Only if allow_copy is true. If false, the reader disables text selection. Note: screenshots still work (no PDF protection can prevent that)."},
+    ],
+    "split-by-bookmarks": [
+        {"q": "What if the PDF has no bookmarks?", "a": "The tool returns an error. Use the regular Split tool or the new Split by Text tool which doesn't need bookmarks."},
+        {"q": "Does it use nested sub-bookmarks?", "a": "No — only top-level bookmarks define split points. Sub-sections stay within their parent chapter PDF."},
+        {"q": "Can I include the bookmark title as the PDF title?", "a": "Each output PDF inherits its starting bookmark's title as the file name. The internal PDF Title metadata is set to match."},
+    ],
+    "stamp-pdf": [
+        {"q": "Are stamps editable annotations or baked-in?", "a": "Baked into the page content. They survive copying, printing, and PDF/A conversion. To remove, use Whiteout to cover them."},
+        {"q": "Can I apply a stamp to only specific pages?", "a": "Yes — pages parameter accepts page ranges like '1-3' or 'all'."},
+        {"q": "How big is the stamp?", "a": "Auto-sized to roughly 60% of page width with the chosen opacity for visibility without obscuring content."},
+    ],
+    "strip-metadata": [
+        {"q": "Why strip metadata?", "a": "Author / producer / original-filename fields can identify who created or owns a document — a privacy concern for whistleblowers, journalists, or before public release."},
+        {"q": "What about embedded images' EXIF?", "a": "Image-level EXIF inside PDF embedded images is also stripped. The image pixel data is unchanged."},
+        {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes informational fields. Sanitize removes security-risky elements (JavaScript, auto-launch attachments)."},
+    ],
+    "svg-to-pdf": [
+        {"q": "Will my SVG stay as vector inside the PDF?", "a": "Yes — PDF natively supports vector content, so paths, text, and gradients remain editable at any zoom level."},
+        {"q": "What about embedded raster images inside SVG?", "a": "Embedded raster images (data URLs, external image refs) are preserved as raster within the PDF."},
+        {"q": "Does it handle CSS styles inside SVG?", "a": "Standard SVG CSS (fill, stroke, opacity, transform) is honored. External stylesheet refs are inlined first."},
+    ],
+    "tiff-to-pdf": [
+        {"q": "Will quality be preserved?", "a": "Yes — TIFF is lossless. PDF uses Flate (lossless) or JPEG (near-lossless) when embedding. Default is high-quality JPEG to keep file size reasonable."},
+        {"q": "What about CMYK TIFFs (for print)?", "a": "CMYK is preserved through to the PDF. Use this workflow for prepress / professional printing pipelines."},
+        {"q": "How are multi-page TIFFs handled?", "a": "Each TIFF page becomes a PDF page in order. Multiple multi-page TIFFs in one upload are concatenated."},
+    ],
+    "transparent-background": [
+        {"q": "Will text be affected?", "a": "Black text is preserved. Light grey or low-contrast text near the threshold may become semi-transparent — lower the threshold (e.g. 220) to be more aggressive about preserving content."},
+        {"q": "What's the output format?", "a": "PDF with transparent regions where the background was. Open in a reader to see the underlying canvas show through."},
+        {"q": "Can I use this on photos?", "a": "It works best on text/diagram documents with clean backgrounds. Photos with light skies become weirdly transparent — use Remove Background (rembg) for photos."},
+    ],
+    "verify-signature": [
+        {"q": "Does this require uploading my certificates?", "a": "No — verification uses the certificates embedded in the PDF itself, plus the system's trusted CA store."},
+        {"q": "What if a signature is invalid?", "a": "The report says exactly why: content modified, certificate expired, untrusted issuer, or signature format unsupported. The PDF itself isn't rejected — just the signature."},
+        {"q": "Can I verify multiple signatures?", "a": "Yes — PDFs can have multiple signatures (e.g. one per signing party). All are verified independently."},
+    ],
+    "webp-to-pdf": [
+        {"q": "Will the PDF be much smaller than from JPG?", "a": "Slightly smaller — WebP-derived JPEGs inside PDF are similar to direct JPGs. The main benefit was at upload time (smaller WebP files)."},
+        {"q": "What about animated WebP?", "a": "Only the first frame is used. PDF doesn't support animation."},
+        {"q": "Does this preserve transparency?", "a": "PDF supports transparency but most readers render text-on-transparency oddly. We default to compositing over white for best compatibility."},
+    ],
+    "whiteout-pdf": [
+        {"q": "Is whiteout the same as redaction?", "a": "No — whiteout covers content visually but the underlying text remains in the file. For permanent redaction (text removed), use Redact PDF or Smart Redact."},
+        {"q": "Can I use any color, not just white?", "a": "Yes — color is configurable. Black for blackout style, white for whiteout, any custom hex color for matching background."},
+        {"q": "Does it work on scanned PDFs?", "a": "Yes — the cover rectangle is added on top of the rendered page. Behind, the original pixels are still in the file."},
+    ],
+    "add-subtitles": [
+        {"q": "Should I burn-in or use a soft subtitle track?", "a": "Burn-in: best for social media (Twitter, Instagram) where players don't render subtitle tracks. Soft: best for accessibility — viewers can turn off."},
+        {"q": "What subtitle formats are supported?", "a": "Input: SRT. Burn-in output: works in any video player. Soft track: MP4 with WebVTT or MKV with SRT — depending on output format."},
+        {"q": "Can I customize the font / size / color?", "a": "Currently uses sensible defaults (white text with black outline, sans-serif). Custom styling is on the roadmap."},
+    ],
+    "audio-merge": [
+        {"q": "What if my files have different sample rates?", "a": "FFmpeg resamples to a common rate (usually 44.1 kHz) automatically. There may be a tiny re-encoding loss; for lossless concatenation use FLAC inputs."},
+        {"q": "Are gaps between tracks added?", "a": "No — files are concatenated seamlessly. To add silence, prepare it as a separate file with the same format and insert it in the order."},
+        {"q": "Maximum total length?", "a": "Practical limit is whatever fits inside the 500 MB output. Hours of MP3 at moderate bitrate is fine."},
+    ],
+    "color-converter": [
+        {"q": "Does it work with alpha (transparency)?", "a": "Yes — paste #RRGGBBAA or rgba(...) and the alpha channel is preserved across all output formats."},
+        {"q": "Why does my CMYK look different from print?", "a": "CMYK conversion uses a sRGB → CMYK approximation. For exact print color, use your printer's color profile."},
+        {"q": "Is the calculation done locally?", "a": "Yes — pure browser JavaScript. No network requests."},
+    ],
+    "create-zip": [
+        {"q": "Is the password protection strong?", "a": "Yes — AES-256 is the modern standard. The legacy ZipCrypto algorithm is NOT used."},
+        {"q": "Will it preserve folder structure?", "a": "Uploaded files are placed at the root of the archive. To preserve a folder structure, upload them folder-by-folder using the multi-folder option."},
+        {"q": "What if I forget the password?", "a": "There is no recovery — AES-256 has no backdoor. Lost password = lost archive content."},
+    ],
+    "csv-json": [
+        {"q": "How does CSV escaping work?", "a": "Standard RFC 4180: commas in values must be quoted; quotes inside values are doubled (\"\"). PrivaTools handles both."},
+        {"q": "What about nested JSON?", "a": "Nested objects are flattened to dot-notation columns (user.name, user.email) for CSV output. Reverse direction reconstructs the nesting."},
+        {"q": "Will my data be uploaded?", "a": "No — pure-browser conversion. No data leaves your machine."},
+    ],
+    "extract-archive": [
+        {"q": "What about password-protected archives?", "a": "Password input is supported — paste the password and the encrypted archive is decrypted before extraction."},
+        {"q": "Does it support RAR / 7z?", "a": "Currently only ZIP. RAR / 7z support is on the roadmap."},
+        {"q": "What if the archive contains many small files?", "a": "Up to 1000 files per archive. For larger, split before zipping."},
+    ],
+    "extract-audio": [
+        {"q": "Will quality be preserved?", "a": "WAV/FLAC are lossless. MP3/AAC at 192 kbps+ is transparent for most listeners. Lower bitrates lose quality."},
+        {"q": "What if the video has multiple audio tracks?", "a": "PrivaTools extracts the first/default audio track. Multi-track extraction is on the roadmap."},
+        {"q": "Can I extract just a section of the audio?", "a": "Use Trim Media first to isolate the section, then extract audio from the trimmed video."},
+    ],
+    "generate-barcode": [
+        {"q": "What barcode type for a URL?", "a": "Use QR code — barcodes like Code 128 work for text but are much wider for the same content."},
+        {"q": "Will it scan reliably?", "a": "Yes — barcodes are rendered at the standard 2D module size. Printed at 100% on a regular printer, any standard scanner reads them."},
+        {"q": "Can I include a check digit?", "a": "EAN-13 and UPC-A auto-calculate the check digit. Code 128 has a built-in checksum. Code 39 supports optional checksums."},
+    ],
+    "generate-favicon": [
+        {"q": "Do I need all those sizes?", "a": "Yes — different browsers and devices use different sizes (16×16 for tabs, 192×192 for Android home screen, 512×512 for PWA install)."},
+        {"q": "Should I use PNG or SVG source?", "a": "SVG is best — it stays sharp at every size. PNG works if you only have a raster logo. JPG loses some sharpness from compression."},
+        {"q": "Will my logo become circular?", "a": "No — favicons render exactly as uploaded. To get a circular look, upload a circular PNG with transparency."},
+    ],
+    "gif-to-mp4": [
+        {"q": "Why convert GIF to MP4?", "a": "MP4 is dramatically smaller (better compression), supports audio, and plays smoother. Most social platforms now auto-convert uploaded GIFs to MP4 anyway."},
+        {"q": "Will the loop work in MP4?", "a": "MP4 doesn't have built-in loop info — players decide. Embed with <video loop autoplay muted> to mimic GIF behavior on the web."},
+        {"q": "Does it preserve transparency?", "a": "MP4 doesn't support transparency. Transparent pixels render against a black background. Use WebM with VP9 if you need alpha."},
+    ],
+    "hash-generator": [
+        {"q": "Is MD5 safe to use?", "a": "For non-security purposes (file integrity, deduplication): yes. For security (passwords, signatures): no — MD5 is broken. Use SHA-256 or SHA-512."},
+        {"q": "Why are file hashes useful?", "a": "Verifying file integrity after download, deduplication, change detection, content-addressed storage."},
+        {"q": "Is the hash calculation done in the browser?", "a": "Yes — Web Crypto API runs the hash in your browser. Files are not uploaded."},
+    ],
+    "image-converter": [
+        {"q": "Which format is best for what?", "a": "PNG for graphics with transparency. JPG for photos. WebP for web (smaller). TIFF for archival. HEIC for iPhone storage (limited compatibility)."},
+        {"q": "Does it preserve EXIF metadata?", "a": "Stripped during conversion. Use View EXIF first to record any GPS or camera data you want to keep."},
+        {"q": "Can I batch-convert?", "a": "Currently one image at a time. For batch, use the format-specific aliases (jpg-to-pdf, etc.) which accept multiple files."},
+    ],
+    "image-ocr": [
+        {"q": "How accurate is the OCR?", "a": "Tesseract handles clean printed text very well (98%+). Handwriting, low-resolution, or low-contrast images are harder."},
+        {"q": "Should I preprocess the image first?", "a": "Deskew helps a lot for tilted scans. Convert to grayscale doesn't help (Tesseract converts internally)."},
+        {"q": "What about handwriting?", "a": "Tesseract is trained on print. Use a specialized handwriting OCR for cursive."},
+    ],
+    "image-watermark": [
+        {"q": "Can I watermark with an image instead of text?", "a": "Currently text-only watermarks. Image watermarks (logo overlay) are on the roadmap."},
+        {"q": "Is the watermark removable?", "a": "Depends on placement. Watermarks over high-detail areas are harder to remove than over solid backgrounds. AI inpainting tools can sometimes erase them — for stronger protection, use diagonal repeating patterns."},
+        {"q": "Does it affect image quality?", "a": "Negligibly. Output is at the same JPEG quality as input."},
+    ],
+    "json-xml-formatter": [
+        {"q": "Will it validate the input?", "a": "Yes — invalid JSON / XML shows an error with the line and column. Common errors (trailing commas, unclosed strings, mismatched tags) are highlighted."},
+        {"q": "Can it convert JSON ↔ XML?", "a": "This tool only formats. For conversion, paste into the CSV/JSON converter or use a dedicated converter."},
+        {"q": "Is the indent customizable?", "a": "Yes — 2 spaces, 4 spaces, or tabs."},
+    ],
+    "lorem-ipsum": [
+        {"q": "Why use Lorem Ipsum and not English?", "a": "It has roughly Latin letter frequencies so designs feel real, without distracting reviewers with the actual content. English placeholder text always gets read instead of looked at."},
+        {"q": "Can I get other languages?", "a": "Cyrillic, Greek, Arabic, and CJK placeholder texts are on the roadmap."},
+        {"q": "Is it copyrighted?", "a": "Cicero died in 43 BC. Public domain."},
+    ],
+    "make-collage": [
+        {"q": "Will images be resized?", "a": "Each image is scaled to fit its grid cell while preserving aspect ratio. To force same aspect ratio, crop them first with Resize Crop Image."},
+        {"q": "Can I rearrange the images?", "a": "Drag in the upload area to reorder. They fill left-to-right, top-to-bottom."},
+        {"q": "What's the max grid size?", "a": "Tested up to 100 images. Output JPEG can be up to 30,000 pixels wide before browser limits."},
+    ],
+    "markdown-html": [
+        {"q": "What about extensions like tables and code blocks?", "a": "GitHub-flavored Markdown extensions are supported in both directions: tables, fenced code, strikethrough, task lists."},
+        {"q": "Will inline CSS be preserved?", "a": "Conversion is opinionated — visible content keeps semantics, but custom CSS is stripped. For a faithful HTML→PDF, use the Markdown-to-PDF tool instead."},
+        {"q": "Is the conversion lossless?", "a": "HTML → Markdown can lose nesting fidelity (deeply-nested divs flatten). Markdown → HTML is exact."},
+    ],
+    "merge-images": [
+        {"q": "Will images be cropped?", "a": "No — they're scaled to a common dimension (width for vertical, height for horizontal). Smaller images upscale; larger images downscale."},
+        {"q": "What if my images have different aspect ratios?", "a": "They get letterboxed (transparent padding) to fit. Use Resize Crop Image first to force a common aspect ratio."},
+        {"q": "Difference from Make Collage?", "a": "Merge concatenates in a single row or column. Collage arranges in a grid with configurable columns."},
+    ],
+    "password-generator": [
+        {"q": "How strong is the password?", "a": "Length 20 with mixed classes ≈ 130 bits of entropy — uncrackable by brute force. Length 12 ≈ 78 bits — still very strong."},
+        {"q": "Why exclude ambiguous characters?", "a": "Visual confusion: l vs 1 vs I, 0 vs O. Excluding them makes the password easier to type / read aloud at the cost of slightly less entropy."},
+        {"q": "Is it really random?", "a": "Yes — Web Crypto's getRandomValues uses the OS's cryptographically secure RNG (e.g. /dev/urandom on Linux, BCryptGenRandom on Windows)."},
+    ],
+    "qr-reader": [
+        {"q": "Can it read damaged QR codes?", "a": "QR codes have built-in error correction (up to 30%). Slightly damaged codes still read; heavily damaged ones fail."},
+        {"q": "Multiple QR codes in one image?", "a": "All detected QR codes are returned with their position. Useful for batch scanning of labels."},
+        {"q": "What about other barcode types?", "a": "pyzbar also reads Code 128, Code 39, EAN-13, UPC-A, etc. The decoder identifies the type automatically."},
+    ],
+    "resize-crop-image": [
+        {"q": "Should I resize or crop?", "a": "Resize when you want to keep the entire image. Crop when you have a specific aspect ratio target (e.g. social media banner)."},
+        {"q": "Will upscaling lose quality?", "a": "Some sharpness loss is unavoidable when upscaling. For 2x or 4x enlargement with AI smoothing, use Image Upscaler."},
+        {"q": "Can I pick the crop position?", "a": "Currently crop is centered. Drag-to-crop with a custom anchor is on the roadmap."},
+    ],
+    "subtitle-converter": [
+        {"q": "What's the difference between SRT and VTT?", "a": "SRT: simplest. VTT (WebVTT): used by HTML5 <track>, supports styling. ASS (Advanced SubStation Alpha): rich styling like karaoke colors, but less compatible."},
+        {"q": "Will styling carry over?", "a": "SRT → VTT: yes. VTT → SRT: styling is stripped (SRT has no style support). ASS → SRT: styling lost; text and timing preserved."},
+        {"q": "Is my subtitle file uploaded?", "a": "No — pure browser conversion."},
+    ],
+    "svg-to-png": [
+        {"q": "Why convert SVG to PNG?", "a": "PNG is universally supported (email, legacy apps, social media uploads). SVG can break in tools that don't render it (Gmail, some Slack clients)."},
+        {"q": "How large should the output be?", "a": "For social media: 1200×630 (use Resize Crop Image after). For app icons: 1024×1024 base. For web retina: 2x your design size."},
+        {"q": "Does it preserve transparency?", "a": "Yes — SVG transparency translates to PNG alpha. The PNG is fully alpha-channel."},
+    ],
+    "url-encoder": [
+        {"q": "What's the difference between URL encoding and base64?", "a": "URL encoding only escapes characters that have special meaning in URLs. Base64 encodes any binary as ASCII (longer but binary-safe). Use Base64 for arbitrary data."},
+        {"q": "Why decode a JWT here?", "a": "All in your browser — never paste a real production JWT into a server-side decoder. The standalone JWT Decoder tool shows expiry and claim details too."},
+        {"q": "Will the encoded URL be browser-safe?", "a": "Yes — outputs only ASCII-safe chars (alphanumeric + - _ . ~ % escapes)."},
+    ],
+    "url-to-pdf": [
+        {"q": "Will JavaScript-rendered content show up?", "a": "WeasyPrint doesn't execute JS — only the server-rendered HTML is converted. For JS-heavy SPAs (React, Vue), use the site's print stylesheet or a server-side rendered version."},
+        {"q": "Can I convert pages behind a login?", "a": "Not currently — only public pages. Authenticated capture is on the roadmap."},
+        {"q": "Does it use my browser cookies?", "a": "No — the fetch is server-side from a clean session. Anonymous, no cookies."},
+    ],
+    "uuid-generator": [
+        {"q": "What's the difference between v4 and v7?", "a": "v4 is purely random — unsortable. v7 (new in 2024) embeds a timestamp prefix so UUIDs sort chronologically. Use v7 for database primary keys."},
+        {"q": "How likely is a collision?", "a": "v4 collision after generating 2^61 ≈ 2.3 quintillion UUIDs. Practically impossible."},
+        {"q": "Are they cryptographically random?", "a": "v4 uses Web Crypto's getRandomValues — yes, cryptographically secure."},
+    ],
+    "video-converter": [
+        {"q": "Which format to choose?", "a": "MP4: most compatible. WebM: smaller, used for web embedding. MOV: works in Apple ecosystem and Final Cut. MKV: open-source flexible container."},
+        {"q": "Will quality suffer?", "a": "FFmpeg uses sensible default bitrates that preserve visual quality. For lossless conversion (rare), use the MKV output."},
+        {"q": "How long does it take?", "a": "Roughly real-time on the server (a 2-minute video = ~2 minutes to convert)."},
+    ],
+    "video-merge": [
+        {"q": "Do the videos need the same resolution?", "a": "PrivaTools resizes inputs to a common resolution (the smallest source). For pixel-perfect quality, pre-resize all sources to the same dimensions first."},
+        {"q": "What about audio-less videos?", "a": "Silent audio is added (anullsrc) for missing tracks so concatenation succeeds."},
+        {"q": "Can I add a transition between clips?", "a": "Not currently — clips are concatenated directly. Crossfade transitions are on the roadmap."},
+    ],
+    "video-resizer": [
+        {"q": "Will upscaling improve quality?", "a": "No — upscaling can't add detail. Use it to match a target resolution, not to improve quality."},
+        {"q": "Does this re-encode the audio?", "a": "Audio is copied unchanged when possible (saves time, no quality loss)."},
+        {"q": "Can I crop to a different aspect ratio?", "a": "Not directly — the resizer preserves aspect ratio. For aspect-ratio crops, use a video editor."},
+    ],
+    "video-thumbnail": [
+        {"q": "How do I find a good thumbnail moment?", "a": "Trial and error — try different timestamps to find a visually interesting frame. For automated 'best' selection, use Video to PDF and pick from the keyframe samples."},
+        {"q": "What resolution will the PNG be?", "a": "Same as the source video's resolution. Use Resize Crop Image after if you need a specific size for social media."},
+        {"q": "Can I extract multiple thumbnails at once?", "a": "Yes — Video to PDF extracts multiple keyframes and lays them out as PDF pages."},
+    ],
+    "video-to-pdf": [
+        {"q": "Why convert video to PDF?", "a": "Storyboarding, content moderation review, video summarisation for accessibility, lecture notes from recorded talks."},
+        {"q": "Can I get just keyframes (scene changes)?", "a": "Evenly-spaced frames are the default. Smart scene-change detection is on the roadmap."},
+        {"q": "What resolution are the frames?", "a": "Native video resolution. The PDF page size matches."},
+    ],
+    "word-counter": [
+        {"q": "What counts as a word?", "a": "Whitespace-separated tokens. Hyphenated words ('self-host') count as one. Apostrophes ('don't') keep the word as one."},
+        {"q": "How is reading time calculated?", "a": "Word count ÷ 200 words per minute (average adult reading speed for non-fiction). Adjust for technical content (slower) or casual reading (faster)."},
+        {"q": "Is my text saved?", "a": "No — everything runs in your browser and persists only in this session."},
     ],
 }
