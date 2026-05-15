@@ -202,12 +202,12 @@ function CategoryToolNav({ currentSlug, category }: { currentSlug: string; categ
     if (el) el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [currentSlug]);
   return (
-    <div className="border-t border-border pt-5">
+    <div className="border-t border-border pt-5 min-w-0 max-w-full">
       <div className="flex items-baseline gap-2 mb-3">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">More {meta.label.toLowerCase()} tools</p>
         <span className="text-[11px] font-mono text-muted-foreground/80">{categoryTools.length}</span>
       </div>
-      <div ref={scrollRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+      <div ref={scrollRef} className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 w-full max-w-full">
         {categoryTools.map(t => {
           const TIcon = t.icon;
           const isActive = t.slug === currentSlug;
