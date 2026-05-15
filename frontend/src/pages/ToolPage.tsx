@@ -353,6 +353,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
         accepts=".pdf,application/pdf"
         outputFilename="compressed-pdfs.zip"
         fileLabel="PDFs"
+        actionVerb="Compress"
         ordered={false}
       />;
     case "pdf-page-counter": return <LazyPdfPageCounterUI />;

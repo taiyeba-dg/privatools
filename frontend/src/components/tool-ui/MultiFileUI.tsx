@@ -22,11 +22,14 @@ interface Props {
     params?: Record<string, string | number | boolean>;
     /** Whether the order matters (shows reorder controls if true). */
     ordered?: boolean;
+    /** Verb on the action button — defaults to "Process" but pass "Compress",
+     *  "Merge", etc. for a more discoverable label. */
+    actionVerb?: string;
 }
 
 export function MultiFileUI({
     endpoint, accepts, outputFilename, fileLabel,
-    minFiles = 2, params, ordered = true,
+    minFiles = 2, params, ordered = true, actionVerb = "Process",
 }: Props) {
     const [files, setFiles] = useState<Item[]>([]);
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
@@ -172,9 +175,9 @@ export function MultiFileUI({
                     disabled={files.length < minFiles || state === "processing"}
                     className="gap-1.5"
                 >
-                    {state === "processing" ? <><Loader2 size={14} className="animate-spin" /> Processing…</> :
-                     state === "done" ? <><CheckCircle2 size={14} /> Done — re-process</> :
-                     <><Download size={14} /> {files.length ? `Process ${files.length} file${files.length === 1 ? "" : "s"}` : "Process files"}</>}
+                    {state === "processing" ? <><Loader2 size={14} className="animate-spin" /> {actionVerb}ing…</> :
+                     state === "done" ? <><CheckCircle2 size={14} /> Done — re-{actionVerb.toLowerCase()}</> :
+                     <><Download size={14} /> {files.length ? `${actionVerb} ${files.length} ${fileLabel}` : `${actionVerb} ${fileLabel}`}</>}
                 </Button>
             </div>
         </div>

@@ -182,6 +182,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
         accepts="audio/*,.mp3,.wav,.ogg,.flac,.aac,.m4a"
         outputFilename="merged.mp3"
         fileLabel="audio files"
+        actionVerb="Merge"
         ordered={true}
       />;
     case "video-merge":
@@ -190,6 +191,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
         accepts="video/*,.mp4,.mov,.avi,.mkv,.webm"
         outputFilename="merged.mp4"
         fileLabel="videos"
+        actionVerb="Merge"
         ordered={true}
       />;
     // v1.2.0 — browser-only dev utilities
