@@ -14,6 +14,32 @@ function normalizeEndpoint(ep: string): string {
     return ep.startsWith("/") ? ep : "/" + ep;
 }
 
+/** Turn a Response into a human-readable error message. Distinguishes
+ *  HTTP status families so the UI can show meaningful guidance instead of
+ *  a generic "Request failed (500)". */
+async function describeError(res: Response): Promise<Error> {
+    const status = res.status;
+    let detail: string | undefined;
+    try {
+        const ct = res.headers.get("content-type") || "";
+        if (ct.includes("application/json")) {
+            const body = await res.json();
+            if (typeof body.detail === "string") detail = body.detail;
+            else if (Array.isArray(body.detail)) detail = body.detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join(", ");
+        }
+    } catch { /* fall through */ }
+
+    if (detail) return new Error(detail);
+    if (status === 0 || status >= 502) return new Error("The server isn't responding right now. Check your connection and try again in a moment.");
+    if (status === 413) return new Error("That file is too large. The maximum is 500 MB per file.");
+    if (status === 415) return new Error("That file type isn't supported by this tool.");
+    if (status === 429) return new Error("Slow down — we're rate-limiting requests. Wait a moment and try again.");
+    if (status === 504) return new Error("Processing timed out. Try a smaller file or a lighter compression setting.");
+    if (status === 422) return new Error("Some required field is missing or has an invalid value.");
+    if (status >= 400 && status < 500) return new Error(`Request rejected (HTTP ${status}). Try a different file or adjust the settings.`);
+    return new Error(`Server error (HTTP ${status}). Try again.`);
+}
+
 /** Maximum file size: 500 MB per file (24 GB RAM server) */
 export const MAX_FILE_SIZE = 500 * 1024 * 1024;
 export const MAX_FILE_SIZE_LABEL = "500 MB";
@@ -47,10 +73,7 @@ export async function uploadFile(
         }
     }
     const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, { method: "POST", body: fd });
-    if (!res.ok) {
-        const body = await res.json().catch(() => ({ detail: "An unexpected error occurred" }));
-        throw new Error(body.detail || `Request failed (${res.status})`);
-    }
+    if (!res.ok) throw await describeError(res);
     return res;
 }
 
@@ -130,10 +153,7 @@ export async function uploadFiles(
         }
     }
     const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, { method: "POST", body: fd });
-    if (!res.ok) {
-        const body = await res.json().catch(() => ({ detail: "An unexpected error occurred" }));
-        throw new Error(body.detail || `Request failed (${res.status})`);
-    }
+    if (!res.ok) throw await describeError(res);
     return res;
 }
 
@@ -215,10 +235,7 @@ export async function postForm<T = unknown>(
         fd.append(k, String(v));
     }
     const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, { method: "POST", body: fd });
-    if (!res.ok) {
-        const body = await res.json().catch(() => ({ detail: "An unexpected error occurred" }));
-        throw new Error(body.detail || `Request failed (${res.status})`);
-    }
+    if (!res.ok) throw await describeError(res);
     return res.json() as Promise<T>;
 }
 
@@ -232,10 +249,7 @@ export async function postJson<T = unknown>(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
-    if (!res.ok) {
-        const data = await res.json().catch(() => ({ detail: "An unexpected error occurred" }));
-        throw new Error(data.detail || `Request failed (${res.status})`);
-    }
+    if (!res.ok) throw await describeError(res);
     return res.json() as Promise<T>;
 }
 
