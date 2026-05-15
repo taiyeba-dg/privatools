@@ -36,11 +36,16 @@ async def pdfa_validator(file: UploadFile = File(...)):
         if "pdfaid" in xml_meta_lower or "pdfa" in xml_meta_lower:
             is_pdfa = True
             standard = "PDF/A (detected)"
+        else:
+            errors.append(
+                "PDF/A identifier not found in XMP metadata — this looks like a "
+                "regular PDF, not PDF/A. Convert it via the PDF→PDF/A tool first."
+            )
 
         if not meta.get("title"):
-            errors.append("Missing title metadata")
+            errors.append("Missing title metadata (required for PDF/A)")
         if not meta.get("author"):
-            errors.append("Missing author metadata")
+            errors.append("Missing author metadata (required for PDF/A)")
         if doc.is_encrypted:
             errors.append("Encrypted PDFs cannot be PDF/A compliant")
 
