@@ -7,6 +7,7 @@ import { AnimatedPipeline } from "@/components/AnimatedPipeline";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
+import { downloadBlob } from "@/lib/api";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -164,6 +165,10 @@ export default function PipelinePage() {
     setResultUrl(url);
     setProcessing(false);
     setCurrentStep(-1);
+    // Auto-download — matches the rest of the tool suite; the banner above
+    // still offers a manual re-download link.
+    const outName = file ? `${file.name.replace(/\.pdf$/i, "")}_pipeline.pdf` : "pipeline_result.pdf";
+    downloadBlob(currentBlob, outName);
   };
 
   return (
