@@ -44,6 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-writer-nogui \
     libreoffice-calc-nogui \
     libreoffice-impress-nogui \
+    qpdf \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
