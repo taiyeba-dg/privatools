@@ -397,6 +397,11 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
     "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly. Get an extractive summary without uploading the document anywhere."),
     "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free — local BERT-NER model detects names, emails, phone numbers, addresses, and SSNs in your browser. Nothing is uploaded."),
+    # v1.2.0 additions
+    "pdf-to-html":     ("PDF to HTML",        "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web."),
+    "pdf-to-rtf":      ("PDF to RTF",         "Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text."),
+    "split-by-text":   ("Split by Text",      "Split PDF by text or keyword online for free — divide a document at every page that contains a search phrase. Perfect for batch-split statements, contracts, invoices, or any PDF with section headings. Case-sensitive optional."),
+    "web-optimize-pdf": ("Web Optimize PDF",  "Optimize PDFs for the web online for free — linearizes the file so the first page renders before the whole document has downloaded. Essential for PDFs served over a CDN or embedded inline. Powered by qpdf."),
 }
 
 # ---------------------------------------------------------------------------
@@ -447,6 +452,16 @@ _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
     "word-counter":       ("Word Counter",       "Count words, characters, sentences, paragraphs, and reading time online for free — live updates as you type. Browser-only, perfect for essays and articles."),
     "color-converter":    ("Color Converter",    "Convert colors online for free — translate between HEX, RGB, RGBA, HSL, and HSLA formats with a live picker and preview. 100% in your browser."),
     "url-encoder":        ("URL & JWT Encoder",  "Encode and decode URLs online for free — percent-encode strings, URL-decode, and inspect/decode JWT tokens entirely in your browser. No data sent anywhere."),
+    # v1.1.0 / v1.2.0 additions
+    "audio-converter":    ("Audio Converter",    "Convert audio files online for free — change between MP3, WAV, OGG, FLAC, and AAC formats. Choose your preferred bitrate (64k to 320k). Powered by FFmpeg for professional-quality conversion. Files up to 200 MB supported."),
+    "image-upscaler":     ("Image Upscaler",     "Upscale images online for free — enlarge photos by 2x or 4x using high-quality Lanczos resampling. Supports JPG, PNG, and WebP. Perfect for improving resolution of small images, thumbnails, or screenshots."),
+    "heic-to-png":        ("HEIC to PNG",        "Convert HEIC to PNG online for free — change Apple's High Efficiency Image format (the default for iPhone photos) to PNG, which every browser and editor can open. Free, private, no sign-up."),
+    "webp-to-jpg":        ("WebP to JPG",        "Convert WebP to JPG online for free — change Google's WebP image format to the universally-compatible JPEG. Drag-and-drop multiple files, no sign-up, no watermarks. Files are processed and discarded immediately."),
+    "webp-to-png":        ("WebP to PNG",        "Convert WebP to PNG online for free — change Google's WebP format to lossless PNG, preserving transparency. Free, private, no watermarks."),
+    "view-exif":          ("View EXIF Data",     "View EXIF data online for free — see every piece of metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, lens info, ISO, exposure, timestamps, software, and more. Counterpart to Remove EXIF."),
+    "jwt-decoder":        ("JWT Decoder",        "Decode a JWT online for free — paste any JSON Web Token and instantly see its header, payload, and signature decoded as readable JSON. Highlights expiry, algorithm, and standard claims. All decoding happens in your browser; tokens never leave."),
+    "regex-tester":       ("Regex Tester",       "Test regular expressions online for free — paste a regex and a test string to see every match highlighted in real time, along with captured groups. Supports flags (g, i, m, s, u, y). Works entirely in your browser."),
+    "timestamp-converter": ("Timestamp Converter", "Convert between Unix timestamps and human-readable dates online for free — paste an epoch (seconds or milliseconds) or an ISO 8601 string and see all formats side-by-side, in your local time and UTC. Pure-browser, never logs your data."),
 }
 
 
