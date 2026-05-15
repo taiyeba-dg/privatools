@@ -610,6 +610,631 @@ export const blogPosts: BlogPost[] = [
 <p>For unrestricted free editing with privacy: <a href="/tool/edit-pdf">PrivaTools</a>. For the best direct text editing (with limits): Sejda. For no-limits without caring about privacy: PDF24. Everything else either costs money, limits you to a handful of tasks, or both.</p>
     `,
   },
+
+  // ─── v1.3.0 SEO additions ──────────────────────────────────────────────
+  {
+    slug: "ai-pdf-summarizer-browser-2026",
+    title: "AI PDF Summarizer: How to Summarize Long PDFs in Your Browser (2026 Guide)",
+    description:
+      "How AI-powered PDF summarizers work, why running them in the browser matters, and a step-by-step walkthrough of summarizing a 100-page PDF without any upload — entirely on your device.",
+    publishedAt: "2026-05-15",
+    readTime: "9 min read",
+    author: "PrivaTools Team",
+    tags: ["AI", "PDF", "Privacy", "How-To"],
+    body: `
+<p>Long PDFs are everywhere — research papers, contracts, legal filings, technical docs, financial reports. Reading them end-to-end is rarely the highest-value use of your time. AI summarization promises to give you the gist in seconds. But there's a catch most people miss: <strong>uploading a PDF to a cloud AI service hands the entire document to that service</strong>, often forever.</p>
+
+<p>This guide explains how AI PDF summarization actually works, why browser-side summarization changes the privacy equation, and how to summarize a long PDF — even a 100-page one — without any data leaving your computer.</p>
+
+<h2>What Is an AI PDF Summarizer?</h2>
+<p>An AI PDF summarizer takes the text content of a PDF and produces a shorter version that preserves the key information. Modern summarizers fall into two architectures:</p>
+<ul>
+  <li><strong>Extractive</strong>: pulls out the most "important" sentences from the source verbatim. Fast, factually faithful, but choppy.</li>
+  <li><strong>Abstractive</strong>: generates new sentences that paraphrase the source. Reads more naturally, but can hallucinate details that aren't in the original.</li>
+</ul>
+<p>The best 2026 summarizers are abstractive transformers — variants of BART, T5, or distilled GPT-style models — that have been fine-tuned on news, scientific papers, and dialog corpora.</p>
+
+<h2>Why Browser-Side Summarization Matters</h2>
+<p>Most "free" AI PDF summarizers operate the same way under the hood:</p>
+<ol>
+  <li>You upload the PDF to their servers.</li>
+  <li>The text is extracted and run through a model in their data center.</li>
+  <li>The summary is shown to you.</li>
+  <li>Your PDF is retained — sometimes "for 24 hours", sometimes indefinitely, sometimes used to train future models.</li>
+</ol>
+<p>Read the privacy policies. Phrases like "we may use your content to improve our services" almost always mean your document is now training data.</p>
+<p>For most public documents that doesn't matter. For confidential ones — medical records, legal drafts, internal strategy memos, financial statements — it absolutely does.</p>
+<p>Browser-side summarization works differently:</p>
+<ol>
+  <li>The model itself is downloaded into your browser the first time you visit (usually 200–500 MB, cached in IndexedDB).</li>
+  <li>The PDF text is extracted in JavaScript using pdf.js.</li>
+  <li>The transformer runs in WebAssembly inside your browser tab.</li>
+  <li>The summary is generated locally; no network calls leave your machine after the model loads.</li>
+</ol>
+<p>You can verify this by opening DevTools → Network and watching: after the model is cached, no requests fire while summarization runs.</p>
+
+<h2>How It Works Technically: distilbart in the Browser</h2>
+<p>PrivaTools' <a href="/tool/summarize-pdf">Summarize PDF</a> tool uses Hugging Face's <code>distilbart-cnn-12-6</code> model, a distilled version of BART trained on the CNN/DailyMail summarization dataset. It runs via the <code>@huggingface/transformers</code> JavaScript SDK, which compiles the model graph to WebAssembly.</p>
+<p>The pipeline for a 100-page PDF roughly looks like:</p>
+<ol>
+  <li><strong>Extract text page-by-page</strong> with pdf.js. Output: ~80,000–150,000 characters.</li>
+  <li><strong>Chunk at sentence boundaries</strong> to fit the model's 1024-token context window. Output: 80–150 chunks.</li>
+  <li><strong>Summarize each chunk</strong> independently (~2–4 seconds per chunk on a modern laptop).</li>
+  <li><strong>Stitch the chunk summaries together</strong>. For very long docs, run a <em>second pass</em> over the joined summaries to produce a coherent overview.</li>
+</ol>
+<p>Total time on a 2026 laptop: ~3–6 minutes for a 100-page PDF, almost entirely CPU-bound. On a phone, expect 10–20 minutes — slow but doable.</p>
+
+<h2>Step-by-Step: Summarize a PDF Privately</h2>
+<ol>
+  <li>Open the <a href="/tool/summarize-pdf">Summarize PDF tool</a>.</li>
+  <li>Drag your PDF into the upload area (or click to browse).</li>
+  <li>Wait for the model to download on first use (one-time, ~250 MB).</li>
+  <li>Choose a summary length — short, medium, or long.</li>
+  <li>Click <strong>Summarize</strong> and watch progress per chunk.</li>
+  <li>Copy the summary or download it as a text file.</li>
+</ol>
+<p>If you're privacy-paranoid (good!), <kbd>Cmd+Shift+P</kbd> → "Open file" while DevTools is on the Network tab. Drop your PDF, summarize, and confirm zero requests leave your machine.</p>
+
+<h2>When NOT to Use Browser-Side Summarization</h2>
+<p>Local summarization has tradeoffs:</p>
+<ul>
+  <li><strong>You're stuck with smaller models.</strong> distilbart is a fraction the size of GPT-4 or Claude — quality is good but not best-in-class.</li>
+  <li><strong>First-load is slow.</strong> The model download (~250 MB) takes 30–90s on a typical connection. After caching, subsequent uses are instant.</li>
+  <li><strong>Mobile browsers struggle</strong> with very long documents. Stick to desktop for 50+ page PDFs.</li>
+  <li><strong>Non-English content</strong> needs different models. distilbart-cnn is English-only.</li>
+</ul>
+<p>If quality matters more than privacy and the document is non-sensitive, cloud services like Claude or GPT-4 still beat browser-side models. But for anything you wouldn't paste into a stranger's terminal: keep it local.</p>
+
+<h2>Browser AI Beyond Summarization</h2>
+<p>The same architecture powers <a href="/tool/smart-redact">Smart Redact</a>: a BERT-based named-entity recognition model scans for names, emails, phone numbers, and SSNs, then proposes redactions you can accept or reject. The model never sees the cloud.</p>
+<p>Expect 2026 to bring more of this — translation, classification, semantic search — all running in 200–500 MB browser-cached models. The privacy story keeps getting better.</p>
+
+<h2>FAQ</h2>
+<h3>Is browser-side AI as accurate as ChatGPT or Claude?</h3>
+<p>Not yet, no. Cloud-hosted frontier models are 50–100x larger and produce better summaries on average. But distilbart is good enough for most professional use — and the privacy guarantee is something cloud services can't offer.</p>
+
+<h3>Does my data really stay private?</h3>
+<p>Yes — for browser-side tools like PrivaTools' summarizer. The model loads once via a CDN; after that, all inference runs in WebAssembly inside your tab. Verify with DevTools → Network. No backend processes the file.</p>
+
+<h3>Can I summarize an encrypted PDF?</h3>
+<p>Not directly. First <a href="/tool/unlock-pdf">unlock the PDF</a> with the password, then summarize.</p>
+
+<h3>How long does the model take to download?</h3>
+<p>First visit: ~30–90 seconds depending on connection. The model is cached in IndexedDB and reused on subsequent visits.</p>
+    `,
+  },
+
+  {
+    slug: "ilovepdf-alternatives-2026",
+    title: "10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)",
+    description:
+      "iLovePDF is popular but it's not free, it uploads your files, and it shows ads. Here are 10 alternatives ranked by features, privacy, and price.",
+    publishedAt: "2026-05-15",
+    readTime: "12 min read",
+    author: "PrivaTools Team",
+    tags: ["Comparison", "PDF", "Alternatives", "iLovePDF"],
+    body: `
+<p>iLovePDF processes 50+ million PDFs a month, which makes it one of the most popular PDF tool suites on the web. But its free tier is heavily restricted, every file uploads to their servers, the UI is plastered with ads, and a free account is required for anything non-trivial. If any of those bother you, you're not alone — and you have great alternatives.</p>
+
+<p>This guide ranks the 10 best iLovePDF alternatives in 2026, ordered by overall value. We weighted privacy, true free-tier limits, feature breadth, and whether the tool is open source.</p>
+
+<h2>What's Wrong with iLovePDF?</h2>
+<ul>
+  <li><strong>Heavily limited free tier</strong> — large files require a Premium account ($4/month or $48/year).</li>
+  <li><strong>Files upload to their servers</strong> — every operation sends your document to Spain, where it's retained "for 2 hours".</li>
+  <li><strong>Ads everywhere</strong> on the free tier, including pop-ups and remarketing pixels.</li>
+  <li><strong>Account required</strong> for many operations including OCR and batch processing.</li>
+  <li><strong>Not open source</strong> — you have to trust their privacy claims.</li>
+</ul>
+
+<h2>1. PrivaTools — Most Tools, Truly Free, Open Source</h2>
+<p><strong>Free:</strong> Yes (no quotas) · <strong>Privacy:</strong> Open source, files auto-deleted · <strong>Self-host:</strong> Yes · <strong>Tools:</strong> 152</p>
+<p>PrivaTools is the comprehensive open-source alternative. It includes everything iLovePDF does (merge, split, compress, convert, OCR, sign, redact) and a lot it doesn't (video tools, audio tools, AI summarization in your browser, smart redaction with NER, JWT decoder, regex tester). The entire stack is MIT-licensed; you can audit the code or self-host it on Docker.</p>
+<p>Files are processed in an isolated container and deleted immediately on response — no retention period, no upload caps beyond 500 MB per file, no watermarks, no ads, no account ever.</p>
+<p><strong>Best for:</strong> Privacy-conscious users, professionals handling confidential documents, organizations wanting on-premises file tooling.</p>
+<p><strong>Try:</strong> <a href="/tool/merge-pdf">Merge</a> · <a href="/tool/compress-pdf">Compress</a> · <a href="/tool/ocr-pdf">OCR</a> · <a href="/tool/edit-pdf">Edit</a> · <a href="/tool/summarize-pdf">AI Summarize</a></p>
+
+<h2>2. Stirling-PDF — Best Self-Hosted</h2>
+<p><strong>Free:</strong> Yes (self-host) · <strong>Privacy:</strong> Self-hosted only · <strong>Tools:</strong> ~50</p>
+<p>Stirling-PDF is a Java/Spring-based self-hosted PDF toolkit. Tool count is smaller (PDF-only), but it has a polished UI and a no-code workflow builder. Has no public demo — you need to spin it up via Docker yourself.</p>
+<p><strong>Best for:</strong> Java/Spring shops that want enterprise PDF processing on their own infrastructure.</p>
+
+<h2>3. PDF24 — Most Tools (95+), Free Forever, But Uploads</h2>
+<p><strong>Free:</strong> Yes · <strong>Privacy:</strong> Files uploaded to their servers · <strong>Tools:</strong> 95+</p>
+<p>PDF24 is genuinely free forever with the largest pure-PDF tool set on the web. The catch: every operation uploads your file to their German servers. They claim to delete after a few hours but you have to trust that.</p>
+<p><strong>Best for:</strong> Users who want every conceivable PDF tool and don't care about cloud processing.</p>
+
+<h2>4. Sejda — Best Text Editing</h2>
+<p><strong>Free:</strong> 3 tasks/hour, 50 MB cap · <strong>Privacy:</strong> Files retained 2 hours · <strong>Tools:</strong> ~35</p>
+<p>Sejda's text-editor for PDFs is exceptional — it actually edits text content rather than overlaying. Free tier limits to 3 tasks/hour or 50 MB files, whichever comes first. Premium ($7.50/mo) unlocks all of it.</p>
+<p><strong>Best for:</strong> Occasional users who need to edit existing PDF text.</p>
+
+<h2>5. Smallpdf — Premium UX, Premium Price</h2>
+<p><strong>Free:</strong> 2 tasks/day · <strong>Privacy:</strong> Files retained · <strong>Tools:</strong> 30+</p>
+<p>Smallpdf has the slickest UI of any PDF tool. They've also added AI features (Chat with PDF, Translate PDF). Free tier is the most restrictive in this list — 2 tasks per day before you're prompted to upgrade ($9/month).</p>
+<p><strong>Best for:</strong> Users willing to pay for polish.</p>
+
+<h2>6. PDFescape — Free Browser Editor</h2>
+<p><strong>Free:</strong> Yes, 10 MB cap, 100 pages · <strong>Privacy:</strong> Uploads · <strong>Tools:</strong> ~15</p>
+<p>PDFescape was one of the first browser-based PDF editors and still works fine. Limits are tight (10 MB, 100 pages) and the UI feels dated, but the free tier is generous in tasks-per-day.</p>
+
+<h2>7. Adobe Acrobat Online</h2>
+<p><strong>Free:</strong> Very limited · <strong>Privacy:</strong> Adobe cloud · <strong>Tools:</strong> 20+</p>
+<p>The industry standard. Most tools are paywalled — you'll hit a "Sign in to continue" wall fast. Quality is excellent if you have an Acrobat subscription (~$23/month).</p>
+
+<h2>8. CloudConvert</h2>
+<p><strong>Free:</strong> 25 conversions/day · <strong>Privacy:</strong> Uploads · <strong>Tools:</strong> Format conversion</p>
+<p>Specialist: file format conversion across 200+ formats including PDF. Not a full PDF editor. Generous free tier (25 conversions/day) before paid plans kick in.</p>
+
+<h2>9. Foxit PDF Editor Online</h2>
+<p><strong>Free:</strong> Very limited · <strong>Privacy:</strong> Foxit cloud · <strong>Tools:</strong> 15+</p>
+<p>Foxit makes a credible Acrobat alternative on desktop. Their online tools are basic and most useful features push to the desktop app or a paid Cloud plan.</p>
+
+<h2>10. DocHub</h2>
+<p><strong>Free:</strong> Limited · <strong>Privacy:</strong> Account required · <strong>Tools:</strong> Form filler + e-sign focus</p>
+<p>DocHub specializes in form filling and electronic signatures rather than PDF manipulation. If that's your use case, it's worth a look. Otherwise, skip.</p>
+
+<h2>Quick Comparison</h2>
+<table>
+  <thead>
+    <tr><th>Tool</th><th>Free?</th><th>Account?</th><th>Privacy</th><th>Tools</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>PrivaTools</strong></td><td>Yes (no quotas)</td><td>No</td><td>Open source · deleted on response</td><td>152</td></tr>
+    <tr><td>Stirling-PDF</td><td>Yes (self-host)</td><td>No</td><td>You host</td><td>~50</td></tr>
+    <tr><td>PDF24</td><td>Yes</td><td>No</td><td>Uploaded</td><td>95+</td></tr>
+    <tr><td>Sejda</td><td>3 tasks/hr</td><td>No</td><td>2hr retention</td><td>~35</td></tr>
+    <tr><td>Smallpdf</td><td>2 tasks/day</td><td>No</td><td>Retained</td><td>30+</td></tr>
+    <tr><td>PDFescape</td><td>10 MB cap</td><td>No</td><td>Uploaded</td><td>~15</td></tr>
+    <tr><td>Adobe</td><td>Very limited</td><td>Yes</td><td>Adobe cloud</td><td>20+</td></tr>
+    <tr><td>CloudConvert</td><td>25/day</td><td>No</td><td>Uploaded</td><td>200+ formats</td></tr>
+    <tr><td>Foxit</td><td>Very limited</td><td>Yes</td><td>Foxit cloud</td><td>15+</td></tr>
+    <tr><td>DocHub</td><td>Limited</td><td>Yes</td><td>Account</td><td>Form-fill</td></tr>
+  </tbody>
+</table>
+
+<h2>The Bottom Line</h2>
+<p>If privacy and tool breadth matter most: <strong>PrivaTools</strong> wins. If you want pure-PDF on a cloud you don't mind: <strong>PDF24</strong>. If you only need to edit text occasionally: <strong>Sejda</strong>. Everything else is a worse trade-off in 2026.</p>
+    `,
+  },
+
+  {
+    slug: "redact-pdf-permanently-guide",
+    title: "How to Redact a PDF Properly (Don't Use Black Boxes)",
+    description:
+      "Drawing black boxes over text doesn't redact anything — the text is still under there. Here's how to actually remove sensitive content from a PDF so it can't be recovered.",
+    publishedAt: "2026-05-15",
+    readTime: "8 min read",
+    author: "PrivaTools Team",
+    tags: ["PDF", "Privacy", "Redaction", "Security"],
+    body: `
+<p>Public redaction failures are embarrassingly common. Lawyers, governments, and corporations have all leaked confidential information by "redacting" PDFs with black rectangles drawn on top of the text — text that is still right there, copy-pasteable to anyone with five minutes of curiosity.</p>
+
+<p>Real redaction permanently removes the underlying content. Done correctly, the original data is unrecoverable from the redacted file. This guide explains how to do it right, what tools to use, and the common mistakes that have leaked everything from witness names to corporate financials.</p>
+
+<h2>The #1 Redaction Mistake (and How It Leaks)</h2>
+<p>The most common "redaction" mistake is drawing a black rectangle over sensitive text using a PDF annotation tool. To the eye, the text is hidden. But:</p>
+<ul>
+  <li>Copy/paste the page → the underlying text is still in the clipboard.</li>
+  <li>Print to a new PDF → the rectangle may not flatten and the text re-appears.</li>
+  <li>Open in any text-extracting tool → the redacted strings come out plaintext.</li>
+</ul>
+<p>This has caused multiple public disasters: court filings with witness identities leaked, government documents with classified information exposed, and corporate filings with the names of investigated executives accidentally published.</p>
+
+<h2>How Real Redaction Works</h2>
+<p>Proper redaction does two things together:</p>
+<ol>
+  <li><strong>Visually obscures the area</strong> with an opaque block (typically black or white).</li>
+  <li><strong>Permanently removes the underlying content</strong> — the text glyphs, the image pixels, the XMP metadata, and any other instance of the data.</li>
+</ol>
+<p>The technical operation is a "redaction annotation" followed by a "redaction apply" step. The PDF standard supports both. PyMuPDF, Adobe Acrobat Pro, and Foxit PhantomPDF all implement this correctly. Many "free PDF editor" web tools do not.</p>
+
+<h2>Method 1: Manual Redaction (Best for Specific Boxes)</h2>
+<p>Use this when you know exactly where the sensitive content is — a specific paragraph, a name, a signature image.</p>
+<ol>
+  <li>Open <a href="/tool/redact-pdf">PrivaTools Redact PDF</a>.</li>
+  <li>Upload your PDF. Each page renders as a thumbnail.</li>
+  <li>Click and drag a rectangle over each area you want to permanently remove.</li>
+  <li>Choose redaction color (usually black; sometimes white for "blackline" review).</li>
+  <li>Click <strong>Redact</strong>. The tool applies real PyMuPDF redactions and returns a file where the content under each rectangle is unrecoverable.</li>
+</ol>
+<p>Verify the result: open the redacted PDF in any reader, try to copy text from a redacted area — nothing should be in the clipboard.</p>
+
+<h2>Method 2: Smart Redact (Text-Based, Best for Bulk)</h2>
+<p>Use this when sensitive content is spread throughout a document and you want every occurrence redacted automatically.</p>
+<p><a href="/tool/smart-redact">Smart Redact</a> runs a BERT named-entity-recognition (NER) model in your browser to find every name, email, phone number, address, SSN, credit card, and similar entity. You review the proposed list, accept or reject each, and the backend applies real redactions to every matching location across the document.</p>
+<ol>
+  <li>Upload your PDF.</li>
+  <li>Wait for the NER model to scan (a few seconds for typical docs).</li>
+  <li>Review the suggested redactions grouped by entity type (Names · Emails · Phones · SSNs · Locations · Orgs).</li>
+  <li>Uncheck false positives.</li>
+  <li>Click <strong>Redact all</strong>.</li>
+</ol>
+<p>Because NER runs in the browser (~250 MB BERT model, cached after first use), the PDF content never leaves your machine before redaction.</p>
+
+<h2>Verifying a Redaction Worked</h2>
+<p>Three checks every time:</p>
+<ol>
+  <li><strong>Copy/paste test.</strong> Try to select text behind a redaction rectangle. If anything ends up in your clipboard, the redaction failed.</li>
+  <li><strong>Text extraction test.</strong> Run <a href="/tool/pdf-to-text">PDF to Text</a> on the redacted file. Search for the sensitive strings. They should not appear.</li>
+  <li><strong>Metadata test.</strong> Run <a href="/tool/metadata">View Metadata</a>. The XMP block may still contain hints (author name, file path, original title). Strip them with <a href="/tool/strip-metadata">Strip Metadata</a> after redacting.</li>
+</ol>
+<p>If all three pass, the redaction is real.</p>
+
+<h2>Common Redaction Pitfalls</h2>
+<h3>1. Redacting only the visible text, not the OCR layer</h3>
+<p>Scanned PDFs often have an invisible OCR text layer underneath the rendered image. Redacting the visible pixels doesn't touch the OCR layer. Solution: redact in a tool that applies both visually and to the text layer (PyMuPDF does this; many web tools don't).</p>
+
+<h3>2. Forgetting embedded thumbnails</h3>
+<p>Some PDF readers embed a thumbnail image of each page. Drawing a black box over the rendered page doesn't update the thumbnail. Solution: re-save with <code>--garbage=4</code> (qpdf) or use a redaction tool that rebuilds embedded resources.</p>
+
+<h3>3. Filenames and metadata</h3>
+<p>If the file is named "Witness_John_Smith_Statement.pdf", redacting "John Smith" inside the document doesn't help. Rename the file and strip the XMP metadata.</p>
+
+<h3>4. Linked content</h3>
+<p>Hyperlinks pointing to <code>mailto:</code> addresses, embedded attachments, and external file references can leak data even when the visible text is redacted. Run <a href="/tool/sanitize-pdf">Sanitize PDF</a> to flatten links and embedded files.</p>
+
+<h3>5. Image-based content that LOOKS like text</h3>
+<p>If text is part of an image (a screenshot, a stamped signature), drawing over it works — the image pixels are replaced. But the original image may still be embedded if you didn't apply redaction. Always use the redaction-apply step, not just an annotation.</p>
+
+<h2>Should You Redact in the Cloud?</h2>
+<p>Most "online redact PDF" tools upload your document to their servers, apply redaction, and return the result. For routine business documents that's fine. For documents that are themselves sensitive (court filings, medical records, regulatory submissions) — the redaction is supposed to protect — sending the un-redacted file to a third party defeats the entire purpose.</p>
+<p>That's why <a href="/tool/redact-pdf">PrivaTools Redact</a> processes your file inside an isolated container that auto-deletes after response, and <a href="/tool/smart-redact">Smart Redact</a> runs NER entirely in your browser. The unredacted content never persists.</p>
+
+<h2>FAQ</h2>
+<h3>Is a redaction reversible?</h3>
+<p>If done correctly with a real redaction tool, no — the underlying content is removed from the PDF file. If done by drawing a rectangle annotation on top, yes — anyone with five minutes and a copy-paste shortcut can recover it.</p>
+
+<h3>What's the difference between "redact" and "blackout"?</h3>
+<p>"Blackout" usually refers to the visual style. "Redaction" is the technical operation of permanently removing content. Many tools use the words interchangeably — check what they actually do.</p>
+
+<h3>Does PrivaTools Smart Redact see my document?</h3>
+<p>Only briefly, for the final apply step. The detection (NER) runs entirely in your browser. The backend never stores your PDF.</p>
+
+<h3>Can I redact images, not just text?</h3>
+<p>Yes — image content under the redaction rectangle is replaced with the solid color, and the original image data is removed from the file structure.</p>
+    `,
+  },
+
+  {
+    slug: "online-pdf-tools-tracking-you",
+    title: "Why Most Online PDF Tools Are Tracking You (And What to Do About It)",
+    description:
+      "A look at what actually happens when you upload a PDF to a 'free' online tool — the trackers, the retention windows, the third-party pixels — and how to stay private.",
+    publishedAt: "2026-05-15",
+    readTime: "10 min read",
+    author: "PrivaTools Team",
+    tags: ["Privacy", "PDF", "Security", "Tracking"],
+    body: `
+<p>The PDF tool market is worth several billion dollars. None of the leading "free" services make their money from selling subscriptions — they make it from advertising, data licensing, and conversion funnels. Your file becomes the product.</p>
+
+<p>This isn't tinfoil-hat paranoia. It's the straightforward business model documented in their own privacy policies. This article walks through what happens when you drag a PDF onto a typical free online tool, what gets logged, what gets shared, and what you can do about it.</p>
+
+<h2>What Happens When You Upload a PDF</h2>
+<p>The journey of a typical upload to a major "free" PDF tool goes something like this:</p>
+<ol>
+  <li>You drag a file onto the upload area.</li>
+  <li>The browser sends the file to the tool's server (often via S3 multipart upload).</li>
+  <li>The server logs: your IP address, browser fingerprint, file size, file hash, filename, and inferred device type.</li>
+  <li>The file is queued for processing on a worker. If the tool is a thin wrapper around an open-source library, the open-source binary processes the file and returns the result.</li>
+  <li>The processed file is written to a download bucket. You get a temporary URL.</li>
+  <li>The "delete after 2 hours" policy is enforced — usually. Sometimes it's lifecycle policies on the bucket, sometimes it's a scheduled job, sometimes it's "best effort". The original file is what's deleted, not necessarily the logs, the hashes, the file metadata, or the analytics events.</li>
+  <li>Trackers fire: Google Analytics, Facebook Pixel, LinkedIn Insight, sometimes specialist ad networks. They get your IP, screen size, referrer, and any user IDs the site has assigned.</li>
+</ol>
+<p>That's the BEST case. The WORST case is files that get retained indefinitely, used for ML training, or sold in aggregate to data brokers.</p>
+
+<h2>What's In Their Privacy Policies (You Should Read Them)</h2>
+<p>Some real language pulled from major PDF tool privacy policies (paraphrased for length):</p>
+<ul>
+  <li><strong>"We retain content for as long as necessary to provide our services."</strong> Translation: indefinitely, at our discretion.</li>
+  <li><strong>"We may use your content to improve our services."</strong> Translation: training data.</li>
+  <li><strong>"We share data with third-party providers."</strong> Translation: AWS, GCP, Cloudflare, plus ad networks.</li>
+  <li><strong>"We may retain logs and metadata."</strong> Translation: even after we 'delete' your file, we still know you used the tool, what kind of document it was, and how often.</li>
+</ul>
+<p>None of this is illegal. Most of it is in the privacy policy you clicked "Accept" on without reading. But it adds up to a meaningful loss of privacy that most users never notice.</p>
+
+<h2>The Cookies and Pixels</h2>
+<p>Visit a major PDF tool homepage. Open browser DevTools → Network. Filter by "Doc" to see the trackers:</p>
+<ul>
+  <li><code>google-analytics.com/collect</code> — page-view + event analytics.</li>
+  <li><code>googletagmanager.com</code> — orchestrates other tags.</li>
+  <li><code>doubleclick.net</code> — Google's ad network.</li>
+  <li><code>facebook.com/tr/</code> — Facebook conversion pixel.</li>
+  <li><code>linkedin.com/li.lms-analytics</code> — LinkedIn Insight tag.</li>
+  <li><code>hotjar.com</code> or <code>fullstory.com</code> — session replay (yes, they record what you click).</li>
+  <li><code>intercom.io</code> — chat widget that captures your interactions.</li>
+</ul>
+<p>By the time you've uploaded a file, 5-10 third parties have your IP, browser fingerprint, and a signal that you were doing something with PDFs.</p>
+
+<h2>The "Open Source" Test</h2>
+<p>A simple test for whether a tool actually does what it claims: <strong>is the source code public?</strong></p>
+<ul>
+  <li>If yes, you can audit what happens to your file.</li>
+  <li>If no, you have to take their word for it.</li>
+</ul>
+<p>The major PDF tool vendors (iLovePDF, Smallpdf, PDF24, Sejda, Adobe Acrobat Online) are all closed source. The open-source alternatives include:</p>
+<ul>
+  <li><strong>PrivaTools</strong> — MIT-licensed full-stack, both online and self-hosted.</li>
+  <li><strong>Stirling-PDF</strong> — Java/Spring; self-host only.</li>
+  <li><strong>Mozilla pdf.js</strong> — viewer only.</li>
+  <li><strong>qpdf / pdftk</strong> — command line.</li>
+</ul>
+
+<h2>What Privacy-Respecting Tools Look Like</h2>
+<p>A genuinely privacy-respecting PDF tool has these properties:</p>
+<ol>
+  <li><strong>Open source.</strong> You can read the code.</li>
+  <li><strong>No account required.</strong> No identity to log against.</li>
+  <li><strong>Minimal logging.</strong> Aggregate metrics, not request-level identifiable logs.</li>
+  <li><strong>Aggressive deletion.</strong> Files removed immediately after response, not "after 2 hours".</li>
+  <li><strong>Browser-side processing where possible.</strong> Tools that don't need a server should run in WebAssembly.</li>
+  <li><strong>No third-party trackers.</strong> Or, if any, anonymized analytics with explicit disclosure.</li>
+  <li><strong>Self-host option.</strong> So you can run the tools on your own infrastructure if you don't want to trust ANY hosted service.</li>
+</ol>
+
+<h2>How PrivaTools Handles It</h2>
+<p>For full transparency, here's exactly what happens when you use <a href="/">PrivaTools</a>:</p>
+<ul>
+  <li><strong>Files are processed inside an isolated Docker container.</strong> The container has no network egress; it can't phone home.</li>
+  <li><strong>Files are deleted immediately after the HTTP response.</strong> No "2 hours" retention. The cleanup is a background task that fires within seconds.</li>
+  <li><strong>No account, ever.</strong> The site has no login mechanism.</li>
+  <li><strong>Only anonymous Google Analytics 4 page-view telemetry.</strong> No identifiable events; IP anonymization is on; blockable by any standard extension. We're considering removing GA4 entirely.</li>
+  <li><strong>No third-party ad pixels, no remarketing, no session replay.</strong></li>
+  <li><strong>Source code is MIT-licensed</strong> at <a href="https://github.com/taiyeba-dg/privatools">github.com/taiyeba-dg/privatools</a>. Audit it yourself.</li>
+  <li><strong>Browser-side tools run entirely in your browser.</strong> Files never reach our servers for tools like <a href="/tool/summarize-pdf">Summarize</a>, <a href="/tool/smart-redact">Smart Redact</a>, <a href="/tools/jwt-decoder">JWT Decoder</a>, <a href="/tools/regex-tester">Regex Tester</a>, <a href="/tools/password-generator">Password Generator</a>, and more.</li>
+  <li><strong>Self-hostable.</strong> <code>docker compose up --build</code> and you're running your own instance.</li>
+</ul>
+
+<h2>What You Can Do Right Now</h2>
+<ol>
+  <li><strong>Use browser-side tools when possible.</strong> Look for "client-side" or "browser-only" badges.</li>
+  <li><strong>Install uBlock Origin.</strong> Blocks the ad pixels and analytics from firing.</li>
+  <li><strong>Read privacy policies.</strong> Search them for "retain", "share", "improve our services". The honest ones are short and specific.</li>
+  <li><strong>Self-host the tools you use most.</strong> Open-source projects make this trivial.</li>
+  <li><strong>Don't upload anything you wouldn't want stored.</strong> If it's truly sensitive (medical, legal, financial), use a desktop tool or a self-hosted instance.</li>
+</ol>
+
+<h2>FAQ</h2>
+<h3>Are the trackers actually a problem if I'm not doing anything secret?</h3>
+<p>The trackers themselves aren't dangerous. The aggregation problem is. Every site sees a slice; advertisers and data brokers stitch them together. You don't get to see your composite profile or correct it.</p>
+
+<h3>Is "we delete after 2 hours" enough?</h3>
+<p>It's better than retaining indefinitely. It's worse than not uploading in the first place. Two hours is plenty of time for a misconfigured backup, a debugging engineer, or an internal log query to copy the file somewhere it won't be deleted.</p>
+
+<h3>What's the safest way to use online PDF tools?</h3>
+<p>In order of safety: (1) use a desktop tool, (2) self-host an open-source one, (3) use a browser-side tool that doesn't upload, (4) use an open-source online tool with aggressive deletion, (5) use any free closed-source tool with no caveats about retention.</p>
+    `,
+  },
+
+  {
+    slug: "heic-conversion-guide-2026",
+    title: "How to Convert HEIC to PDF, JPG, and PNG on Any Device (2026)",
+    description:
+      "Apple's HEIC format is space-efficient but incompatible with most software. Here's how to convert HEIC to PDF, JPG, or PNG online, on Mac, on Windows, and in batch.",
+    publishedAt: "2026-05-15",
+    readTime: "7 min read",
+    author: "PrivaTools Team",
+    tags: ["HEIC", "Image", "Conversion", "How-To"],
+    body: `
+<p>If you've ever tried to email a photo from your iPhone to someone on Windows, you've met HEIC — Apple's High Efficiency Image Container format. It cuts file sizes in half compared to JPEG, but most non-Apple software can't open it. Photos arrive as broken thumbnails or won't import at all.</p>
+
+<p>This guide covers every way to convert HEIC: online tools, native Mac, native Windows, batch conversion, and what you lose along the way.</p>
+
+<h2>What Is HEIC, Anyway?</h2>
+<p>HEIC is Apple's wrapper around the HEIF image format, which itself wraps HEVC-encoded image data. Compared to JPEG, HEIC files are typically:</p>
+<ul>
+  <li><strong>40–60% smaller</strong> at equivalent visual quality.</li>
+  <li><strong>10-bit color</strong> (vs. JPEG's 8-bit) — better for HDR and pro photography.</li>
+  <li><strong>Capable of storing depth maps</strong> for Portrait Mode and effects.</li>
+  <li><strong>Supports image sequences</strong> (Live Photos), animations, and alpha channels.</li>
+</ul>
+<p>The catch: HEIF/HEIC depends on HEVC, which is patent-encumbered. That's the main reason Windows, Android, Linux, and many web tools have been slow to support it.</p>
+
+<h2>Method 1: Convert HEIC Online (Browser)</h2>
+<p>The fastest, most universal approach. No software install.</p>
+
+<h3>HEIC → PDF</h3>
+<ol>
+  <li>Open <a href="/tool/heic-to-pdf">HEIC to PDF</a>.</li>
+  <li>Drag one or many HEIC files into the upload area.</li>
+  <li>Choose page size (Letter or A4) and orientation.</li>
+  <li>Click Convert. You get a single PDF with one HEIC per page.</li>
+</ol>
+
+<h3>HEIC → JPG</h3>
+<ol>
+  <li>Open <a href="/tool/heic-to-jpg">HEIC to JPG</a>.</li>
+  <li>Drag your HEIC.</li>
+  <li>Choose JPEG quality (default 85 is fine for most use).</li>
+  <li>Click Convert and download.</li>
+</ol>
+
+<h3>HEIC → PNG</h3>
+<ol>
+  <li>Open <a href="/tools/heic-to-png">HEIC to PNG</a>.</li>
+  <li>Drag your HEIC.</li>
+  <li>Click Convert.</li>
+</ol>
+<p>PNG is lossless but produces files 3–5x larger than JPG. Use PNG if you need transparency or are doing further editing.</p>
+
+<h2>Method 2: Mac (Built-In, Free)</h2>
+<p>macOS handles HEIC natively. To convert:</p>
+<ol>
+  <li>Open the HEIC in Preview.</li>
+  <li>File → Export.</li>
+  <li>Choose JPEG, PNG, or PDF as the format.</li>
+  <li>Click Save.</li>
+</ol>
+<p>For batch: select multiple HEICs in Finder → right-click → <em>Quick Actions</em> → <em>Convert Image</em> → choose format. macOS Sonoma (14) and later have this built in.</p>
+
+<h2>Method 3: Windows (HEIF Extensions or Online)</h2>
+<p>Windows 11 supports HEIC if you install the Microsoft "HEIF Image Extensions" from the Store (free, despite the upsell to a $0.99 paid version). After installing:</p>
+<ol>
+  <li>Open the HEIC in the Photos app.</li>
+  <li>Click "..." → Save as → choose JPEG or PNG.</li>
+</ol>
+<p>For batch, the easiest path on Windows is still the online tool above.</p>
+
+<h2>Method 4: iPhone Settings (Stop Generating HEIC in the First Place)</h2>
+<p>If you'd rather your iPhone produce JPEG directly:</p>
+<ol>
+  <li>Settings → Camera → Formats.</li>
+  <li>Choose "Most Compatible" (instead of "High Efficiency").</li>
+</ol>
+<p>Future photos will be JPEG. Existing HEICs need to be converted.</p>
+
+<h2>Method 5: Command Line (Batch + Scripts)</h2>
+<p>For large batches or automation, command line is fastest:</p>
+<pre><code>brew install libheif imagemagick   # macOS, one time
+for f in *.heic; do
+  heif-convert "$f" "\${f%.heic}.jpg"
+done</code></pre>
+<p>Or with ImageMagick:</p>
+<pre><code>magick mogrify -format jpg *.heic</code></pre>
+
+<h2>Privacy Note</h2>
+<p>HEIC files contain extensive EXIF metadata: GPS location, camera model, capture time, even depth maps. Before sharing converted files publicly, strip the metadata:</p>
+<ul>
+  <li>Use <a href="/tool/remove-exif">Remove EXIF</a> after converting.</li>
+  <li>Or view what's in there first with <a href="/tools/view-exif">View EXIF Data</a>.</li>
+</ul>
+<p>For sensitive photos, the online converters worth using are the ones that auto-delete files after conversion (e.g., PrivaTools) rather than retaining them on their servers.</p>
+
+<h2>FAQ</h2>
+<h3>Does converting HEIC to JPG lose quality?</h3>
+<p>Slightly, since HEIC supports 10-bit color and JPEG only supports 8-bit. For most viewing and printing the loss is imperceptible. For pro photography work, convert HEIC to PNG or TIFF instead.</p>
+
+<h3>What's the difference between HEIC and HEIF?</h3>
+<p>HEIF is the container format (defined by MPEG); HEIC is Apple's specific implementation/extension. In practice the terms are interchangeable.</p>
+
+<h3>Why doesn't my email client show HEIC previews?</h3>
+<p>Most email clients (Gmail web, Outlook desktop) can't decode HEIC. Recipients see a generic attachment icon. Always convert to JPG before emailing.</p>
+
+<h3>Is HEIC the future of digital photography?</h3>
+<p>Probably not. AVIF (a newer royalty-free format) is gaining traction and is supported in Chrome, Firefox, and Safari. Expect AVIF to gradually replace HEIC over the next few years.</p>
+    `,
+  },
+
+  {
+    slug: "decode-jwt-tokens-safely-guide",
+    title: "How to Decode a JWT Token Safely (and What Each Part Means)",
+    description:
+      "JWT tokens are everywhere in modern web auth. Here's how they're structured, how to decode them, what each claim means, and why you should never paste a real JWT into a random online decoder.",
+    publishedAt: "2026-05-15",
+    readTime: "8 min read",
+    author: "PrivaTools Team",
+    tags: ["JWT", "Developer", "Security", "How-To"],
+    body: `
+<p>If you've worked with modern web auth, you've seen tokens that look like this:</p>
+<pre><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZXhwIjoxNzMwMDAwMDAwfQ.signature</code></pre>
+<p>That's a JWT — JSON Web Token. It's the standard format for stateless authentication across REST APIs, OAuth flows, and microservice mesh systems. JWTs are not encrypted; they're just signed. Decoding them is trivial. Verifying their signature requires the issuer's secret or public key.</p>
+
+<p>This guide explains the JWT structure, how to decode one, what each standard claim means, and how to decode JWTs without leaking them to a random online service.</p>
+
+<h2>The Three Parts of a JWT</h2>
+<p>Every JWT has three dot-separated parts:</p>
+<pre><code>HEADER.PAYLOAD.SIGNATURE</code></pre>
+<p>Each part is <strong>base64url-encoded</strong>. Base64url is regular base64 with two character swaps (<code>+</code> → <code>-</code>, <code>/</code> → <code>_</code>) and no padding. Some implementations are picky about the padding; most aren't.</p>
+
+<h3>1. Header</h3>
+<p>The header tells you the signing algorithm and the token type:</p>
+<pre><code>{
+  "alg": "HS256",
+  "typ": "JWT"
+}</code></pre>
+<p>Common <code>alg</code> values:</p>
+<ul>
+  <li><strong>HS256, HS384, HS512</strong> — HMAC with SHA-2. Symmetric: same secret signs and verifies.</li>
+  <li><strong>RS256, RS384, RS512</strong> — RSA. Asymmetric: private key signs, public key verifies.</li>
+  <li><strong>ES256, ES384, ES512</strong> — ECDSA. Asymmetric, smaller signatures than RSA.</li>
+  <li><strong>EdDSA</strong> — Ed25519 / Ed448. Modern asymmetric, fast.</li>
+  <li><strong>none</strong> — DANGER. No signature. Most libraries refuse to accept these now.</li>
+</ul>
+
+<h3>2. Payload (Claims)</h3>
+<p>The payload is the JSON object you actually care about. It contains "claims" — assertions about an entity. Decoding shows something like:</p>
+<pre><code>{
+  "sub": "user-42",
+  "iat": 1730000000,
+  "exp": 1730003600,
+  "iss": "auth.example.com",
+  "aud": "api.example.com",
+  "scope": "read:profile write:profile"
+}</code></pre>
+<p>Standard claims (defined by RFC 7519):</p>
+<ul>
+  <li><code>iss</code> (issuer): who created and signed the token.</li>
+  <li><code>sub</code> (subject): who the token is about. Usually a user ID.</li>
+  <li><code>aud</code> (audience): which service(s) should accept the token.</li>
+  <li><code>iat</code> (issued at): Unix timestamp of creation.</li>
+  <li><code>exp</code> (expires at): Unix timestamp after which the token is invalid.</li>
+  <li><code>nbf</code> (not before): Unix timestamp before which the token isn't valid yet.</li>
+  <li><code>jti</code> (JWT ID): unique token identifier (for revocation tracking).</li>
+</ul>
+<p>Everything else (roles, scopes, custom permissions) is application-specific.</p>
+
+<h3>3. Signature</h3>
+<p>The signature is computed over <code>base64url(header) + "." + base64url(payload)</code> using the algorithm specified in the header and the issuer's secret (HS*) or private key (RS*/ES*). It's there so a recipient can verify the token wasn't tampered with — given the right key.</p>
+<p><strong>The signature does NOT make the token confidential.</strong> Anyone can decode header and payload. The signature only proves the token came from someone who has the signing key.</p>
+
+<h2>How to Decode a JWT</h2>
+<h3>Online (Browser-Side, Safe)</h3>
+<p>Paste your JWT into <a href="/tools/jwt-decoder">PrivaTools JWT Decoder</a>. The token is decoded entirely in JavaScript inside your browser — never sent to any server. You'll see the header, payload (with iat/exp converted to ISO 8601), and signature.</p>
+
+<h3>Command Line</h3>
+<pre><code># With jq
+echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | jq
+
+# With Python
+python3 -c "import sys,base64,json
+parts = sys.argv[1].split('.')
+pad = lambda s: s + '=' * (-len(s) % 4)
+print(json.dumps(json.loads(base64.urlsafe_b64decode(pad(parts[1]))), indent=2))" "$TOKEN"</code></pre>
+
+<h3>What NOT to Do: Public Online Decoders</h3>
+<p>There are many "JWT decoder" sites that send your token to their server. Some log the token. A logged production JWT is an instant authentication bypass — anyone with the log file can impersonate the user until the token expires.</p>
+<p>Always use a decoder that processes the token client-side. Verify by opening DevTools → Network and confirming no outgoing request fires when you paste a token.</p>
+
+<h2>Common Mistakes</h2>
+<h3>1. Trusting an unsigned token</h3>
+<p>An attacker can construct any JWT they want with <code>alg: none</code> and no signature. Many JWT libraries used to accept these. Always validate the algorithm matches what your service expects.</p>
+
+<h3>2. Confusing decoding with verification</h3>
+<p>Decoding shows you what the token claims. <strong>Verification</strong> proves the claims are authentic. You need the issuer's key to verify. A decoded-but-not-verified token tells you nothing trustworthy.</p>
+
+<h3>3. Leaking tokens in URLs</h3>
+<p>JWTs in URL query strings get logged everywhere — browser history, server access logs, analytics, CDNs. Always pass them in the <code>Authorization: Bearer</code> header.</p>
+
+<h3>4. Long-lived tokens</h3>
+<p>If your <code>exp</code> is days or weeks in the future, a single token theft is a long-lived compromise. Use short-lived access tokens (5–15 minutes) plus refresh tokens for sessions.</p>
+
+<h3>5. Storing JWTs in localStorage</h3>
+<p>localStorage is accessible to any JavaScript on the page. XSS = token theft. Use HttpOnly cookies for browser-side session tokens, or in-memory storage with a sliding refresh.</p>
+
+<h2>How to Verify a JWT (Beyond Decode)</h2>
+<p>Verifying requires:</p>
+<ol>
+  <li>The signing algorithm from the header.</li>
+  <li>The corresponding key (secret for HS*, public key for RS*/ES*).</li>
+  <li>Recomputing the signature over header.payload with that key.</li>
+  <li>Comparing the recomputed signature against the one in the token.</li>
+</ol>
+<p>Use a library — never roll your own. Common picks: <code>jsonwebtoken</code> (Node), <code>PyJWT</code> (Python), <code>jjwt</code> (Java), <code>github.com/golang-jwt/jwt</code> (Go).</p>
+
+<h2>FAQ</h2>
+<h3>Is the JWT signature reversible?</h3>
+<p>No. It's a one-way hash. You can verify it given the key but you can't extract the key from a signature alone (without a brute force attack on a weak secret).</p>
+
+<h3>Can I decode a JWT without the secret?</h3>
+<p>Yes. Header and payload are just base64-encoded JSON. The secret is only needed for verification.</p>
+
+<h3>Are JWTs encrypted?</h3>
+<p>By default, no. They're signed but not encrypted. There IS a sibling spec called JWE (JSON Web Encryption) that adds encryption, but it's much less commonly used.</p>
+
+<h3>Is it safe to log JWT payloads in my server logs?</h3>
+<p>It's safer to log the <code>sub</code> claim (user ID) and the <code>jti</code> claim (token ID) but NOT the full token. The full token would let anyone with log access impersonate the user.</p>
+    `,
+  },
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {

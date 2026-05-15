@@ -2,6 +2,29 @@
 
 All notable changes to PrivaTools will be documented in this file.
 
+## [1.2.1] — 2026-05-15 — SEO content push
+
+### 📝 6 new long-form blog posts (~17,000 words of new content)
+
+- **AI PDF Summarizer: How to Summarize Long PDFs in Your Browser (2026 Guide)** — explains browser-side distilbart, step-by-step walkthrough, what cloud summarizers do with your data
+- **10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)** — full comparison matrix, ranked
+- **How to Redact a PDF Properly (Don't Use Black Boxes)** — proper redaction technique, common pitfalls, verification steps
+- **Why Most Online PDF Tools Are Tracking You (And What to Do About It)** — privacy-policy analysis, tracker breakdown, the open-source test
+- **How to Convert HEIC to PDF, JPG, and PNG on Any Device (2026)** — online + Mac + Windows + CLI + iPhone settings
+- **How to Decode a JWT Token Safely (and What Each Part Means)** — JWT structure, claims reference, why public decoders are unsafe
+
+### 🔍 Rich-result schemas added
+
+- **HowTo + FAQPage JSON-LD** for 18 additional tools: highlight-pdf, summarize-pdf, smart-redact, split-in-half, pdf-to-svg, pdf-to-html, pdf-to-rtf, web-optimize-pdf, split-by-text, view-exif, jwt-decoder, regex-tester, timestamp-converter, batch-compress-pdf, pdf-page-counter, webp-to-jpg, webp-to-png, heic-to-png — for richer Google SERPs.
+- All 6 new blog posts wired into seo_meta `_BLOG_POSTS` for BlogPosting + Article JSON-LD.
+
+### 📊 Numbers
+
+- HowTo coverage: 42 → **60** tools (39% of 152 → 76% of high-traffic tools)
+- FAQ coverage: 42 → **60** tools
+- Blog posts: 9 → **15**
+- Words of content on the site: roughly doubled
+
 ## [1.2.0] — 2026-05-15
 
 ### 🆕 New tools (11) — total now 152

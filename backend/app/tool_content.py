@@ -240,6 +240,96 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Choose output format and bitrate", "text": "Select the target format (MP3, WAV, OGG, FLAC, AAC) and bitrate (64k to 320k). Default is MP3 at 192k."},
         {"name": "Convert and download", "text": "Click Convert. FFmpeg processes the audio and the converted file downloads automatically."},
     ],
+
+    # ── v1.1.0 + v1.2.0 additions ─────────────────────────────────────────
+    "highlight-pdf": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB containing the text you want to highlight."},
+        {"name": "Enter your search phrase", "text": "Type the word or phrase to highlight. Use the case-sensitive toggle for exact matches."},
+        {"name": "Pick a highlight color", "text": "Choose yellow, green, pink, blue, or orange. Highlights are added as real PDF annotations."},
+        {"name": "Download the highlighted PDF", "text": "Click Highlight. The tool finds every occurrence on every page and writes a new PDF with permanent highlight annotations."},
+    ],
+    "summarize-pdf": [
+        {"name": "Open the tool and accept the model download", "text": "On first use the page downloads a ~250 MB AI summarization model (distilbart-cnn) into your browser. It caches in IndexedDB so subsequent visits are instant."},
+        {"name": "Upload your PDF", "text": "Drag a PDF (any length, any topic) into the upload area. Text is extracted page-by-page using pdf.js — entirely in the browser."},
+        {"name": "Choose a summary length", "text": "Pick short (paragraph), medium (page), or long (multi-page) depending on the source size and how much detail you want."},
+        {"name": "Run summarization", "text": "Click Summarize. The transformer runs in WebAssembly inside your browser, processing chunks at sentence boundaries. No data leaves your machine."},
+        {"name": "Copy or download the summary", "text": "When done, the summary appears below. Copy to clipboard or download as a text file."},
+    ],
+    "smart-redact": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. The first visit downloads a BERT NER model (~250 MB) into your browser; cached for future use."},
+        {"name": "Wait for the NER scan", "text": "The model scans your document for names, emails, phone numbers, addresses, SSNs, credit cards, and other PII. Entirely client-side."},
+        {"name": "Review and uncheck false positives", "text": "Proposed redactions are grouped by entity type. Uncheck anything that shouldn't be redacted."},
+        {"name": "Apply redactions", "text": "Click Redact. The backend applies real PyMuPDF redactions — permanently removing the underlying content, not just covering it."},
+    ],
+    "split-in-half": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Best for two-up scans or scanned booklets."},
+        {"name": "Choose direction", "text": "Vertical splits each page down the middle (left → right halves). Horizontal splits across the middle (top → bottom)."},
+        {"name": "Split and download", "text": "Click Split. The result is a new PDF where each original page is replaced by its two halves in reading order."},
+    ],
+    "pdf-to-svg": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Best results come from vector PDFs."},
+        {"name": "Convert and download", "text": "Click Convert. The tool extracts vector graphics page-by-page using PyMuPDF and packages the SVGs into a ZIP."},
+    ],
+    "pdf-to-html": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. PyMuPDF's HTML exporter preserves fonts and positioning."},
+        {"name": "Download the HTML", "text": "Click Convert. The result is a single self-contained HTML file with inline styles — open it in any browser without needing the PDF."},
+    ],
+    "pdf-to-rtf": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB."},
+        {"name": "Download the RTF", "text": "Click Convert. The RTF file opens in WordPad, Microsoft Word, Pages, LibreOffice, and any other RTF-aware editor. Unicode is preserved via RTF escape sequences."},
+    ],
+    "web-optimize-pdf": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB that you serve over the web or via a CDN."},
+        {"name": "Linearize and download", "text": "Click Optimize. qpdf reorganizes the file structure so the first page renders before the whole document downloads — perfect for inline embeds and CDN-hosted PDFs."},
+    ],
+    "split-by-text": [
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Best for batch-style documents: monthly statements, multi-invoice exports, chapter-divided manuscripts."},
+        {"name": "Enter the search phrase", "text": "Type the keyword that appears at the start of each section (e.g. 'Invoice #', 'Statement of', 'Chapter')."},
+        {"name": "Toggle case sensitivity", "text": "Enable case-sensitive matching if your keyword's capitalization matters."},
+        {"name": "Split and download", "text": "Click Split. Every page containing the keyword starts a new chunk. The result is a ZIP of part1.pdf, part2.pdf, etc."},
+    ],
+    "view-exif": [
+        {"name": "Upload an image", "text": "Select a JPG, PNG, TIFF, WebP, HEIC, or BMP up to 500 MB."},
+        {"name": "Inspect the metadata", "text": "The tool reads every EXIF, IPTC, and XMP field: camera make and model, lens info, ISO, exposure, GPS coordinates, capture timestamps, software versions, embedded copyright."},
+        {"name": "Decide what to do next", "text": "If GPS coordinates are present they reveal where the photo was taken. Use Remove EXIF before publishing to strip them."},
+    ],
+    "jwt-decoder": [
+        {"name": "Paste your JWT", "text": "Copy the full token (three dot-separated base64url segments) into the input area."},
+        {"name": "Inspect the decoded structure", "text": "Header, payload, and signature are decoded in your browser. Standard claims (iss, sub, aud, exp, iat, nbf, jti) are highlighted; expiry status is shown."},
+        {"name": "Copy decoded values", "text": "Click Copy on any section to grab the JSON. Decoding never sends your token to a server."},
+    ],
+    "regex-tester": [
+        {"name": "Enter your regex pattern", "text": "Type the pattern. JavaScript RegExp syntax (same as in MDN docs)."},
+        {"name": "Set flags", "text": "Combine g (global), i (case-insensitive), m (multiline), s (dotall), u (unicode), y (sticky)."},
+        {"name": "Paste test text", "text": "Drop the text to match against. Matches highlight in real time as you edit either field."},
+        {"name": "Read match details", "text": "Each match is listed with its offset, captured groups, and matched substring."},
+    ],
+    "timestamp-converter": [
+        {"name": "Paste a timestamp", "text": "Enter a Unix epoch (seconds or milliseconds — auto-detected) or an ISO 8601 date string. Click Now to insert the current time."},
+        {"name": "Read all formats side-by-side", "text": "The tool displays Unix seconds, Unix milliseconds, ISO 8601 (UTC), UTC string, local timezone, and a relative phrase ('in 3 hours', '2 days ago')."},
+        {"name": "Copy what you need", "text": "Click Copy on any row. Useful for filling Cron entries, debugging API timestamps, or formatting logs."},
+    ],
+    "batch-compress-pdf": [
+        {"name": "Upload multiple PDFs", "text": "Drag up to 50 PDF files. Up to 500 MB per file."},
+        {"name": "Pick compression level", "text": "Light (modest reduction, best quality), Recommended (balanced — default), Extreme (smallest files, some image-quality loss)."},
+        {"name": "Compress and download as ZIP", "text": "Click Compress. Files are processed in parallel across 4 workers. Results are bundled into a ZIP with a savings summary."},
+    ],
+    "pdf-page-counter": [
+        {"name": "Upload up to 100 PDFs", "text": "Drag up to 100 PDF files. The tool reads only metadata, not content — page counts come back almost instantly."},
+        {"name": "Read the per-file count", "text": "Each filename appears with its page count. The total across all files appears at the bottom — ideal for print quotes."},
+    ],
+    "webp-to-jpg": [
+        {"name": "Upload a WebP image", "text": "Select a WebP file from your iPhone, Android, or any camera/browser export."},
+        {"name": "Convert and download", "text": "Click Convert. The image becomes a JPEG with the same dimensions and aspect ratio. Default quality is 85 — visually identical for most uses."},
+    ],
+    "webp-to-png": [
+        {"name": "Upload a WebP image", "text": "Select a WebP file. PNG conversion preserves transparency if the original has any."},
+        {"name": "Convert and download", "text": "Click Convert. The result is a lossless PNG, typically 3–5x larger than the WebP source but universally compatible."},
+    ],
+    "heic-to-png": [
+        {"name": "Upload a HEIC image", "text": "Select a HEIC or HEIF file (e.g., from an iPhone photo export)."},
+        {"name": "Convert and download", "text": "Click Convert. The tool decodes via libheif and writes a PNG that opens in every browser and image editor."},
+    ],
 }
 
 
@@ -462,5 +552,99 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What audio formats are supported?", "a": "Convert between MP3, WAV, OGG, FLAC, and AAC. The tool uses FFmpeg for professional-quality conversion with precise codec handling."},
         {"q": "Can I choose the bitrate?", "a": "Yes. Available bitrates: 64k (small file), 128k (good), 192k (high quality), 256k (very high), and 320k (maximum). Default is 192k."},
         {"q": "What is the file size limit?", "a": "Audio files up to 200 MB are supported. This covers most audio files including full albums in lossless FLAC format."},
+    ],
+
+    # ── v1.1.0 + v1.2.0 additions ─────────────────────────────────────────
+    "highlight-pdf": [
+        {"q": "Are the highlights real PDF annotations or flattened images?", "a": "Real PDF annotations. They render in every PDF viewer and can be removed later if you reopen the file in an editor. Nothing about the underlying text is changed."},
+        {"q": "Can I highlight multiple phrases at once?", "a": "Run the tool once per phrase. Each run preserves previous highlights, so you can layer different colors for different keywords."},
+        {"q": "Does the highlighter respect case?", "a": "Toggle case-sensitive matching for exact-case search; leave it off for case-insensitive flexible matching. Case-insensitive is the default."},
+    ],
+    "summarize-pdf": [
+        {"q": "Is my PDF really not uploaded?", "a": "Correct. The summarization model loads once into your browser (~250 MB, cached in IndexedDB). After load, summarization runs entirely in WebAssembly inside your tab. Verify by opening DevTools → Network — no requests fire while summarization is running."},
+        {"q": "How long does it take?", "a": "About 2–4 seconds per chunk on a modern laptop. A 100-page PDF takes 3–6 minutes; a 10-page PDF takes 30–60 seconds."},
+        {"q": "What languages are supported?", "a": "The default distilbart-cnn model is English-only. For other languages we plan to add multilingual mT5 in a future release."},
+        {"q": "Is the summary as good as ChatGPT?", "a": "Not quite — frontier cloud models are 50–100x larger. distilbart produces good professional summaries but won't match GPT-4 quality. The trade-off is full privacy."},
+    ],
+    "smart-redact": [
+        {"q": "What entities does it detect?", "a": "Names (persons and organizations), emails, phone numbers, postal addresses, SSNs, credit card numbers, dates, and locations. The BERT model also catches custom patterns via regex hooks."},
+        {"q": "Where does the NER scan run?", "a": "Entirely in your browser using @huggingface/transformers WebAssembly. The PDF text never leaves your machine during detection."},
+        {"q": "Is the redaction reversible?", "a": "No. The backend applies real PyMuPDF redactions which permanently remove the underlying content. The redacted file cannot be 'unredacted' without the original."},
+        {"q": "How is this different from regular Redact?", "a": "Regular Redact requires you to draw rectangles manually. Smart Redact auto-detects sensitive entities so you only need to review and confirm."},
+    ],
+    "split-in-half": [
+        {"q": "When would I use this?", "a": "For two-up scans (where two pages were scanned side-by-side onto one physical page), scanned booklets, or any PDF where each page should be two pages in the output."},
+        {"q": "Does it work on PDFs with mixed page sizes?", "a": "Yes. Each page is split independently at its own midpoint, so different page sizes work fine."},
+        {"q": "What's the difference between vertical and horizontal?", "a": "Vertical bisects each page down the middle into left and right halves (the common case for landscape two-up scans). Horizontal bisects across the middle into top and bottom halves."},
+    ],
+    "pdf-to-svg": [
+        {"q": "What kind of PDFs convert best?", "a": "Vector PDFs (drawn in Illustrator, Inkscape, Figma, LaTeX, etc.) convert into editable vector SVGs. Scanned/raster PDFs become SVGs containing embedded images."},
+        {"q": "How many SVG files come back?", "a": "One per page, packaged into a ZIP."},
+        {"q": "Can I edit the SVGs after?", "a": "Yes. Open in any vector editor (Illustrator, Inkscape, Figma). Text and paths are editable."},
+    ],
+    "pdf-to-html": [
+        {"q": "How accurate is the conversion?", "a": "PyMuPDF preserves text positioning and fonts via inline styles. Layout is faithful for simple documents; complex multi-column or floating-element layouts may need manual cleanup."},
+        {"q": "Are images included?", "a": "Yes. Embedded images come through as base64-encoded inline data URLs, so the HTML is fully self-contained — no external image files needed."},
+        {"q": "Why convert PDF to HTML?", "a": "Web archiving, accessibility (screen readers handle HTML better than complex PDFs), republishing offline documents online, or any use where you need the content as a web page."},
+    ],
+    "pdf-to-rtf": [
+        {"q": "What's RTF good for?", "a": "Rich Text Format opens in every word processor (Word, Pages, LibreOffice, WordPad) without the bloat of .docx and with better text fidelity than .txt. Useful for legacy or cross-platform document exchange."},
+        {"q": "Are images preserved?", "a": "No. The current implementation focuses on text and structure. For full visual fidelity, use PDF to Word instead."},
+        {"q": "Does it handle Unicode?", "a": "Yes. Non-ASCII characters are encoded via the standard RTF \\uN escape mechanism."},
+    ],
+    "web-optimize-pdf": [
+        {"q": "What does linearization actually do?", "a": "It reorganizes the PDF byte layout so the first page's objects come first in the file. A byte-range-aware viewer can then start rendering the first page while the rest still downloads."},
+        {"q": "Does it change file size?", "a": "Usually slightly smaller, sometimes slightly larger — the rearrangement adds a small overhead but qpdf also re-streams and recompresses where it can."},
+        {"q": "Do I need this for a PDF served from my own server?", "a": "Only if you're serving large PDFs and want the inline-viewer experience to feel fast. For small (<2 MB) PDFs the difference is invisible."},
+    ],
+    "split-by-text": [
+        {"q": "How does it decide where to split?", "a": "It scans every page for your search term. Every page that contains the term becomes the start of a new chunk. The chunk runs until the next match-page or the end of the document."},
+        {"q": "Can I use a regex?", "a": "Not in the current version — the search is a literal string match (case-sensitive optional). For regex splits, use the dev API directly."},
+        {"q": "What if my keyword doesn't appear at all?", "a": "The tool returns a 400 error with a clear message. Make sure your search exactly matches the casing if you have case-sensitive enabled."},
+    ],
+    "view-exif": [
+        {"q": "What metadata does it show?", "a": "All standard EXIF tags (camera make/model, lens, ISO, exposure, focal length, timestamps), GPS sub-IFD (latitude, longitude, altitude), IPTC, and XMP-embedded fields, plus PNG tEXt chunks if present."},
+        {"q": "Does this strip the metadata?", "a": "No — this is read-only. To strip metadata, use Remove EXIF."},
+        {"q": "Why does my photo have GPS coordinates?", "a": "Most smartphones embed GPS coordinates in photos by default. They reveal exactly where the photo was taken. Strip them before posting publicly."},
+    ],
+    "jwt-decoder": [
+        {"q": "Is it safe to paste a real production JWT here?", "a": "Yes — decoding happens entirely in your browser using JavaScript's atob(). No part of the token is sent to a server. Verify by checking DevTools → Network."},
+        {"q": "Can it verify the signature?", "a": "Not in this tool. Verification requires the issuer's signing key (HMAC secret for HS*, public key for RS*/ES*). The decoder displays the signature for inspection but doesn't validate it."},
+        {"q": "What if my JWT is malformed?", "a": "If the three-part dot structure is wrong, you'll see a clear error. If the base64 is malformed, the parser shows which segment failed."},
+    ],
+    "regex-tester": [
+        {"q": "Which regex flavor does it use?", "a": "JavaScript RegExp (ECMAScript). The same engine that powers browser pattern matching. Most patterns are portable to Python re, PCRE, or Go regexp with minor adjustments."},
+        {"q": "Is my test text saved anywhere?", "a": "No. Pattern and text are kept in browser state only. Refresh the page and they're gone. No server-side storage."},
+        {"q": "How many matches can it handle?", "a": "Tested up to ~10,000 matches without slowdown. Beyond that, the highlighting may lag but the match list still renders."},
+    ],
+    "timestamp-converter": [
+        {"q": "How does it know if a number is seconds or milliseconds?", "a": "By magnitude. Numbers larger than 10^12 (Sep 2001 onward in milliseconds) are treated as milliseconds; smaller as seconds. You can also paste an ISO 8601 string explicitly."},
+        {"q": "Why is the local time different from the UTC time?", "a": "Your browser's timezone offset is applied. The UTC value is what's actually stored in the timestamp; local is just for human convenience."},
+        {"q": "Can I generate a future timestamp?", "a": "Yes. Type or paste any past or future ISO date and you'll get the corresponding epoch. The relative phrase will say 'in X days' for the future."},
+    ],
+    "batch-compress-pdf": [
+        {"q": "How many PDFs can I upload?", "a": "Up to 50 files per batch, up to 500 MB per file."},
+        {"q": "Are they compressed in parallel?", "a": "Yes — the backend runs 4 worker processes simultaneously, so 4 files compress at once. Total time scales nearly linearly with file count divided by 4."},
+        {"q": "What's the difference between Light, Recommended, and Extreme?", "a": "Light shrinks structure only (5–30% reduction, no visible quality loss). Recommended (default) resamples images at 150 DPI (40–70% reduction). Extreme drops to 96 DPI and lower JPEG quality (60–90% reduction)."},
+    ],
+    "pdf-page-counter": [
+        {"q": "How is this faster than opening each PDF?", "a": "The tool reads only the PDF's page metadata, not the page content. For 100 PDFs the total scan time is typically under a second."},
+        {"q": "Does it work on encrypted PDFs?", "a": "Yes for most. Password-protected PDFs that block metadata access return as invalid."},
+        {"q": "Useful for print pricing?", "a": "Yes — print shops use this exact tool to count total pages across multi-file print jobs for instant quotes."},
+    ],
+    "webp-to-jpg": [
+        {"q": "Why convert WebP to JPG?", "a": "WebP isn't supported by all software, email clients, or older browsers. JPG is universal — every image viewer can open it."},
+        {"q": "Will the quality be the same?", "a": "Essentially yes. Default JPG quality is 85, which is visually indistinguishable from the WebP source at typical viewing sizes."},
+        {"q": "Does it preserve transparency?", "a": "No — JPEG doesn't support transparency. Transparent pixels in the source render as white in the JPG. Use HEIC to PNG or WebP to PNG if you need transparency preserved."},
+    ],
+    "webp-to-png": [
+        {"q": "Why convert WebP to PNG?", "a": "PNG is lossless and supports transparency, making it ideal for graphics, logos, screenshots, and anywhere you need pixel-perfect output."},
+        {"q": "How much larger is the PNG?", "a": "Typically 3–5x the size of the WebP source. PNG compression is lossless but less efficient than WebP."},
+        {"q": "Does it preserve transparency?", "a": "Yes. Transparent pixels in the WebP come through unchanged in the PNG."},
+    ],
+    "heic-to-png": [
+        {"q": "What's HEIC and why convert it?", "a": "HEIC (High Efficiency Image Container) is Apple's image format from iOS 11 onward. It's space-efficient but not widely supported outside Apple's ecosystem. PNG works everywhere."},
+        {"q": "Is PNG better than JPG for HEIC conversion?", "a": "If you need transparency or are doing further editing: yes. For sharing on the web or attaching to emails: JPG is fine and 3–5x smaller."},
+        {"q": "Are EXIF tags preserved?", "a": "Most are stripped during conversion (since PNG and HEIC have different metadata formats). If you need to preserve EXIF, use HEIC to JPG instead and the standard EXIF block survives."},
     ],
 }

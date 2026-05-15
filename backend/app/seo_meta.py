@@ -148,6 +148,36 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "We tested 7 free online PDF editors in 2026. Which ones are truly free, "
         "which add watermarks, and which respect your privacy.",
     ),
+    "/blog/ai-pdf-summarizer-browser-2026": (
+        "AI PDF Summarizer: How to Summarize Long PDFs in Your Browser (2026 Guide)",
+        "How AI-powered PDF summarizers work and how to summarize a 100-page PDF entirely in your browser — "
+        "no upload, no API key, no privacy compromise. Step-by-step walkthrough.",
+    ),
+    "/blog/ilovepdf-alternatives-2026": (
+        "10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)",
+        "iLovePDF charges, uploads, and shows ads. Here are 10 better alternatives ranked by features, "
+        "privacy, and price — including open-source options you can self-host.",
+    ),
+    "/blog/redact-pdf-permanently-guide": (
+        "How to Redact a PDF Properly (Don't Use Black Boxes) — 2026 Guide",
+        "Drawing black rectangles over PDF text doesn't redact anything — the text is still under there. "
+        "Learn the right way to permanently remove sensitive content from a PDF.",
+    ),
+    "/blog/online-pdf-tools-tracking-you": (
+        "Why Most Online PDF Tools Are Tracking You (And What to Do About It)",
+        "A look at what actually happens when you upload a PDF: the trackers, retention windows, "
+        "third-party pixels, and how to stay private when working with sensitive documents.",
+    ),
+    "/blog/heic-conversion-guide-2026": (
+        "How to Convert HEIC to PDF, JPG, and PNG on Any Device (2026)",
+        "Every way to convert iPhone HEIC photos: online tools, native Mac, Windows extensions, "
+        "command line, batch conversion — plus how to stop your iPhone from creating HEIC in the first place.",
+    ),
+    "/blog/decode-jwt-tokens-safely-guide": (
+        "How to Decode a JWT Token Safely (and What Each Part Means)",
+        "JWT tokens are everywhere in modern web auth. Learn the structure, how to decode one safely, "
+        "what each standard claim means, and why most online JWT decoders are a security risk.",
+    ),
 }
 
 # ---------------------------------------------------------------------------
@@ -216,6 +246,48 @@ _BLOG_POSTS: dict[str, dict] = {
         "publishedAt": "2026-03-29",
         "readTime": "7 min read",
         "tags": ["PDF", "Editor", "Comparison", "Review"],
+    },
+    "ai-pdf-summarizer-browser-2026": {
+        "title": "AI PDF Summarizer: How to Summarize Long PDFs in Your Browser (2026 Guide)",
+        "description": "How AI-powered PDF summarizers work, why running them in the browser matters, and a step-by-step walkthrough of summarizing a 100-page PDF without any upload.",
+        "publishedAt": "2026-05-15",
+        "readTime": "9 min read",
+        "tags": ["AI", "PDF", "Privacy", "How-To"],
+    },
+    "ilovepdf-alternatives-2026": {
+        "title": "10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)",
+        "description": "iLovePDF is popular but it's not free, it uploads your files, and it shows ads. Here are 10 alternatives ranked by features, privacy, and price.",
+        "publishedAt": "2026-05-15",
+        "readTime": "12 min read",
+        "tags": ["Comparison", "PDF", "Alternatives", "iLovePDF"],
+    },
+    "redact-pdf-permanently-guide": {
+        "title": "How to Redact a PDF Properly (Don't Use Black Boxes)",
+        "description": "Drawing black boxes over text doesn't redact anything — the text is still under there. How to actually remove sensitive content from a PDF so it can't be recovered.",
+        "publishedAt": "2026-05-15",
+        "readTime": "8 min read",
+        "tags": ["PDF", "Privacy", "Redaction", "Security"],
+    },
+    "online-pdf-tools-tracking-you": {
+        "title": "Why Most Online PDF Tools Are Tracking You (And What to Do About It)",
+        "description": "A look at what actually happens when you upload a PDF to a 'free' online tool — the trackers, the retention windows, the third-party pixels — and how to stay private.",
+        "publishedAt": "2026-05-15",
+        "readTime": "10 min read",
+        "tags": ["Privacy", "PDF", "Security", "Tracking"],
+    },
+    "heic-conversion-guide-2026": {
+        "title": "How to Convert HEIC to PDF, JPG, and PNG on Any Device (2026)",
+        "description": "Apple's HEIC format is space-efficient but incompatible with most software. How to convert HEIC to PDF, JPG, or PNG online, on Mac, on Windows, and in batch.",
+        "publishedAt": "2026-05-15",
+        "readTime": "7 min read",
+        "tags": ["HEIC", "Image", "Conversion", "How-To"],
+    },
+    "decode-jwt-tokens-safely-guide": {
+        "title": "How to Decode a JWT Token Safely (and What Each Part Means)",
+        "description": "JWT tokens are everywhere in modern web auth. How they're structured, how to decode them, what each claim means, and why you should never paste a real JWT into a random online decoder.",
+        "publishedAt": "2026-05-15",
+        "readTime": "8 min read",
+        "tags": ["JWT", "Developer", "Security", "How-To"],
     },
 }
 
