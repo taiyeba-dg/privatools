@@ -149,7 +149,7 @@ export default function BlogPostPage() {
                       <Clock size={10} /> {p.readTime}
                     </span>
                   </div>
-                  <Link to={`/blog/${p.slug}`} className="shrink-0 text-muted-foreground hover:text-primary transition-colors mt-1">
+                  <Link to={`/blog/${p.slug}`} aria-label={`Read ${p.title}`} className="shrink-0 text-muted-foreground hover:text-primary transition-colors mt-1">
                     <ArrowRight size={14} />
                   </Link>
                 </div>

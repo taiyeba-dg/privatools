@@ -544,6 +544,13 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "uuid-generator":   "Click Generate and copy a v4 or v7 UUID — bulk-generate up to 500 at a time, pure browser.",
     "lorem-ipsum":      "Pick paragraphs/words/sentences and copy placeholder Lorem Ipsum text instantly — never need to look it up again.",
     "word-counter":     "Paste any text and see live word, character, sentence, paragraph, and reading-time counts — pure browser.",
+    # ── Phase 7 — competitor-gap tools (v1.5.0) ────────────────────────
+    "mute-video":       "Upload a video and download the same video without its audio track — instant, lossless, no re-encoding.",
+    "reverse-video":    "Upload a video and download a copy that plays backwards — both video and audio reversed in sync.",
+    "video-speed":      "Upload a video, drag the slider from 0.25× (slow-mo) to 4× (hyperlapse), and download the result — audio pitch-corrected so it doesn't sound chipmunky.",
+    "audio-trim":       "Upload an audio file, type start and end timestamps (HH:MM:SS), and download just that segment — lossless stream-copy.",
+    "image-palette":    "Upload an image and copy the dominant color HEX/rgb values with coverage percentages — useful for extracting brand colors from a logo.",
+    "pixelate-image":   "Upload an image, pick mosaic pixelation or Gaussian blur, set strength, and download a censored copy for privacy-safe sharing.",
 }
 
 
