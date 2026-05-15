@@ -30,7 +30,7 @@ export function AudioConverterUI() {
         setState("processing");
         setError(null);
         try {
-            const res = await uploadFile("/api/audio-converter", file, { format, bitrate });
+            const res = await uploadFile("/audio-converter", file, { format, bitrate });
             const blob = await res.blob();
             const stem = file.name.replace(/\.[^.]+$/, "");
             downloadBlob(blob, `${stem}.${format}`);

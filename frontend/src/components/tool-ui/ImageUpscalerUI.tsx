@@ -20,7 +20,7 @@ export function ImageUpscalerUI() {
         setState("processing");
         setError(null);
         try {
-            const res = await uploadFile("/api/image-upscaler", file, { scale });
+            const res = await uploadFile("/image-upscaler", file, { scale });
             const blob = await res.blob();
             const stem = file.name.replace(/\.[^.]+$/, "");
             const ext = file.name.split(".").pop()?.toLowerCase() || "png";

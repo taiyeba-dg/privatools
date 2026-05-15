@@ -42,7 +42,7 @@ export function PdfPageCounterUI() {
         setState("processing");
         setError(null);
         try {
-            const res = await uploadFiles("/api/pdf-page-counter", items.map(i => i.file));
+            const res = await uploadFiles("/pdf-page-counter", items.map(i => i.file));
             const data = await res.json();
             setResults(data.files || []);
             setTotal(data.total_pages ?? 0);
