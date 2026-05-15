@@ -303,6 +303,50 @@ export const nonPdfTools: NonPdfTool[] = [
     longDescription: "Convert audio files online for free — change between MP3, WAV, OGG, FLAC, and AAC formats. Choose your preferred bitrate (64k to 320k). Powered by FFmpeg for professional-quality conversion. Files up to 200 MB supported.",
     category: "video-audio", accepts: ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma", outputLabel: "converted audio",
   },
+
+  // ── v1.2.0 additions ──────────────────────────────────────────────────────
+  {
+    slug: "view-exif", icon: ScanLine, name: "View EXIF Data",
+    description: "Inspect GPS, camera, and metadata stored in an image",
+    longDescription: "View EXIF data online for free — see every piece of metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, lens info, ISO, exposure, timestamps, software, and more. Counterpart to Remove EXIF — see what you'd be stripping out.",
+    category: "image", accepts: ".jpg,.jpeg,.png,.tiff,.tif,.webp,.heic,.heif,.bmp,.gif", outputLabel: "metadata JSON",
+  },
+  {
+    slug: "webp-to-jpg", icon: RefreshCw, name: "WebP to JPG",
+    description: "Convert WebP images to JPEG",
+    longDescription: "Convert WebP to JPG online for free — change Google's WebP image format to the universally-compatible JPEG. Drag-and-drop multiple files, no sign-up, no watermarks. Files are processed and discarded immediately.",
+    category: "image", accepts: ".webp", outputLabel: "image.jpg",
+  },
+  {
+    slug: "webp-to-png", icon: RefreshCw, name: "WebP to PNG",
+    description: "Convert WebP images to PNG (lossless)",
+    longDescription: "Convert WebP to PNG online for free — change Google's WebP format to lossless PNG, preserving transparency. Free, private, no watermarks.",
+    category: "image", accepts: ".webp", outputLabel: "image.png",
+  },
+  {
+    slug: "heic-to-png", icon: RefreshCw, name: "HEIC to PNG",
+    description: "Convert iPhone HEIC photos to PNG",
+    longDescription: "Convert HEIC to PNG online for free — change Apple's High Efficiency Image format (the default for iPhone photos) to PNG, which every browser and editor can open. Free, private, no sign-up.",
+    category: "image", accepts: ".heic,.heif", outputLabel: "image.png",
+  },
+  {
+    slug: "jwt-decoder", icon: KeyRound, name: "JWT Decoder",
+    description: "Decode and inspect a JWT (JSON Web Token)",
+    longDescription: "Decode a JWT online for free — paste any JSON Web Token and instantly see its header, payload, and signature decoded as readable JSON. Highlights expiry, algorithm, and standard claims. All decoding happens in your browser; tokens never leave.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "decoded JWT",
+  },
+  {
+    slug: "regex-tester", icon: Code2, name: "Regex Tester",
+    description: "Test regular expressions with live highlighting",
+    longDescription: "Test regular expressions online for free — paste a regex and a test string to see every match highlighted in real time, along with captured groups. Supports flags (g, i, m, s, u, y). Works entirely in your browser, no calls to a server.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "matches",
+  },
+  {
+    slug: "timestamp-converter", icon: Hash, name: "Timestamp Converter",
+    description: "Convert Unix epoch ↔ ISO 8601 ↔ human-readable",
+    longDescription: "Convert between Unix timestamps and human-readable dates online for free — paste an epoch (seconds or milliseconds) or an ISO 8601 string and see all formats side-by-side, in your local time and UTC. Pure-browser, never logs your data.",
+    category: "developer", clientOnly: true, accepts: "", outputLabel: "converted timestamp",
+  },
 ];
 
 export const nonPdfToolBySlug = Object.fromEntries(nonPdfTools.map(t => [t.slug, t]));

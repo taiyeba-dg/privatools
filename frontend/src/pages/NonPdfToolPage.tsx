@@ -62,6 +62,11 @@ const LazyWordCounterUI   = lazyNamed(() => import("@/components/tool-ui/Utility
 const LazyColorConverterUI = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "ColorConverterUI");
 const LazyUrlEncoderUI    = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "UrlEncoderUI");
 
+// v1.2.0 browser-only utilities (also live in UtilityTools.tsx)
+const LazyJwtDecoderUI         = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "JwtDecoderUI");
+const LazyRegexTesterUI        = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "RegexTesterUI");
+const LazyTimestampConverterUI = lazyNamed(() => import("@/components/tool-ui/UtilityTools"), "TimestampConverterUI");
+
 // Round-U dedicated UIs (formerly fell through to GenericUI)
 const LazyMultiFileUI       = lazyNamed(() => import("@/components/tool-ui/MultiFileUI"), "MultiFileUI");
 const LazyAudioConverterUI  = lazyNamed(() => import("@/components/tool-ui/AudioConverterUI"), "AudioConverterUI");
@@ -181,6 +186,17 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
         fileLabel="videos"
         ordered={true}
       />;
+    // v1.2.0 — browser-only dev utilities
+    case "jwt-decoder":         return <LazyJwtDecoderUI />;
+    case "regex-tester":        return <LazyRegexTesterUI />;
+    case "timestamp-converter": return <LazyTimestampConverterUI />;
+    // v1.2.0 — image-converter SEO aliases (preset target_format)
+    case "webp-to-jpg":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webp" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "jpeg" }} />;
+    case "webp-to-png":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".webp" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "png" }} />;
+    case "heic-to-png":
+      return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts=".heic,.heif" slug={slug} apiEndpoint="/image-converter" params={{ target_format: "png" }} />;
     default:
       return <GenericUI toolName={toolName} outputLabel={outputLabel} accepts={accepts} slug={slug} />;
   }

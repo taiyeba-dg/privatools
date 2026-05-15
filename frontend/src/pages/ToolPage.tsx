@@ -71,6 +71,7 @@ const LazyPdfToSvgUI  = lazyNamed(() => import("@/components/tool-ui/NamedPdfToI
 const LazyPdfToJpgUI  = lazyNamed(() => import("@/components/tool-ui/NamedPdfToImageVariants"), "PdfToJpgUI");
 const LazyPdfToPngUI  = lazyNamed(() => import("@/components/tool-ui/NamedPdfToImageVariants"), "PdfToPngUI");
 const LazySplitInHalfUI = lazyNamed(() => import("@/components/tool-ui/SplitInHalfUI"), "SplitInHalfUI");
+const LazySplitByTextUI = lazyNamed(() => import("@/components/tool-ui/SplitByTextUI"), "SplitByTextUI");
 const LazyHighlightUI = lazyNamed(() => import("@/components/tool-ui/HighlightUI"), "HighlightUI");
 const LazySummarizePdfUI = lazyNamed(() => import("@/components/tool-ui/SummarizePdfUI"), "SummarizePdfUI");
 const LazySmartRedactUI = lazyNamed(() => import("@/components/tool-ui/SmartRedactUI"), "SmartRedactUI");
@@ -304,6 +305,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "pdf-to-jpg":  return <LazyPdfToJpgUI />;
     case "pdf-to-png":  return <LazyPdfToPngUI />;
     case "split-in-half": return <LazySplitInHalfUI />;
+    case "split-by-text": return <LazySplitByTextUI />;
     case "highlight-pdf": return <LazyHighlightUI />;
     case "summarize-pdf": return <LazySummarizePdfUI />;
     case "smart-redact": return <LazySmartRedactUI />;

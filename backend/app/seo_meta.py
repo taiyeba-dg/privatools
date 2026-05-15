@@ -19,7 +19,7 @@ BASE_URL = "https://privatools.me"
 _STATIC_META: dict[str, tuple[str, str]] = {
     "/": (
         "PrivaTools — Free, Open-Source Privacy-First File Tools",
-        "141+ free, open-source file tools — PDF, image, video, audio, and developer utilities. "
+        "152+ free, open-source file tools — PDF, image, video, audio, and developer utilities. "
         "Self-hostable so your files stay on your own infrastructure. "
         "File content never leaves the processing container; no behavioural tracking; no accounts.",
     ),
@@ -627,7 +627,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     if path == "/":
         parts.append(f"<h1>PrivaTools — Free, Open-Source Privacy-First File Tools</h1>")
         parts.append(
-            "<p>PrivaTools provides 141 free online file tools — 97 PDF tools and 44 image, video, audio, "
+            "<p>PrivaTools provides 152 free online file tools — 101 PDF tools and 51 image, video, audio, "
             "and developer utilities. The entire stack is open source under the MIT license and "
             "self-hostable via Docker, so files stay on your own infrastructure. On the public demo, "
             "files are processed in an isolated container and deleted immediately after the response "
@@ -711,7 +711,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(f"<h1>{title}</h1>")
         parts.append(f"<p>{description}</p>")
         parts.append(
-            "<p>PrivaTools is a free, open-source alternative with 141 file tools, "
+            "<p>PrivaTools is a free, open-source alternative with 152 file tools, "
             "no file limits, no sign-ups, and no behavioural tracking. Compare features, pricing, "
             "and privacy practices side by side.</p>"
         )

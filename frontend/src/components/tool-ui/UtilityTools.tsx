@@ -494,3 +494,315 @@ export function UrlEncoderUI() {
         </div>
     );
 }
+
+// ─── 7. JWT Decoder ──────────────────────────────────────────────────────
+
+function b64urlDecode(input: string): string {
+    const padded = input.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((input.length + 3) % 4);
+    return decodeURIComponent(
+        atob(padded)
+            .split("")
+            .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+    );
+}
+
+export function JwtDecoderUI() {
+    const [token, setToken] = useState("");
+    const decoded = useMemo(() => {
+        if (!token.trim()) return null;
+        const parts = token.trim().split(".");
+        if (parts.length !== 3) {
+            return { error: "A JWT has three dot-separated parts (header.payload.signature)." };
+        }
+        try {
+            const header = JSON.parse(b64urlDecode(parts[0]));
+            const payload = JSON.parse(b64urlDecode(parts[1]));
+            return { header, payload, signature: parts[2] };
+        } catch (e: any) {
+            return { error: `Could not parse: ${e.message || e}` };
+        }
+    }, [token]);
+
+    const fmt = (v: unknown) => JSON.stringify(v, null, 2);
+    const now = Math.floor(Date.now() / 1000);
+    const claims = decoded && !("error" in decoded) ? decoded.payload as Record<string, unknown> : null;
+    const exp = claims && typeof claims.exp === "number" ? (claims.exp as number) : null;
+    const iat = claims && typeof claims.iat === "number" ? (claims.iat as number) : null;
+
+    return (
+        <div className="space-y-5">
+            <ClientToolBanner label="JWT tokens never leave the browser — decoded locally with atob()." />
+            <div>
+                <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Paste token</label>
+                <textarea
+                    value={token}
+                    onChange={e => setToken(e.target.value)}
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.…"
+                    className="mt-1.5 w-full h-32 p-4 rounded-xl border border-border bg-card font-mono text-[13px] text-foreground resize-none focus:outline-none focus:border-accent"
+                />
+            </div>
+            {decoded && "error" in decoded && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3 flex items-start gap-3">
+                    <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
+                    <p className="text-[13px] text-foreground">{decoded.error}</p>
+                </div>
+            )}
+            {decoded && !("error" in decoded) && (
+                <>
+                    {(exp !== null || iat !== null) && (
+                        <div className="rounded-xl border border-border bg-card p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-[12px]">
+                            {iat !== null && (
+                                <div>
+                                    <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Issued</p>
+                                    <p className="font-mono text-foreground">{new Date(iat * 1000).toISOString()}</p>
+                                </div>
+                            )}
+                            {exp !== null && (
+                                <div>
+                                    <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Expires</p>
+                                    <p className="font-mono text-foreground">{new Date(exp * 1000).toISOString()}</p>
+                                </div>
+                            )}
+                            {exp !== null && (
+                                <div>
+                                    <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Status</p>
+                                    <p className={cn("font-semibold", exp > now ? "text-emerald-500" : "text-rose-500")}>
+                                        {exp > now ? `Valid (expires in ${Math.round((exp - now) / 60)} min)` : "Expired"}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Header</p>
+                                <CopyButton value={fmt(decoded.header)} />
+                            </div>
+                            <pre className="p-4 rounded-xl border border-border bg-card font-mono text-[12px] text-foreground/90 overflow-auto max-h-72">{fmt(decoded.header)}</pre>
+                        </div>
+                        <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Payload</p>
+                                <CopyButton value={fmt(decoded.payload)} />
+                            </div>
+                            <pre className="p-4 rounded-xl border border-border bg-card font-mono text-[12px] text-foreground/90 overflow-auto max-h-72">{fmt(decoded.payload)}</pre>
+                        </div>
+                    </div>
+                    <div>
+                        <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">Signature (base64url, not verified)</p>
+                        <pre className="p-4 rounded-xl border border-border bg-card font-mono text-[12px] text-foreground/70 overflow-auto break-all whitespace-pre-wrap">{decoded.signature}</pre>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+// ─── 8. Regex Tester ─────────────────────────────────────────────────────
+
+export function RegexTesterUI() {
+    const [pattern, setPattern] = useState("");
+    const [flags, setFlags] = useState("g");
+    const [text, setText] = useState("");
+    const result = useMemo(() => {
+        if (!pattern) return { kind: "idle" as const };
+        try {
+            const re = new RegExp(pattern, flags);
+            const matches: { match: string; index: number; groups: string[] }[] = [];
+            if (flags.includes("g")) {
+                for (const m of text.matchAll(re)) {
+                    matches.push({ match: m[0], index: m.index ?? 0, groups: m.slice(1) });
+                }
+            } else {
+                const m = re.exec(text);
+                if (m) matches.push({ match: m[0], index: m.index, groups: m.slice(1) });
+            }
+            return { kind: "ok" as const, matches };
+        } catch (e: any) {
+            return { kind: "err" as const, error: e.message || String(e) };
+        }
+    }, [pattern, flags, text]);
+
+    const highlighted = useMemo(() => {
+        if (result.kind !== "ok" || result.matches.length === 0) return text;
+        const parts: (string | { match: string })[] = [];
+        let cursor = 0;
+        for (const m of result.matches) {
+            if (m.index > cursor) parts.push(text.slice(cursor, m.index));
+            parts.push({ match: m.match });
+            cursor = m.index + m.match.length;
+        }
+        if (cursor < text.length) parts.push(text.slice(cursor));
+        return parts;
+    }, [result, text]);
+
+    return (
+        <div className="space-y-5">
+            <ClientToolBanner label="JavaScript RegExp running in your browser — your patterns and text never travel." />
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-3">
+                <div>
+                    <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Pattern</label>
+                    <input
+                        value={pattern}
+                        onChange={e => setPattern(e.target.value)}
+                        placeholder={String.raw`\\d{3}-\\d{3}-\\d{4}`}
+                        className="mt-1.5 w-full px-4 py-2 rounded-xl border border-border bg-card font-mono text-[13px] text-foreground focus:outline-none focus:border-accent"
+                    />
+                </div>
+                <div>
+                    <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Flags</label>
+                    <input
+                        value={flags}
+                        onChange={e => setFlags(e.target.value.toLowerCase().replace(/[^gimsuy]/g, ""))}
+                        placeholder="gim"
+                        className="mt-1.5 w-full px-4 py-2 rounded-xl border border-border bg-card font-mono text-[13px] text-foreground focus:outline-none focus:border-accent"
+                    />
+                </div>
+            </div>
+            <div>
+                <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Test string</label>
+                <textarea
+                    value={text}
+                    onChange={e => setText(e.target.value)}
+                    placeholder="Paste the text to test against…"
+                    className="mt-1.5 w-full h-40 p-4 rounded-xl border border-border bg-card font-mono text-[13px] text-foreground resize-none focus:outline-none focus:border-accent"
+                />
+            </div>
+            {result.kind === "err" && (
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-4 py-3 flex items-start gap-3">
+                    <AlertCircle size={14} className="text-rose-500 mt-0.5 shrink-0" />
+                    <p className="text-[13px] text-foreground font-mono">{result.error}</p>
+                </div>
+            )}
+            {result.kind === "ok" && (
+                <>
+                    <div className="rounded-xl border border-border bg-card p-4">
+                        <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                            {result.matches.length} match{result.matches.length === 1 ? "" : "es"}
+                        </p>
+                        <div className="text-[13px] text-foreground whitespace-pre-wrap break-words font-mono">
+                            {typeof highlighted === "string" ? highlighted : highlighted.map((p, i) =>
+                                typeof p === "string"
+                                    ? <span key={i}>{p}</span>
+                                    : <mark key={i} className="bg-accent/30 rounded px-0.5">{p.match}</mark>
+                            )}
+                        </div>
+                    </div>
+                    {result.matches.length > 0 && (
+                        <div className="rounded-xl border border-border bg-card p-4">
+                            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">Match details</p>
+                            <div className="space-y-2 max-h-60 overflow-auto">
+                                {result.matches.map((m, i) => (
+                                    <div key={i} className="text-[12px] font-mono text-foreground/90 border-l-2 border-accent pl-3">
+                                        <span className="text-muted-foreground">[{i}] @{m.index}</span> <span>"{m.match}"</span>
+                                        {m.groups.length > 0 && (
+                                            <span className="text-muted-foreground"> · groups: [{m.groups.map(g => JSON.stringify(g)).join(", ")}]</span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
+// ─── 9. Timestamp Converter ──────────────────────────────────────────────
+
+export function TimestampConverterUI() {
+    const [input, setInput] = useState(String(Math.floor(Date.now() / 1000)));
+    const parsed = useMemo(() => {
+        const s = input.trim();
+        if (!s) return null;
+        // Numeric: detect seconds vs milliseconds heuristically
+        if (/^-?\d+$/.test(s)) {
+            const n = Number(s);
+            // If 10 digits or fewer → seconds; 13 → ms
+            const ms = Math.abs(n) > 1e12 ? n : n * 1000;
+            const d = new Date(ms);
+            if (isNaN(d.getTime())) return { error: "Number out of range for a date" };
+            return { d, source: Math.abs(n) > 1e12 ? "ms" : "seconds" };
+        }
+        // Otherwise treat as ISO 8601 / parseable string
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return { error: "Could not parse as a date" };
+        return { d, source: "iso" };
+    }, [input]);
+
+    const setNow = () => setInput(String(Math.floor(Date.now() / 1000)));
+
+    return (
+        <div className="space-y-5">
+            <ClientToolBanner label="Parsing happens in your browser. No data is transmitted." />
+            <div>
+                <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Epoch (seconds or ms) or ISO 8601 date</label>
+                <div className="flex gap-2 mt-1.5">
+                    <input
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        placeholder="1704067200 or 2024-01-01T00:00:00Z"
+                        className="flex-1 px-4 py-2 rounded-xl border border-border bg-card font-mono text-[13px] text-foreground focus:outline-none focus:border-accent"
+                    />
+                    <Button type="button" variant="outline" onClick={setNow}>
+                        <RefreshCw size={13} className="mr-1.5" /> Now
+                    </Button>
+                </div>
+            </div>
+            {parsed && "error" in parsed && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3 flex items-start gap-3">
+                    <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
+                    <p className="text-[13px] text-foreground">{parsed.error}</p>
+                </div>
+            )}
+            {parsed && !("error" in parsed) && (
+                <div className="rounded-xl border border-border bg-card p-5 space-y-3 text-[13px]">
+                    {[
+                        ["Detected", parsed.source.toString()],
+                        ["Unix seconds", String(Math.floor(parsed.d.getTime() / 1000))],
+                        ["Unix milliseconds", String(parsed.d.getTime())],
+                        ["ISO 8601 (UTC)", parsed.d.toISOString()],
+                        ["UTC string", parsed.d.toUTCString()],
+                        ["Local string", parsed.d.toString()],
+                        ["Relative", relTime(parsed.d.getTime() - Date.now())],
+                    ].map(([k, v]) => (
+                        <div key={k} className="flex items-start gap-3 justify-between gap-x-4">
+                            <span className="text-muted-foreground text-[12px] uppercase tracking-wider font-semibold pt-0.5 shrink-0">{k}</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-mono text-foreground text-[13px] truncate">{v}</span>
+                                <CopyButton value={String(v)} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function relTime(ms: number): string {
+    const abs = Math.abs(ms);
+    const future = ms >= 0;
+    const units: [number, string][] = [
+        [60_000, "second"],
+        [3_600_000, "minute"],
+        [86_400_000, "hour"],
+        [86_400_000 * 30, "day"],
+        [86_400_000 * 365, "month"],
+        [Infinity, "year"],
+    ];
+    let value = 0, unit = "second";
+    let last = 1000;
+    for (const [limit, name] of units) {
+        if (abs < limit) {
+            value = Math.round(abs / last);
+            unit = name;
+            break;
+        }
+        last = limit;
+    }
+    return `${future ? "in " : ""}${value} ${unit}${value === 1 ? "" : "s"}${future ? "" : " ago"}`;
+}

@@ -14,9 +14,16 @@ async def office_to_pdf(input_path: str) -> str:
     shutil.copy2(input_path, str(temp_input))
 
     temp_dir = temp_input.parent
+    # Per-conversion LibreOffice profile dir. Without this, LibreOffice tries
+    # to create its first-run profile under $HOME — but the container's
+    # appuser has no home dir, so that fails with "User installation could
+    # not be completed" and the whole conversion bails out.
+    profile_dir = get_temp_path(f"lo_profile_{uuid.uuid4().hex}")
+    profile_dir.mkdir(parents=True, exist_ok=True)
 
     proc = await asyncio.create_subprocess_exec(
         "libreoffice",
+        f"-env:UserInstallation=file://{profile_dir}",
         "--headless",
         "--convert-to",
         "pdf",

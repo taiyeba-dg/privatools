@@ -633,6 +633,32 @@ export const tools: Tool[] = [
     longDescription: "Count PDF pages online for free — upload up to 100 PDF files and instantly see the page count for each file plus the total. Perfect for print quotes, document audits, and project planning. No sign-up required.",
     category: "advanced", accepts: ".pdf", outputLabel: "page counts",
   },
+
+  // ── v1.2.0 additions ──────────────────────────────────────────────────────
+  {
+    slug: "web-optimize-pdf", icon: Wrench, name: "Web Optimize PDF",
+    description: "Linearize a PDF for fast web viewing",
+    longDescription: "Optimize PDFs for the web online for free — linearizes the file so the first page renders before the whole document has downloaded. Essential for PDFs served over a CDN or embedded inline. Powered by qpdf.",
+    category: "optimize", accepts: ".pdf", outputLabel: "web-optimized.pdf",
+  },
+  {
+    slug: "split-by-text", icon: ScanText, name: "Split by Text",
+    description: "Split a PDF every time a keyword appears",
+    longDescription: "Split PDF by text or keyword online for free — divide a document at every page that contains a search phrase. Perfect for batch-split-statements, contracts, invoices, or any PDF with section headings. Case-sensitive optional.",
+    category: "organize", accepts: ".pdf", outputLabel: "split-by-text.zip",
+  },
+  {
+    slug: "pdf-to-html", icon: FileCode, name: "PDF to HTML",
+    description: "Convert PDF to a web-viewable HTML file",
+    longDescription: "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "document.html",
+  },
+  {
+    slug: "pdf-to-rtf", icon: Type, name: "PDF to RTF",
+    description: "Extract PDF text into a Rich Text Format file",
+    longDescription: "Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text.",
+    category: "from-pdf", accepts: ".pdf", outputLabel: "document.rtf",
+  },
 ];
 
 export const toolBySlug = Object.fromEntries(tools.map(t => [t.slug, t]));

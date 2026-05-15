@@ -52,6 +52,16 @@ const TOOL_ENDPOINT_OVERRIDES: Record<string, string> = {
   "audio-merge":    "/audio-merge",
   "pdf-to-jpg":     "/pdf-to-image",
   "pdf-to-png":     "/pdf-to-image",
+  // v1.2.0 additions
+  "web-optimize-pdf": "/web-optimize",
+  "split-by-text":    "/split-by-text",
+  "pdf-to-html":      "/pdf-to-html",
+  "pdf-to-rtf":       "/pdf-to-rtf",
+  "view-exif":        "/view-exif",
+  // Image-converter SEO aliases (all route to /image-converter with a target_format):
+  "webp-to-jpg":      "/image-converter",
+  "webp-to-png":      "/image-converter",
+  "heic-to-png":      "/image-converter",
 };
 
 const CONTENT_TYPE_EXTENSION_MAP: Record<string, string> = {

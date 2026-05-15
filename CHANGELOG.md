@@ -2,6 +2,36 @@
 
 All notable changes to PrivaTools will be documented in this file.
 
+## [1.2.0] — 2026-05-15
+
+### 🆕 New tools (11) — total now 152
+
+**PDF**
+- **Web Optimize PDF** — `qpdf --linearize` for fast byte-range / first-page-fast-render serving
+- **Split by Text** — split a PDF at every page containing a search keyword (with case-sensitive toggle)
+- **PDF to HTML** — full HTML export preserving fonts and positioning
+- **PDF to RTF** — Rich Text Format extraction, opens in WordPad / Pages / Word / LibreOffice
+
+**Image**
+- **View EXIF Data** — counterpart to Remove EXIF; inspect GPS / camera / timestamps / IPTC / XMP metadata as JSON
+- **WebP to JPG** — SEO landing page hitting the existing image-converter
+- **WebP to PNG** — same, target PNG
+- **HEIC to PNG** — same, HEIC input
+
+**Browser-only dev utilities**
+- **JWT Decoder** — paste a JWT, see header + payload + signature + expiry status (decoded entirely client-side)
+- **Regex Tester** — live JavaScript RegExp tester with match highlighting and capture groups
+- **Timestamp Converter** — Unix epoch ↔ ISO 8601 ↔ UTC ↔ local ↔ relative ("in 3 days")
+
+### 🐛 Bug fixes
+
+- **office-to-pdf no longer 500s.** The LibreOffice path was failing with "User installation could not be completed" because the container's appuser had no `$HOME`. Each call now gets its own per-conversion `-env:UserInstallation` profile dir under `/tmp`.
+
+### 🛠️ Backend
+
+- New router `v12_tools.py` with `/api/web-optimize`, `/api/split-by-text`, `/api/pdf-to-html`, `/api/pdf-to-rtf`, `/api/view-exif`
+- `pdf-to-html` uses PyMuPDF's HTML exporter; `pdf-to-rtf` does its own minimal RTF generation with Unicode escapes; `view-exif` uses PIL's getexif + GPS sub-IFD
+
 ## [1.1.0] — 2026-05-04
 
 ### 🆕 New tools (33)
