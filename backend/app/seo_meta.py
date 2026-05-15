@@ -23,6 +23,14 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "Self-hostable so your files stay on your own infrastructure. "
         "File content never leaves the processing container; no behavioural tracking; no accounts.",
     ),
+    "/privacy": (
+        "Privacy Policy — How PrivaTools Handles Your Files | PrivaTools",
+        "PrivaTools privacy policy: files are processed in temp memory and deleted on response. No accounts, no behavioural tracking, no ads. Browser-side AI tools process data locally. Last updated May 15, 2026.",
+    ),
+    "/terms": (
+        "Terms of Service — PrivaTools",
+        "Terms of service for PrivaTools (privatools.me) — open-source under MIT license, no account required, no warranty, no liability. You retain rights to your files; we claim no ownership.",
+    ),
     "/about": (
         "About PrivaTools — How We Handle Your Files | Privacy-First",
         "Learn how PrivaTools processes your files with zero-knowledge architecture. "
@@ -977,6 +985,87 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     if path == "/about":
         parts.append("<h1>About PrivaTools</h1>")
         parts.append(f"<p>{description}</p>")
+        parts.append(
+            "<p>PrivaTools is a free, open-source suite of 152+ file tools — PDF, image, video, "
+            "audio, and developer utilities. MIT-licensed and self-hostable via Docker. Files "
+            "uploaded to the public demo are processed in an isolated container and deleted on "
+            "response; many tools run entirely in your browser and never upload anything.</p>"
+        )
+        return "\n".join(parts)
+
+    # ── Privacy page ───────────────────────────────────────────────────────
+    if path == "/privacy":
+        parts.append("<h1>Privacy Policy</h1>")
+        parts.append("<p><strong>Last updated:</strong> May 15, 2026</p>")
+        parts.append(
+            "<p>Your files are private. They are processed in temporary server memory and deleted "
+            "immediately after the response is delivered — never written to disk, never inspected, "
+            "never retained. We collect only anonymous Google Analytics 4 pageview telemetry "
+            "(IP-anonymized; blockable by any standard tracking blocker).</p>"
+        )
+        parts.append("<h2>1. Files You Upload</h2>")
+        parts.append(
+            "<p>Server-side tools (Merge, Compress, OCR, etc.) hold your file in temp memory only "
+            "for the duration of processing. The moment the response is delivered, the file is "
+            "unlinked from the temp directory; a cleanup task purges any stragglers every 5 minutes. "
+            "No backups, thumbnails, or metadata are retained.</p>"
+        )
+        parts.append("<h2>2. Client-Side Tools (Zero Upload)</h2>")
+        parts.append(
+            "<p>Many tools run entirely in your browser: JSON / XML Formatter, Text Diff, Base64, "
+            "Hash Generator, CSV ↔ JSON, Markdown ↔ HTML, JWT Decoder, Regex Tester, Timestamp "
+            "Converter, URL Encoder, Word Counter, Color Converter, UUID Generator, Lorem Ipsum, "
+            "Password Generator. The two browser-side AI tools (Summarize PDF, Smart Redact) "
+            "download their models once from Hugging Face and then run inference offline.</p>"
+        )
+        parts.append("<h2>3. What We Don't Collect</h2>")
+        parts.append(
+            "<p>No accounts, no email addresses, no behavioural profiling, no advertising cookies, "
+            "no remarketing audiences, no session recordings, no file metadata, no canvas / browser "
+            "fingerprints. Just anonymous pageview counts via GA4.</p>"
+        )
+        parts.append("<h2>4. Open Source &amp; Self-Hosting</h2>")
+        parts.append(
+            "<p>The entire stack is MIT-licensed at "
+            "<a href='https://github.com/taiyeba-dg/privatools'>github.com/taiyeba-dg/privatools</a>. "
+            "If you don't want to trust our deployment, "
+            "<code>docker compose up --build</code> runs the whole thing on your own server.</p>"
+        )
+        return "\n".join(parts)
+
+    # ── Terms page ─────────────────────────────────────────────────────────
+    if path == "/terms":
+        parts.append("<h1>Terms of Service</h1>")
+        parts.append("<p><strong>Last updated:</strong> March 29, 2026</p>")
+        parts.append("<h2>1. Acceptance of Terms</h2>")
+        parts.append(
+            "<p>By accessing PrivaTools (privatools.me) you agree to these Terms of Service. "
+            "The service is free and open-source under the MIT license — no account required.</p>"
+        )
+        parts.append("<h2>2. Description of Service</h2>")
+        parts.append(
+            "<p>PrivaTools provides browser-based file processing for PDF, image, video, audio, "
+            "and developer workflows. Server-side tools hold files in temp memory only and delete "
+            "them immediately after the response. Many tools run entirely in your browser with no "
+            "server interaction. Free, no limits, no registration.</p>"
+        )
+        parts.append("<h2>3. Acceptable Use</h2>")
+        parts.append(
+            "<p>Do not use the service to process unlawful content, abuse the infrastructure, or "
+            "redistribute the service under another name while claiming original authorship. The "
+            "MIT license grants you full rights to fork, modify, and self-host the codebase.</p>"
+        )
+        parts.append("<h2>4. No Warranty &amp; Limitation of Liability</h2>")
+        parts.append(
+            "<p>PrivaTools is provided 'as is' without warranty. Maintainers are not liable for "
+            "any indirect, incidental, or consequential damages arising from use of the service. "
+            "See <a href='/privacy'>Privacy Policy</a> for file handling details.</p>"
+        )
+        parts.append("<h2>5. Intellectual Property</h2>")
+        parts.append(
+            "<p>The PrivaTools codebase is open source under the MIT license. You retain all "
+            "rights to files you upload and outputs you download.</p>"
+        )
         return "\n".join(parts)
 
     # Fallback: just title + description
