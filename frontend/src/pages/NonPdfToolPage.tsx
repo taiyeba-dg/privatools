@@ -178,7 +178,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "image-upscaler":     return <LazyImageUpscalerUI />;
     case "audio-merge":
       return <LazyMultiFileUI
-        endpoint="/api/audio-merge"
+        endpoint="/audio-merge"
         accepts="audio/*,.mp3,.wav,.ogg,.flac,.aac,.m4a"
         outputFilename="merged.mp3"
         fileLabel="audio files"
@@ -186,7 +186,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
       />;
     case "video-merge":
       return <LazyMultiFileUI
-        endpoint="/api/video-merge"
+        endpoint="/video-merge"
         accepts="video/*,.mp4,.mov,.avi,.mkv,.webm"
         outputFilename="merged.mp4"
         fileLabel="videos"

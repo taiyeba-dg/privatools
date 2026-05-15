@@ -5,6 +5,15 @@
 
 const API_BASE = "/api";
 
+/** Strip an accidental leading "/api" so callers can pass either "/foo" or
+ *  "/api/foo" without producing "/api/api/foo". A few tool files have done
+ *  the latter historically and that produced 405s in prod. */
+function normalizeEndpoint(ep: string): string {
+    if (ep.startsWith("/api/")) return ep.slice(4);
+    if (ep === "/api") return "/";
+    return ep.startsWith("/") ? ep : "/" + ep;
+}
+
 /** Maximum file size: 500 MB per file (24 GB RAM server) */
 export const MAX_FILE_SIZE = 500 * 1024 * 1024;
 export const MAX_FILE_SIZE_LABEL = "500 MB";
@@ -33,7 +42,7 @@ export async function uploadFile(
             fd.append(k, String(v));
         }
     }
-    const res = await fetch(`${API_BASE}${endpoint}`, { method: "POST", body: fd });
+    const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, { method: "POST", body: fd });
     if (!res.ok) {
         const body = await res.json().catch(() => ({ detail: "An unexpected error occurred" }));
         throw new Error(body.detail || `Request failed (${res.status})`);
@@ -62,7 +71,7 @@ export function uploadFileWithProgress(
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${API_BASE}${endpoint}`);
+        xhr.open("POST", `${API_BASE}${normalizeEndpoint(endpoint)}`);
         xhr.responseType = "blob";
 
         xhr.upload.onprogress = (e) => {
@@ -115,7 +124,7 @@ export async function uploadFiles(
             fd.append(k, String(v));
         }
     }
-    const res = await fetch(`${API_BASE}${endpoint}`, { method: "POST", body: fd });
+    const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, { method: "POST", body: fd });
     if (!res.ok) {
         const body = await res.json().catch(() => ({ detail: "An unexpected error occurred" }));
         throw new Error(body.detail || `Request failed (${res.status})`);
@@ -143,7 +152,7 @@ export function uploadFilesWithProgress(
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${API_BASE}${endpoint}`);
+        xhr.open("POST", `${API_BASE}${normalizeEndpoint(endpoint)}`);
         xhr.responseType = "blob";
 
         xhr.upload.onprogress = (e) => {
@@ -200,7 +209,7 @@ export async function postForm<T = unknown>(
     for (const [k, v] of Object.entries(params)) {
         fd.append(k, String(v));
     }
-    const res = await fetch(`${API_BASE}${endpoint}`, { method: "POST", body: fd });
+    const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, { method: "POST", body: fd });
     if (!res.ok) {
         const body = await res.json().catch(() => ({ detail: "An unexpected error occurred" }));
         throw new Error(body.detail || `Request failed (${res.status})`);
@@ -213,7 +222,7 @@ export async function postJson<T = unknown>(
     endpoint: string,
     body: unknown,
 ): Promise<T> {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+    const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

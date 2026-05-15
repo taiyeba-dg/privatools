@@ -349,7 +349,7 @@ function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolNa
     case "booklet-pdf": return <LazyBookletUI />;
     case "batch-compress-pdf":
       return <LazyMultiFileUI
-        endpoint="/api/batch-compress-pdf"
+        endpoint="/batch-compress-pdf"
         accepts=".pdf,application/pdf"
         outputFilename="compressed-pdfs.zip"
         fileLabel="PDFs"

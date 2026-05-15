@@ -26,10 +26,14 @@ async def image_to_pdf(
     if len(files) > MAX_FILES:
         raise HTTPException(status_code=400, detail=f"Please upload at most {MAX_FILES} images")
 
-    normalized_page_size = (page_size or "").strip()
+    # Accept case-insensitive variants ("a4" / "A4") and treat the special
+    # value "auto" the same as A4 — the React UI ships "auto" as the default.
+    raw_page_size = (page_size or "").strip()
+    _alias = {"a4": "A4", "letter": "Letter", "auto": "A4"}
+    normalized_page_size = _alias.get(raw_page_size.lower(), raw_page_size)
     if normalized_page_size not in image_to_pdf_service.PAGE_SIZES:
         allowed = ", ".join(sorted(image_to_pdf_service.PAGE_SIZES.keys()))
-        raise HTTPException(status_code=400, detail=f"page_size must be one of: {allowed}")
+        raise HTTPException(status_code=400, detail=f"page_size must be one of: {allowed} (or auto)")
 
     ensure_temp_dir()
     input_paths: list[str] = []
