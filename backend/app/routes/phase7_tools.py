@@ -270,7 +270,8 @@ async def pixelate_image_endpoint(
         img.save(out_path, "PNG")
         media = "image/png"
     cleanup = BackgroundTask(remove_files, str(out_path))
+    suffix_word = "pixelated" if mode_clean == "pixelate" else "blurred"
     return FileResponse(
         str(out_path), media_type=media,
-        filename=f"{mode_clean}d{out_ext}", background=cleanup,
+        filename=f"{suffix_word}{out_ext}", background=cleanup,
     )
