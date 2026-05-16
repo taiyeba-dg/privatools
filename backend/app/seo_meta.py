@@ -1395,6 +1395,17 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             "is returned — never stored, never shared with third parties. The public site uses anonymous "
             "Google Analytics 4 pageview telemetry only (IP-anonymized; blockable). No accounts, no behavioural profiling.</p>"
         )
+        parts.append(
+            '<h2>Chain tools with <a href="/pipeline">Pipeline</a></h2>'
+            "<p>PrivaTools is the only free PDF suite with a chained pipeline: queue Merge → "
+            "Compress → Watermark → Sign in a single click and download one final PDF. No competitor "
+            "offers this in their free tier.</p>"
+        )
+        parts.append(
+            '<h2>Process many files with <a href="/batch">Batch</a></h2>'
+            "<p>Bulk-apply any compatible tool to dozens of files at once. Drop a folder of "
+            "PDFs into Batch Compress, get a ZIP of compressed outputs back — no per-file clicking.</p>"
+        )
         parts.append("<h2>PDF Tools</h2><ul>")
         for slug, (name, desc) in _by_popularity(_PDF_TOOLS.items()):
             parts.append(f'<li><a href="/tool/{slug}">{name}</a> — {desc[:120]}</li>')
