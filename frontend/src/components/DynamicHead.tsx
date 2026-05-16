@@ -71,7 +71,7 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     },
     "/compare/foxit": {
         title: "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
-        description: "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. 152+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
+        description: "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. 175+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
     },
     "/compare/lightpdf": {
         title: "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",

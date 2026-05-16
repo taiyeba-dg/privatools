@@ -355,7 +355,7 @@ export default function ComparePage() {
               { icon: DollarSign, label: "Truly free", value: "Yes — no quotas", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25" },
               { icon: Lock, label: "Open source", value: "MIT licensed", color: "text-blue-400 bg-blue-500/10 border-blue-500/25" },
               { icon: ServerCog, label: "Self-hostable", value: "Yes — Docker", color: "text-violet-400 bg-violet-500/10 border-violet-500/25" },
-              { icon: Zap, label: "Tools", value: "152+ all categories", color: "text-amber-400 bg-amber-500/10 border-amber-500/25" },
+              { icon: Zap, label: "Tools", value: "175+ all categories", color: "text-amber-400 bg-amber-500/10 border-amber-500/25" },
             ].map((s, i) => {
               const Icon = s.icon;
               return (
@@ -391,7 +391,7 @@ export default function ComparePage() {
                     <td className="text-center px-2"><Check size={14} className="inline text-emerald-500" /></td>
                     <td className="text-center px-2"><Check size={14} className="inline text-emerald-500" /></td>
                     <td className="text-center px-2"><Check size={14} className="inline text-emerald-500" /></td>
-                    <td className="text-right pl-4 font-mono-meta text-[12px] text-foreground">152+</td>
+                    <td className="text-right pl-4 font-mono-meta text-[12px] text-foreground">175+</td>
                   </tr>
                   {allCompetitors.map(([key, c]) => (
                     <tr key={key} className="border-b border-border/40 hover:bg-secondary/20">
@@ -480,7 +480,7 @@ export default function ComparePage() {
                   Everything they make you pay for — for free.
                 </h2>
                 <p className="font-serif-body text-sm text-muted-foreground mt-4 leading-relaxed">
-                  PrivaTools combines 152+ file tools across PDF, image, video, audio, and developer utilities. The whole stack is MIT-licensed and self-hostable.
+                  PrivaTools combines 175+ file tools across PDF, image, video, audio, and developer utilities. The whole stack is MIT-licensed and self-hostable.
                 </p>
                 <Link to="/" className="mt-6 inline-flex items-center gap-2 btn-editorial">
                   Browse all 175+ tools <ArrowRight size={14} />
@@ -568,7 +568,7 @@ export default function ComparePage() {
               { icon: Lock, title: "True Privacy", desc: "Files are processed and immediately deleted. No cloud storage, no data mining." },
               { icon: Heart, title: "Actually Free", desc: "No '2 tasks/day' limits, no premium upsells, no watermarks. Every tool, every time." },
               { icon: Globe, title: "Open Source", desc: "MIT licensed. Audit every line of code. Self-host with Docker if you don't trust anybody." },
-              { icon: Zap, title: "152+ Tools", desc: "Not just PDF — image, video, audio, and developer tools too. All in one place." },
+              { icon: Zap, title: "175+ Tools", desc: "Not just PDF — image, video, audio, and developer tools too. All in one place." },
             ].map((item, i) => (
               <div key={i} className="p-4 border border-border rounded-lg space-y-2">
                 <div className="flex items-center gap-2">

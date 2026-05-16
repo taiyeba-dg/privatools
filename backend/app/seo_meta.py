@@ -80,7 +80,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare/foxit": (
         "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
         "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid subscription. "
-        "152+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
+        "175+ privacy-first PDF tools with no account required vs Foxit's enterprise pricing.",
     ),
     "/compare/lightpdf": (
         "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
