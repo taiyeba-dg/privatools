@@ -64,7 +64,7 @@ export function HeaderFooterUI() {
               <input value={footerText} onChange={e => setFooterText(e.target.value)} placeholder="e.g. Confidential"
                 className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
             <div><label className="text-xs font-medium text-muted-foreground">Font size</label>
-              <input type="number" value={fontSize} onChange={e => setFontSize(parseInt(e.target.value) || 10)} min={6} max={48}
+              <input type="number" inputMode="numeric" value={fontSize} onChange={e => setFontSize(parseInt(e.target.value) || 10)} min={6} max={48}
                 className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
           </div>
           {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}

@@ -113,27 +113,27 @@ export function WhiteoutUI() {
                                     <span className="text-[10px] text-muted-foreground w-5 shrink-0 font-medium">{idx + 1}.</span>
                                     <div className="flex items-center gap-1">
                                         <label className="text-[9px] text-muted-foreground">Pg</label>
-                                        <input type="number" min={1} value={r.page} onChange={e => update(r.id, "page", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={1} value={r.page} onChange={e => update(r.id, "page", +e.target.value)}
                                             className="w-12 rounded border border-border bg-secondary/30 px-1.5 py-1 text-[11px] text-foreground focus:outline-none text-center" />
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <label className="text-[9px] text-muted-foreground">X</label>
-                                        <input type="number" min={0} value={r.x} onChange={e => update(r.id, "x", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={0} value={r.x} onChange={e => update(r.id, "x", +e.target.value)}
                                             className="w-14 rounded border border-border bg-secondary/30 px-1.5 py-1 text-[11px] text-foreground focus:outline-none text-center" />
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <label className="text-[9px] text-muted-foreground">Y</label>
-                                        <input type="number" min={0} value={r.y} onChange={e => update(r.id, "y", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={0} value={r.y} onChange={e => update(r.id, "y", +e.target.value)}
                                             className="w-14 rounded border border-border bg-secondary/30 px-1.5 py-1 text-[11px] text-foreground focus:outline-none text-center" />
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <label className="text-[9px] text-muted-foreground">W</label>
-                                        <input type="number" min={10} value={r.width} onChange={e => update(r.id, "width", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={10} value={r.width} onChange={e => update(r.id, "width", +e.target.value)}
                                             className="w-14 rounded border border-border bg-secondary/30 px-1.5 py-1 text-[11px] text-foreground focus:outline-none text-center" />
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <label className="text-[9px] text-muted-foreground">H</label>
-                                        <input type="number" min={5} value={r.height} onChange={e => update(r.id, "height", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={5} value={r.height} onChange={e => update(r.id, "height", +e.target.value)}
                                             className="w-14 rounded border border-border bg-secondary/30 px-1.5 py-1 text-[11px] text-foreground focus:outline-none text-center" />
                                     </div>
                                     <button onClick={() => removeRegion(r.id)} className="text-muted-foreground hover:text-destructive ml-auto"><Trash2 size={12} /></button>

@@ -64,10 +64,10 @@ export function ResizeCropImageUI() {
 
         <div className="grid grid-cols-2 gap-3">
           <div><label className="text-xs font-medium text-muted-foreground">Width (px)</label>
-            <input type="number" value={width} onChange={e => setWidth(parseInt(e.target.value) || 800)} min={1}
+            <input type="number" inputMode="numeric" value={width} onChange={e => setWidth(parseInt(e.target.value) || 800)} min={1}
               className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none" /></div>
           <div><label className="text-xs font-medium text-muted-foreground">Height (px)</label>
-            <input type="number" value={height} onChange={e => setHeight(parseInt(e.target.value) || 600)} min={1}
+            <input type="number" inputMode="numeric" value={height} onChange={e => setHeight(parseInt(e.target.value) || 600)} min={1}
               className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none" /></div>
         </div>
       </div>

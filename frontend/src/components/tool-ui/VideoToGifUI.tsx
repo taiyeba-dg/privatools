@@ -28,10 +28,10 @@ export function VideoToGifUI() {
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div><label className="text-xs font-medium text-muted-foreground">FPS</label>
-            <input type="number" value={fps} onChange={e => setFps(parseInt(e.target.value) || 10)} min={1} max={30}
+            <input type="number" inputMode="numeric" value={fps} onChange={e => setFps(parseInt(e.target.value) || 10)} min={1} max={30}
               className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none" /></div>
           <div><label className="text-xs font-medium text-muted-foreground">Width (px)</label>
-            <input type="number" value={width} onChange={e => setWidth(parseInt(e.target.value) || 480)} min={100}
+            <input type="number" inputMode="numeric" value={width} onChange={e => setWidth(parseInt(e.target.value) || 480)} min={100}
               className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none" /></div>
         </div>
       </div>

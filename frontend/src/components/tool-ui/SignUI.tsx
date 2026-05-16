@@ -124,16 +124,16 @@ export function SignUI() {
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div><label className="text-xs font-medium text-muted-foreground">Page</label>
-                <input type="number" value={page} onChange={e => setPage(Math.max(1, parseInt(e.target.value) || 1))} min={1}
+                <input type="number" inputMode="numeric" value={page} onChange={e => setPage(Math.max(1, parseInt(e.target.value) || 1))} min={1}
                   className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">Width</label>
-                <input type="number" value={width} onChange={e => setWidth(parseInt(e.target.value) || 200)} min={10}
+                <input type="number" inputMode="numeric" value={width} onChange={e => setWidth(parseInt(e.target.value) || 200)} min={10}
                   className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">X position</label>
-                <input type="number" value={x} onChange={e => setX(parseInt(e.target.value) || 0)} min={0}
+                <input type="number" inputMode="numeric" value={x} onChange={e => setX(parseInt(e.target.value) || 0)} min={0}
                   className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">Y position</label>
-                <input type="number" value={y} onChange={e => setY(parseInt(e.target.value) || 0)} min={0}
+                <input type="number" inputMode="numeric" value={y} onChange={e => setY(parseInt(e.target.value) || 0)} min={0}
                   className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
             </div>
           </div>

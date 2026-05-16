@@ -137,7 +137,7 @@ export function VideoThumbnailUI() {
                 </div>
                 <input
                     id="vt-ts"
-                    type="number" min={0} max={86400} step={0.1}
+                    type="number" inputMode="numeric" min={0} max={86400} step={0.1}
                     value={ts}
                     onChange={e => setTs(parseFloat(e.target.value) || 0)}
                     className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:border-accent"

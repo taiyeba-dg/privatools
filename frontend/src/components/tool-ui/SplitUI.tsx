@@ -104,7 +104,7 @@ export function SplitUI() {
             {mode === "every_n" && (
               <div className="pt-2">
                 <label className="text-xs font-medium text-muted-foreground">Pages per chunk</label>
-                <input type="number" value={n} onChange={e => setN(Math.max(1, parseInt(e.target.value) || 1))} min={1}
+                <input type="number" inputMode="numeric" value={n} onChange={e => setN(Math.max(1, parseInt(e.target.value) || 1))} min={1}
                   className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" />
               </div>
             )}

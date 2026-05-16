@@ -47,7 +47,7 @@ export function SplitBySizeUI() {
       <div className="rounded-xl border border-border bg-card p-4">
         <label className="text-sm font-semibold text-foreground">Max part size (MB)</label>
         <input
-          type="number"
+          type="number" inputMode="numeric"
           min={1}
           max={1024}
           value={maxSizeMb}

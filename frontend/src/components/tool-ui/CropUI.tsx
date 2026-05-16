@@ -73,7 +73,7 @@ export function CropUI() {
                             ].map(m => (
                                 <div key={m.label} className="space-y-1.5">
                                     <label className="text-xs font-medium text-muted-foreground">{m.label}</label>
-                                    <input type="number" min="0" max="500" value={m.value} onChange={e => m.set(e.target.value)}
+                                    <input type="number" inputMode="numeric" min="0" max="500" value={m.value} onChange={e => m.set(e.target.value)}
                                         className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" />
                                 </div>
                             ))}

@@ -77,10 +77,10 @@ export function ResizeUI() {
             {pageSize === "custom" && (
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-xs font-medium text-muted-foreground">Width (pt)</label>
-                  <input type="number" value={width} onChange={e => setWidth(parseInt(e.target.value) || 595)} min={72}
+                  <input type="number" inputMode="numeric" value={width} onChange={e => setWidth(parseInt(e.target.value) || 595)} min={72}
                     className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
                 <div><label className="text-xs font-medium text-muted-foreground">Height (pt)</label>
-                  <input type="number" value={height} onChange={e => setHeight(parseInt(e.target.value) || 842)} min={72}
+                  <input type="number" inputMode="numeric" value={height} onChange={e => setHeight(parseInt(e.target.value) || 842)} min={72}
                     className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
               </div>
             )}

@@ -133,7 +133,7 @@ export function AnnotateUI() {
                                     </div>
                                     <div>
                                         <label className="text-[9px] text-muted-foreground uppercase">Page</label>
-                                        <input type="number" min={1} value={ann.page} onChange={e => update(ann.id, "page", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={1} value={ann.page} onChange={e => update(ann.id, "page", +e.target.value)}
                                             className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                     </div>
                                     <div>
@@ -143,22 +143,22 @@ export function AnnotateUI() {
                                     </div>
                                     <div>
                                         <label className="text-[9px] text-muted-foreground uppercase">X</label>
-                                        <input type="number" min={0} value={ann.x} onChange={e => update(ann.id, "x", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={0} value={ann.x} onChange={e => update(ann.id, "x", +e.target.value)}
                                             className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                     </div>
                                     <div>
                                         <label className="text-[9px] text-muted-foreground uppercase">Y</label>
-                                        <input type="number" min={0} value={ann.y} onChange={e => update(ann.id, "y", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={0} value={ann.y} onChange={e => update(ann.id, "y", +e.target.value)}
                                             className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                     </div>
                                     <div>
                                         <label className="text-[9px] text-muted-foreground uppercase">Width</label>
-                                        <input type="number" min={10} value={ann.width} onChange={e => update(ann.id, "width", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={10} value={ann.width} onChange={e => update(ann.id, "width", +e.target.value)}
                                             className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                     </div>
                                     <div>
                                         <label className="text-[9px] text-muted-foreground uppercase">Height</label>
-                                        <input type="number" min={5} value={ann.height} onChange={e => update(ann.id, "height", +e.target.value)}
+                                        <input type="number" inputMode="numeric" min={5} value={ann.height} onChange={e => update(ann.id, "height", +e.target.value)}
                                             className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                     </div>
                                 </div>

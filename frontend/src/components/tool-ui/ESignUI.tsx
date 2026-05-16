@@ -223,27 +223,27 @@ export function ESignUI() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Page</label>
-                                <input type="number" min={1} value={pageNumber} onChange={e => setPageNumber(+e.target.value)}
+                                <input type="number" inputMode="numeric" min={1} value={pageNumber} onChange={e => setPageNumber(+e.target.value)}
                                     className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">X Position</label>
-                                <input type="number" min={0} max={600} value={posX} onChange={e => setPosX(+e.target.value)}
+                                <input type="number" inputMode="numeric" min={0} max={600} value={posX} onChange={e => setPosX(+e.target.value)}
                                     className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Y Position</label>
-                                <input type="number" min={0} max={850} value={posY} onChange={e => setPosY(+e.target.value)}
+                                <input type="number" inputMode="numeric" min={0} max={850} value={posY} onChange={e => setPosY(+e.target.value)}
                                     className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Width</label>
-                                <input type="number" min={50} max={400} value={sigWidth} onChange={e => setSigWidth(+e.target.value)}
+                                <input type="number" inputMode="numeric" min={50} max={400} value={sigWidth} onChange={e => setSigWidth(+e.target.value)}
                                     className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                             <div>
                                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Height</label>
-                                <input type="number" min={20} max={200} value={sigHeight} onChange={e => setSigHeight(+e.target.value)}
+                                <input type="number" inputMode="numeric" min={20} max={200} value={sigHeight} onChange={e => setSigHeight(+e.target.value)}
                                     className="w-full rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground focus:border-accent/50 focus:outline-none" />
                             </div>
                         </div>

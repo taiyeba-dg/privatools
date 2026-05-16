@@ -190,7 +190,7 @@ export function UuidGeneratorUI() {
                     <label htmlFor="uuid-count" className="text-sm font-semibold text-foreground">Count</label>
                     <input
                         id="uuid-count"
-                        type="number" min={1} max={500} value={count}
+                        type="number" inputMode="numeric" min={1} max={500} value={count}
                         onChange={e => setCount(Math.max(1, Math.min(500, parseInt(e.target.value, 10) || 1)))}
                         className="w-24 h-9 px-3 rounded-md border border-border bg-background text-sm text-foreground"
                     />
@@ -282,7 +282,7 @@ export function LoremIpsumUI() {
                     <label htmlFor="lorem-count" className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground block mb-1.5">Count</label>
                     <input
                         id="lorem-count"
-                        type="number" min={1} max={100} value={count}
+                        type="number" inputMode="numeric" min={1} max={100} value={count}
                         onChange={e => setCount(Math.max(1, Math.min(100, parseInt(e.target.value, 10) || 1)))}
                         className="w-24 h-9 px-3 rounded-md border border-border bg-background text-sm text-foreground"
                     />

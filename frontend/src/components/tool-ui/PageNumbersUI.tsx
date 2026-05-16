@@ -75,10 +75,10 @@ export function PageNumbersUI() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><label className="text-xs font-medium text-muted-foreground">Start number</label>
-                <input type="number" value={startNumber} onChange={e => setStartNumber(parseInt(e.target.value) || 1)} min={1}
+                <input type="number" inputMode="numeric" value={startNumber} onChange={e => setStartNumber(parseInt(e.target.value) || 1)} min={1}
                   className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">Font size</label>
-                <input type="number" value={fontSize} onChange={e => setFontSize(parseInt(e.target.value) || 12)} min={6} max={72}
+                <input type="number" inputMode="numeric" value={fontSize} onChange={e => setFontSize(parseInt(e.target.value) || 12)} min={6} max={72}
                   className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
             </div>
           </div>

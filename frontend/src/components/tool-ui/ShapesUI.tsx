@@ -139,7 +139,7 @@ export function ShapesUI() {
                                         </div>
                                         <div>
                                             <label className="text-[9px] text-muted-foreground uppercase">Page</label>
-                                            <input type="number" min={1} value={s.page} onChange={e => update(s.id, "page", +e.target.value)}
+                                            <input type="number" inputMode="numeric" min={1} value={s.page} onChange={e => update(s.id, "page", +e.target.value)}
                                                 className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                         </div>
                                         <div>
@@ -156,24 +156,24 @@ export function ShapesUI() {
                                         )}
                                         <div>
                                             <label className="text-[9px] text-muted-foreground uppercase">X</label>
-                                            <input type="number" min={0} value={s.x} onChange={e => update(s.id, "x", +e.target.value)}
+                                            <input type="number" inputMode="numeric" min={0} value={s.x} onChange={e => update(s.id, "x", +e.target.value)}
                                                 className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                         </div>
                                         <div>
                                             <label className="text-[9px] text-muted-foreground uppercase">Y</label>
-                                            <input type="number" min={0} value={s.y} onChange={e => update(s.id, "y", +e.target.value)}
+                                            <input type="number" inputMode="numeric" min={0} value={s.y} onChange={e => update(s.id, "y", +e.target.value)}
                                                 className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                         </div>
                                         {isLineOrArrow ? (
                                             <>
                                                 <div>
                                                     <label className="text-[9px] text-muted-foreground uppercase">End X</label>
-                                                    <input type="number" min={0} value={s.x2} onChange={e => update(s.id, "x2", +e.target.value)}
+                                                    <input type="number" inputMode="numeric" min={0} value={s.x2} onChange={e => update(s.id, "x2", +e.target.value)}
                                                         className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="text-[9px] text-muted-foreground uppercase">End Y</label>
-                                                    <input type="number" min={0} value={s.y2} onChange={e => update(s.id, "y2", +e.target.value)}
+                                                    <input type="number" inputMode="numeric" min={0} value={s.y2} onChange={e => update(s.id, "y2", +e.target.value)}
                                                         className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                                 </div>
                                             </>
@@ -181,19 +181,19 @@ export function ShapesUI() {
                                             <>
                                                 <div>
                                                     <label className="text-[9px] text-muted-foreground uppercase">Width</label>
-                                                    <input type="number" min={10} value={s.width} onChange={e => update(s.id, "width", +e.target.value)}
+                                                    <input type="number" inputMode="numeric" min={10} value={s.width} onChange={e => update(s.id, "width", +e.target.value)}
                                                         className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                                 </div>
                                                 <div>
                                                     <label className="text-[9px] text-muted-foreground uppercase">Height</label>
-                                                    <input type="number" min={10} value={s.height} onChange={e => update(s.id, "height", +e.target.value)}
+                                                    <input type="number" inputMode="numeric" min={10} value={s.height} onChange={e => update(s.id, "height", +e.target.value)}
                                                         className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                                 </div>
                                             </>
                                         )}
                                         <div>
                                             <label className="text-[9px] text-muted-foreground uppercase">Stroke Width</label>
-                                            <input type="number" min={0.5} max={10} step={0.5} value={s.stroke_width} onChange={e => update(s.id, "stroke_width", +e.target.value)}
+                                            <input type="number" inputMode="numeric" min={0.5} max={10} step={0.5} value={s.stroke_width} onChange={e => update(s.id, "stroke_width", +e.target.value)}
                                                 className="w-full rounded-lg border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground focus:outline-none" />
                                         </div>
                                     </div>

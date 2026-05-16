@@ -181,7 +181,7 @@ export function WatermarkUI() {
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Font size</label>
                   <input
-                    type="number"
+                    type="number" inputMode="numeric"
                     value={fontSize}
                     onChange={(e) => setFontSize(Math.max(8, parseInt(e.target.value, 10) || 8))}
                     min={8}
