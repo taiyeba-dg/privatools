@@ -188,6 +188,16 @@ const SYNONYMS: Record<string, string> = {
     "generate-barcode": "barcode ean upc code128 qr",
 };
 
+// Short label shown as a chip on the right of each result.
+const _CAT_LABEL: Record<string, string> = {
+    // PDF
+    organize: "PDF", edit: "PDF", optimize: "PDF", security: "PDF",
+    "to-pdf": "PDF", "from-pdf": "PDF", advanced: "PDF",
+    // Non-PDF
+    image: "Image", "video-audio": "Video/Audio",
+    developer: "Dev", archive: "Archive", "document-office": "Docs",
+};
+
 // Build searchable index once. We pre-lowercase everything and bake
 // popularity into the tool itself so the scoring loop stays tight.
 const allTools = [
@@ -196,6 +206,7 @@ const allTools = [
         href: `/tool/${t.slug}`,
         iconBg: categoryMeta[t.category as Category]?.iconBg ?? "bg-blue-500/10",
         iconColor: categoryMeta[t.category as Category]?.iconColor ?? "text-blue-400",
+        categoryLabel: _CAT_LABEL[t.category] ?? "PDF",
         synonyms: SYNONYMS[t.slug] ?? "",
         nameLower: t.name.toLowerCase(),
         descLower: t.description.toLowerCase(),
@@ -208,6 +219,7 @@ const allTools = [
         href: `/tools/${t.slug}`,
         iconBg: nonPdfCategoryMeta[t.category as NonPdfCategory]?.iconBg ?? "bg-pink-500/10",
         iconColor: nonPdfCategoryMeta[t.category as NonPdfCategory]?.iconColor ?? "text-pink-400",
+        categoryLabel: _CAT_LABEL[t.category] ?? "Tool",
         synonyms: SYNONYMS[t.slug] ?? "",
         nameLower: t.name.toLowerCase(),
         descLower: t.description.toLowerCase(),
@@ -400,6 +412,9 @@ export default function CommandPalette() {
                                             <p className="text-sm font-heading font-semibold text-foreground truncate">{tool.name}</p>
                                             <p className="text-[11px] text-muted-foreground/80 truncate">{tool.description}</p>
                                         </div>
+                                        <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-bold tracking-wider uppercase text-muted-foreground/70 bg-secondary/40 border border-border/40 shrink-0">
+                                            {tool.categoryLabel}
+                                        </span>
                                         {i === selected && <ArrowRight size={13} className="shrink-0 text-primary/60" />}
                                     </button>
                                 );
