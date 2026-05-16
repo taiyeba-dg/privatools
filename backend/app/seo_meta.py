@@ -952,9 +952,45 @@ def get_jsonld_for_path(path: str) -> dict | None:
                 {
                     "@type": "ItemList",
                     "name": "Featured tools",
-                    "description": "A curated subset of the 175+ free PDF, image, video, audio, and developer tools on PrivaTools.",
+                    "description": f"A curated subset of the {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ free PDF, image, video, audio, and developer tools on PrivaTools.",
                     "numberOfItems": len(featured),
                     "itemListElement": featured,
+                },
+                {
+                    "@type": "FAQPage",
+                    "speakable": {"@type": "SpeakableSpecification", "cssSelector": [".tool-faq", ".tool-tldr"]},
+                    "mainEntity": [
+                        {
+                            "@type": "Question",
+                            "name": "Is PrivaTools really free?",
+                            "acceptedAnswer": {"@type": "Answer", "text": "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."},
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "Do you upload my files anywhere?",
+                            "acceptedAnswer": {"@type": "Answer", "text": "For server-side tools, files enter an isolated Docker container, are processed in temporary memory, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."},
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "Can I self-host PrivaTools?",
+                            "acceptedAnswer": {"@type": "Answer", "text": "Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/taiyeba-dg/privatools and run `docker compose up --build` to host all 175+ tools on your own server."},
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "What file size limit does PrivaTools have?",
+                            "acceptedAnswer": {"@type": "Answer", "text": "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."},
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "Does PrivaTools use AI?",
+                            "acceptedAnswer": {"@type": "Answer", "text": "Two tools use AI, both running entirely in your browser via WebAssembly: Summarize PDF uses distilbart-cnn-12-6 for text summarization, and Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API."},
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?",
+                            "acceptedAnswer": {"@type": "Answer", "text": "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."},
+                        },
+                    ],
                 },
             ],
         }
@@ -1362,6 +1398,17 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         for slug, (name, desc) in _by_popularity(_NONPDF_TOOLS.items()):
             parts.append(f'<li><a href="/tools/{slug}">{name}</a> — {desc[:120]}</li>')
         parts.append("</ul>")
+        # FAQ section so the JSON-LD FAQPage above has matching visible content.
+        parts.append('<h2 class="tool-faq">Frequently Asked Questions</h2>')
+        for q, a in [
+            ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."),
+            ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, are processed in temporary memory, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload anything."),
+            ("Can I self-host PrivaTools?", "Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/taiyeba-dg/privatools and run docker compose up --build to host all 175+ tools on your own server."),
+            ("What file size limit does PrivaTools have?", "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."),
+            ("Does PrivaTools use AI?", "Two tools use AI, both running entirely in your browser via WebAssembly: Summarize PDF uses distilbart-cnn-12-6 for text summarization, and Smart Redact uses BERT-base-NER for PII detection. Neither sends data to any third-party AI API."),
+            ("How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?", "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."),
+        ]:
+            parts.append(f"<h3>{q}</h3><p>{a}</p>")
         return "\n".join(parts)
 
     # ── Individual tool pages (/tool/<slug> and /tools/<slug>) ─────────────
