@@ -64,7 +64,7 @@ export function CompareUI() {
       {!file ? (
         <div onClick={() => inputRef.current?.click()}
           className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border hover:border-accent/40 cursor-pointer py-8 transition-all bg-secondary/20 hover:bg-secondary/40">
-          <input ref={inputRef as any} type="file" accept=".pdf" className="hidden" onChange={e => { if (e.target.files?.[0]) { const f = e.target.files[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); } }} />
+          <input ref={inputRef as any} type="file" accept=".pdf" className="hidden" onChange={e => { if (e.target.files?.[0]) { const f = e.target.files[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); } e.target.value = ""; }} />
           <Upload size={18} className="text-muted-foreground" /><span className="text-sm text-muted-foreground">Select PDF</span>
         </div>
       ) : (

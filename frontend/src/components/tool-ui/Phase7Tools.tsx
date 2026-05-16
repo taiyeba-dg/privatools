@@ -61,7 +61,7 @@ export function VideoSpeedUI() {
             </div>
             <div onClick={() => ref.current?.click()}
                 className="cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border hover:border-accent/40 bg-secondary/20 py-12 transition-all">
-                <input ref={ref} type="file" accept=".mp4,.mov,.webm,.avi,.mkv" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
+                <input ref={ref} type="file" accept=".mp4,.mov,.webm,.avi,.mkv" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
                 <Upload size={22} className="text-muted-foreground" />
                 <p className="text-sm font-semibold">{file ? file.name : "Drop a video here"}</p>
                 {file && <p className="text-xs text-muted-foreground">{file.size}</p>}
@@ -110,7 +110,7 @@ export function AudioTrimUI() {
         <div className="space-y-4">
             <div onClick={() => ref.current?.click()}
                 className="cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border hover:border-accent/40 bg-secondary/20 py-12 transition-all">
-                <input ref={ref} type="file" accept=".mp3,.wav,.aac,.flac,.ogg,.m4a" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
+                <input ref={ref} type="file" accept=".mp3,.wav,.aac,.flac,.ogg,.m4a" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <Upload size={22} className="text-muted-foreground" />
                 <p className="text-sm font-semibold">{file ? file.name : "Drop an audio file"}</p>
                 {file && <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
@@ -172,7 +172,7 @@ export function ImagePaletteUI() {
             <div onClick={() => ref.current?.click()}
                 className="cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border hover:border-accent/40 bg-secondary/20 py-12 transition-all">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.gif"
-                    className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
+                    className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <Upload size={22} className="text-muted-foreground" />
                 <p className="text-sm font-semibold">{file ? file.name : "Drop an image"}</p>
                 {file && <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}
@@ -243,7 +243,7 @@ export function PixelateImageUI() {
             <div onClick={() => ref.current?.click()}
                 className="cursor-pointer flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border hover:border-accent/40 bg-secondary/20 py-12 transition-all">
                 <input ref={ref} type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp" className="hidden"
-                    onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
+                    onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
                 <Upload size={22} className="text-muted-foreground" />
                 <p className="text-sm font-semibold">{file ? file.name : "Drop an image"}</p>
                 {file && <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>}

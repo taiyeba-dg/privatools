@@ -55,7 +55,7 @@ export function ImageUpscalerUI() {
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/jpg"
                         className="hidden"
-                        onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); e.target.value = ""; }}
                     />
                 </button>
             ) : (

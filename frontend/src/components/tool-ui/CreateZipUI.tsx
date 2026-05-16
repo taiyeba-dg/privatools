@@ -33,7 +33,7 @@ export function CreateZipUI() {
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">Drop files here to zip</p>
         <p className="text-xs text-muted-foreground">Any file types — add as many as needed</p>
-        <input ref={ref} type="file" multiple className="hidden" onChange={e => e.target.files && add(e.target.files)} />
+        <input ref={ref} type="file" multiple className="hidden" onChange={e => { e.target.files && add(e.target.files); e.target.value = ""; }} />
       </label>
       {files.length > 0 && (
         <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">

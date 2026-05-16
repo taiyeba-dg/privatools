@@ -23,7 +23,7 @@ export function VideoToGifUI() {
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop video here"}</p>
         <p className="text-xs text-muted-foreground">MP4, WebM, AVI, MOV</p>
-        <input type="file" accept=".mp4,.webm,.avi,.mov" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
+        <input type="file" accept=".mp4,.webm,.avi,.mov" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
       </label>
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <div className="grid grid-cols-2 gap-3">

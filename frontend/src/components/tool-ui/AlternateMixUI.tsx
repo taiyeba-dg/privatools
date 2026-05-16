@@ -69,6 +69,7 @@ export function AlternateMixUI() {
             onChange={e => {
               const f = e.target.files?.[0];
               if (f) setFile({ name: f.name, size: formatFileSize(f.size), raw: f });
+              e.target.value = "";
             }}
           />
           <Upload size={18} className="text-muted-foreground" />

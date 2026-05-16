@@ -89,7 +89,7 @@ export function SmartFileDetector() {
                     ref={inputRef}
                     type="file"
                     className="hidden"
-                    onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
+                    onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ""; }}
                 />
                 <div className="relative">
                     <Upload size={28} className="mx-auto text-muted-foreground/25 group-hover:text-primary/50 mb-3 transition-all group-hover:-translate-y-0.5 duration-300" />

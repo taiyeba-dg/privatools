@@ -39,7 +39,7 @@ export function ResizeCropImageUI() {
       <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 transition-all">
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop image here"}</p>
-        <input type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
+        <input type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
       </label>
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <div className="flex gap-2">

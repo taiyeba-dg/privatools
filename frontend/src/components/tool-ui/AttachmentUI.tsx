@@ -74,7 +74,7 @@ export function AttachmentUI() {
                     className={cn("flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-8 px-4 text-center",
                         dragPdf ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 bg-secondary/20")}
                 >
-                    <input ref={pdfRef} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && setPdfFile(e.target.files[0])} />
+                    <input ref={pdfRef} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files?.[0] && setPdfFile(e.target.files[0]); e.target.value = ""; }} />
                     <FileText size={20} className={cn(pdfFile ? "text-primary" : "text-muted-foreground")} />
                     <p className="text-xs font-semibold text-foreground">{pdfFile ? pdfFile.name : "Main PDF file"}</p>
                     {pdfFile && <p className="text-[10px] text-muted-foreground">{formatFileSize(pdfFile.size)}</p>}
@@ -90,7 +90,7 @@ export function AttachmentUI() {
                     className={cn("flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-8 px-4 text-center",
                         dragAtt ? "border-violet-400 bg-violet-400/5" : "border-border hover:border-violet-400/40 bg-secondary/20")}
                 >
-                    <input ref={attRef} type="file" className="hidden" onChange={e => e.target.files?.[0] && setAttachFile(e.target.files[0])} />
+                    <input ref={attRef} type="file" className="hidden" onChange={e => { e.target.files?.[0] && setAttachFile(e.target.files[0]); e.target.value = ""; }} />
                     <Paperclip size={20} className={cn(attachFile ? "text-violet-400" : "text-muted-foreground")} />
                     <p className="text-xs font-semibold text-foreground">{attachFile ? attachFile.name : "File to attach"}</p>
                     {attachFile && <p className="text-[10px] text-muted-foreground">{formatFileSize(attachFile.size)}</p>}

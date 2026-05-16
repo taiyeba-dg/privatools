@@ -32,7 +32,7 @@ export function ImageConverterUI() {
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop image here"}</p>
         <p className="text-xs text-muted-foreground">{file ? `${(file.size / 1024).toFixed(0)} KB` : "JPEG, PNG, WebP, BMP, TIFF"}</p>
-        <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif" className="hidden" onChange={e => { e.target.files?.[0] && handleFile(e.target.files[0]); e.target.value = ""; }} />
       </label>
       {preview && <div className="rounded-lg border border-border overflow-hidden max-h-40"><img src={preview} alt="Preview" className="w-full h-full object-contain" /></div>}
       <div className="rounded-xl border border-border bg-card p-5">

@@ -26,7 +26,7 @@ export function InvertColorsUI() {
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop PDF here"}</p>
         <p className="text-xs text-muted-foreground">Invert all colors for dark mode reading</p>
-        <input type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
+        <input type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
       </label>
 
       {/* Mode selector */}

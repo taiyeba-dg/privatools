@@ -129,7 +129,7 @@ export function SubtitleConverterUI() {
                         drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20"
                     )}
                 >
-                    <input ref={inputRef} type="file" accept=".srt,.vtt,.ass" className="hidden" onChange={e => onPick(e.target.files?.[0] || null)} />
+                    <input ref={inputRef} type="file" accept=".srt,.vtt,.ass" className="hidden" onChange={e => { onPick(e.target.files?.[0] || null); e.target.value = ""; }} />
                     <Upload size={22} className="text-muted-foreground" />
                     <p className="text-sm font-semibold text-foreground">Pick a subtitle file</p>
                     <p className="text-xs text-muted-foreground">.srt, .vtt, or .ass</p>

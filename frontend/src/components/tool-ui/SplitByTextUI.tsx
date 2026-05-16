@@ -57,7 +57,7 @@ export function SplitByTextUI() {
                     <Upload size={22} className="text-muted-foreground" />
                     <p className="text-sm font-medium text-foreground">Drop a PDF or click to choose</p>
                     <p className="text-xs text-muted-foreground">Splits at every page containing the search term</p>
-                    <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={e => onPick(e.target.files)} />
+                    <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={e => { onPick(e.target.files); e.target.value = ""; }} />
                 </label>
             ) : (
                 <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">

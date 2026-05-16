@@ -27,7 +27,7 @@ export function RemoveBlankPagesUI() {
       <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 hover:bg-secondary/50 transition-all">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary"><Upload size={22} className="text-muted-foreground" /></div>
         <div className="text-center"><p className="text-sm font-medium text-foreground">Drop your PDF here</p><p className="text-xs text-muted-foreground mt-1">or click to browse</p></div>
-        <input type="file" accept=".pdf" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+        <input type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files?.[0] && handleFile(e.target.files[0]); e.target.value = ""; }} />
       </label>
 
       {file && (

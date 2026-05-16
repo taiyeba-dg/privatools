@@ -71,7 +71,7 @@ export function BackgroundRemoverUI() {
           aria-label="Upload file"
                 className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-12 px-6 text-center",
                     drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 bg-secondary/20")}>
-                <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+                <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" className="hidden" onChange={e => { e.target.files?.[0] && handleFile(e.target.files[0]); e.target.value = ""; }} />
                 <Eraser size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
                 <p className="text-sm font-semibold text-foreground">{file ? file.name : "Drop image here"}</p>
                 {file && <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>}

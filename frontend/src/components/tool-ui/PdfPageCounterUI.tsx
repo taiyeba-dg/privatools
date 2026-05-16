@@ -79,7 +79,7 @@ export function PdfPageCounterUI() {
                     accept=".pdf,application/pdf"
                     multiple
                     className="hidden"
-                    onChange={e => e.target.files && add(e.target.files)}
+                    onChange={e => { e.target.files && add(e.target.files); e.target.value = ""; }}
                 />
             </button>
 

@@ -96,7 +96,7 @@ export function HighlightUI() {
                         drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20"
                     )}
                 >
-                    <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={e => onPick(e.target.files)} />
+                    <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={e => { onPick(e.target.files); e.target.value = ""; }} />
                     <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
                         <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
                     </div>

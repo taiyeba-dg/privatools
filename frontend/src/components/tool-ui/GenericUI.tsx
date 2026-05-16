@@ -233,7 +233,7 @@ export function GenericUI({ toolName, outputLabel, accepts, actionLabel, slug, a
           <div className="w-5 h-[2px] bg-accent/60 rounded-full ml-auto" />
         </div>
 
-        <input ref={ref} type="file" accept={accepts} className="hidden" onChange={e => e.target.files && add(e.target.files)} />
+        <input ref={ref} type="file" accept={accepts} className="hidden" onChange={e => { if (e.target.files) add(e.target.files); e.target.value = ""; }} />
 
         <div className={cn(
           "flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300",

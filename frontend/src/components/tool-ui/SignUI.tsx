@@ -93,7 +93,7 @@ export function SignUI() {
           aria-label="Upload file"
           className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
             drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
-          <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => e.target.files && pick(e.target.files)} />
+          <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
           <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
             <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
           </div>
@@ -118,7 +118,7 @@ export function SignUI() {
               <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={clearCanvas}>Clear</Button>
               <span className="text-xs text-muted-foreground/80 self-center">or</span>
               <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => sigRef.current?.click()}>Upload image</Button>
-              <input ref={sigRef} type="file" accept=".png,.jpg,.jpeg" className="hidden" onChange={e => { if (e.target.files?.[0]) { setSigFile(e.target.files[0]); setSigData("uploaded"); } }} />
+              <input ref={sigRef} type="file" accept=".png,.jpg,.jpeg" className="hidden" onChange={e => { if (e.target.files?.[0]) { setSigFile(e.target.files[0]); setSigData("uploaded"); } e.target.value = ""; }} />
             </div>
             {sigFile && <p className="text-xs text-emerald-400">✓ Signature image: {sigFile.name}</p>}
 

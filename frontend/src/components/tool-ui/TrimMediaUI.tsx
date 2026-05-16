@@ -26,7 +26,7 @@ export function TrimMediaUI() {
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop video/audio here"}</p>
         <p className="text-xs text-muted-foreground">MP4, MP3, WebM, AVI, WAV</p>
-        <input type="file" accept=".mp4,.mp3,.webm,.avi,.wav,.mov,.mkv,.aac,.flac,.ogg" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
+        <input type="file" accept=".mp4,.mp3,.webm,.avi,.wav,.mov,.mkv,.aac,.flac,.ogg" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
       </label>
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <div className="grid grid-cols-2 gap-3">

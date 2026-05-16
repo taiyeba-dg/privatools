@@ -71,7 +71,7 @@ export function HashGeneratorUI() {
             <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop any file here"}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{file ? `${(file.size / 1024).toFixed(1)} KB` : "Any file type supported"}</p>
           </div>
-          <input type="file" className="hidden" onChange={e => { setFile(e.target.files?.[0] ?? null); setResults([]); }} />
+          <input type="file" className="hidden" onChange={e => { setFile(e.target.files?.[0] ?? null); setResults([]); e.target.value = ""; }} />
         </label>
       )}
 

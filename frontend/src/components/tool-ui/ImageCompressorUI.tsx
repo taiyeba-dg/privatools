@@ -39,7 +39,7 @@ export function ImageCompressorUI() {
         onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); e.dataTransfer.files && handleFiles(e.dataTransfer.files); }}>
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary"><Upload size={22} className="text-muted-foreground" /></div>
         <div className="text-center"><p className="text-sm font-medium text-foreground">Drop images here</p><p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP — multiple files supported</p></div>
-        <input type="file" accept=".jpg,.jpeg,.png,.webp" multiple className="hidden" onChange={e => e.target.files && handleFiles(e.target.files)} />
+        <input type="file" accept=".jpg,.jpeg,.png,.webp" multiple className="hidden" onChange={e => { e.target.files && handleFiles(e.target.files); e.target.value = ""; }} />
       </label>
 
       {files.length > 0 && (

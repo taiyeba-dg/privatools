@@ -84,7 +84,7 @@ export function FileUploadZone({ onFileSelect, file, onClear, accept, label, hin
                 className,
             )}
         >
-            <input ref={ref} type="file" accept={accept} className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+            <input ref={ref} type="file" accept={accept} className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ""; }} />
             <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl transition-colors", drag ? "bg-accent/20" : "bg-secondary")}>
                 <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
             </div>

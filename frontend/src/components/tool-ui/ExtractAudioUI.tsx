@@ -25,7 +25,7 @@ export function ExtractAudioUI() {
         <Upload size={22} className="text-muted-foreground" />
         <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop video here"}</p>
         <p className="text-xs text-muted-foreground">MP4, WebM, AVI, MOV, MKV</p>
-        <input type="file" accept=".mp4,.webm,.avi,.mov,.mkv" className="hidden" onChange={e => e.target.files?.[0] && setFile(e.target.files[0])} />
+        <input type="file" accept=".mp4,.webm,.avi,.mov,.mkv" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
       </label>
       <div className="rounded-xl border border-border bg-card p-5">
         <label className="text-sm font-semibold text-foreground">Output format</label>

@@ -85,7 +85,7 @@ export function ImageOcrUI() {
                         <p className="text-sm font-medium text-foreground">Drop an image here</p>
                         <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP, BMP, TIFF supported</p>
                     </div>
-                    <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.gif" className="hidden" onChange={e => e.target.files && handleFiles(e.target.files)} />
+                    <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.gif" className="hidden" onChange={e => { e.target.files && handleFiles(e.target.files); e.target.value = ""; }} />
                 </label>
             ) : (
                 <div className="relative rounded-xl border border-border bg-card overflow-hidden">

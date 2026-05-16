@@ -236,7 +236,7 @@ export function AddSubtitlesUI() {
                 drag === slotKey ? "border-accent bg-accent/5" : file ? "border-accent/30 bg-card" : "border-border hover:border-accent/40 hover:bg-secondary/30 bg-secondary/10"
             )}
         >
-            <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={e => onPick(e.target.files?.[0] || null)} />
+            <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={e => { onPick(e.target.files?.[0] || null); e.target.value = ""; }} />
             <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg shrink-0", file ? "bg-accent/10" : "bg-secondary")}>
                 {file ? <FileText size={18} className="text-accent" /> : <Upload size={18} className="text-muted-foreground" />}
             </div>

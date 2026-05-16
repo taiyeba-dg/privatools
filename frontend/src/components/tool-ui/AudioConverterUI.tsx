@@ -63,7 +63,7 @@ export function AudioConverterUI() {
                         type="file"
                         accept="audio/*,.mp3,.wav,.ogg,.flac,.aac,.m4a,.wma"
                         className="hidden"
-                        onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); e.target.value = ""; }}
                     />
                 </button>
             ) : (
