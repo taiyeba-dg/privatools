@@ -29,7 +29,7 @@ export default function AboutPage() {
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-accent/30 text-[11px] font-mono-meta uppercase tracking-widest text-accent">
                 <Shield className="w-3 h-3" /> Privacy Manifesto
               </span>
-              <span className="font-mono-meta text-[11px] text-muted-foreground">v1.2.1 · MIT licensed</span>
+              <span className="font-mono-meta text-[11px] text-muted-foreground">v1.5.0 · MIT licensed</span>
             </div>
             <h1 className="font-heading text-5xl sm:text-7xl font-black leading-[1.02] tracking-tight">
               Your files are <span className="italic text-accent">yours</span>.
@@ -229,7 +229,9 @@ export default function AboutPage() {
           <p className="font-serif-body text-sm text-muted-foreground mb-6">Open source means an open changelog. Every version is on GitHub.</p>
           <div className="space-y-3">
             {[
-              { v: "v1.2.1", date: "2026-05-15", title: "SEO content push", desc: "6 long-form blog posts, HowTo + FAQ schemas for 18 more tools." },
+              { v: "v1.5.0", date: "2026-05-16", title: "Phase 7 + UX polish + AEO/GEO push", desc: "6 competitor-gap tools (mute-video, reverse-video, video-speed, audio-trim, image-palette, pixelate-image), Cmd-K palette with multi-token fuzzy scoring + 145 synonyms, human-readable HTTP errors, mobile overflow fixes, AboutPage / Blog / Compare structured data." },
+              { v: "v1.4.0", date: "2026-05-12", title: "20+ converter aliases + browser-only dev tools", desc: "JPG↔PNG/WebP and audio/video conversion aliases (m4a→mp3, mov→mp4, etc.), YAML↔JSON, case converter, password generator, UUID generator, lorem ipsum — all client-side." },
+              { v: "v1.2.1", date: "2026-05-15", title: "SEO content push", desc: "Long-form blog posts, HowTo + FAQ schemas for 18 more tools." },
               { v: "v1.2.0", date: "2026-05-15", title: "11 new tools + office-to-pdf fix", desc: "Web-optimize, split-by-text, pdf-to-html, pdf-to-rtf, view-exif, JWT decoder, regex tester, timestamp converter, image-converter aliases." },
               { v: "v1.1.0", date: "2026-05-04", title: "33 new tools + UI redesign + browser AI", desc: "Highlight, Smart Redact (BERT-NER in-browser), Summarize PDF (distilbart in-browser), video/audio toolkit, 21 custom tool illustrations." },
               { v: "v1.0.0", date: "2026-03-05", title: "Launch", desc: "First public release. 107 tools, MIT license, open source from day one." },

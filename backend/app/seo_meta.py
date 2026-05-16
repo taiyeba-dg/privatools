@@ -1120,6 +1120,138 @@ def get_jsonld_for_path(path: str) -> dict | None:
             }
         return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": breadcrumbs}
 
+    if path == "/blog":
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Blog", "item": canonical_url})
+        blog_items = []
+        for i, (slug, post) in enumerate(_BLOG_POSTS.items(), start=1):
+            blog_items.append({
+                "@type": "ListItem",
+                "position": i,
+                "url": f"{BASE_URL}/blog/{slug}",
+                "name": post["title"],
+            })
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "Blog",
+                    "@id": f"{canonical_url}#blog",
+                    "name": "PrivaTools Blog",
+                    "description": description,
+                    "url": canonical_url,
+                    "inLanguage": "en",
+                    "publisher": {"@id": f"{BASE_URL}/#organization"},
+                    "blogPost": [
+                        {
+                            "@type": "BlogPosting",
+                            "headline": p["title"],
+                            "description": p["description"],
+                            "url": f"{BASE_URL}/blog/{s}",
+                            "datePublished": p["publishedAt"],
+                            "author": {"@type": "Person", "name": p.get("author") or "PrivaTools Team"},
+                        }
+                        for s, p in _BLOG_POSTS.items()
+                    ],
+                },
+                {
+                    "@type": "ItemList",
+                    "name": "PrivaTools Blog Posts",
+                    "numberOfItems": len(_BLOG_POSTS),
+                    "itemListElement": blog_items,
+                },
+                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+            ],
+        }
+
+    if path == "/about":
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "About", "item": canonical_url})
+        about_faqs = [
+            {
+                "q": "Who runs PrivaTools?",
+                "a": "PrivaTools is an open-source project under the MIT license — see the code on GitHub at taiyeba-dg/privatools. The public demo at privatools.me is maintained by independent contributors and funded by no advertisers, investors, or data brokers.",
+            },
+            {
+                "q": "What happens to files I upload?",
+                "a": "Server-side tools hold your file in temporary memory only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all.",
+            },
+            {
+                "q": "Is PrivaTools really free?",
+                "a": "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. We do not sell user data, run ads, or operate a freemium tier.",
+            },
+            {
+                "q": "Can I self-host PrivaTools?",
+                "a": "Yes. The full stack is MIT-licensed and ships as a Docker Compose project. Clone the repo and run docker compose up --build to host the whole thing on your own server.",
+            },
+            {
+                "q": "What's the difference between PrivaTools and Smallpdf, iLovePDF, or Adobe?",
+                "a": "PrivaTools is free with no daily limits, requires no account, does not retain your files, and is open source. See the side-by-side comparisons at privatools.me/compare for specifics.",
+            },
+        ]
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "AboutPage",
+                    "@id": f"{canonical_url}#about",
+                    "name": title,
+                    "description": description,
+                    "url": canonical_url,
+                    "inLanguage": "en",
+                    "isPartOf": {"@id": f"{BASE_URL}/#website"},
+                    "about": {"@id": f"{BASE_URL}/#organization"},
+                    "mainEntity": {"@id": f"{BASE_URL}/#organization"},
+                    "speakable": {
+                        "@type": "SpeakableSpecification",
+                        "cssSelector": ["h1", ".about-tldr", "h2"],
+                    },
+                },
+                {
+                    "@type": "FAQPage",
+                    "mainEntity": [
+                        {
+                            "@type": "Question",
+                            "name": faq["q"],
+                            "acceptedAnswer": {"@type": "Answer", "text": faq["a"]},
+                        }
+                        for faq in about_faqs
+                    ],
+                },
+                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+            ],
+        }
+
+    if path == "/compare":
+        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Compare", "item": canonical_url})
+        compare_items = []
+        for i, (cslug, cdata) in enumerate(_COMPARE_DATA.items(), start=1):
+            compare_items.append({
+                "@type": "ListItem",
+                "position": i,
+                "url": f"{BASE_URL}/compare/{cslug}",
+                "name": f"PrivaTools vs {cdata['name']}",
+            })
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "CollectionPage",
+                    "@id": f"{canonical_url}#collection",
+                    "name": title,
+                    "description": description,
+                    "url": canonical_url,
+                    "inLanguage": "en",
+                    "isPartOf": {"@id": f"{BASE_URL}/#website"},
+                },
+                {
+                    "@type": "ItemList",
+                    "name": "PrivaTools competitor comparisons",
+                    "numberOfItems": len(_COMPARE_DATA),
+                    "itemListElement": compare_items,
+                },
+                {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
+            ],
+        }
+
     return None
 
 
@@ -1278,7 +1410,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(f"<h1>{title}</h1>")
         parts.append(f"<p>{description}</p>")
         parts.append(
-            "<p>PrivaTools is a free, open-source alternative with 152 file tools, "
+            f"<p>PrivaTools is a free, open-source alternative with {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ file tools, "
             "no file limits, no sign-ups, and no behavioural tracking. Compare features, pricing, "
             "and privacy practices side by side.</p>"
         )
@@ -1328,13 +1460,31 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     # ── About page ─────────────────────────────────────────────────────────
     if path == "/about":
         parts.append("<h1>About PrivaTools</h1>")
-        parts.append(f"<p>{description}</p>")
         parts.append(
-            "<p>PrivaTools is a free, open-source suite of 152+ file tools — PDF, image, video, "
-            "audio, and developer utilities. MIT-licensed and self-hostable via Docker. Files "
-            "uploaded to the public demo are processed in an isolated container and deleted on "
-            "response; many tools run entirely in your browser and never upload anything.</p>"
+            '<p class="about-tldr" data-speakable="true"><strong>TL;DR:</strong> '
+            "PrivaTools is a free, open-source, privacy-first suite of "
+            f"{len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ file tools. "
+            "MIT-licensed, self-hostable, no accounts, no ads, no data resale. "
+            "Files uploaded to the public demo are processed in memory and deleted on response — "
+            "many tools never upload at all.</p>"
         )
+        parts.append(f"<p>{description}</p>")
+        parts.append("<h2>What PrivaTools is</h2>")
+        parts.append(
+            f"<p>PrivaTools provides {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} free online file tools across PDF, "
+            "image, video, audio, archive, and developer workflows. The codebase is MIT-licensed and "
+            "self-hostable via Docker, so the privacy guarantees can be audited end-to-end. The public demo "
+            "at privatools.me processes server-side tasks inside an isolated container and deletes the input "
+            "the moment the response leaves the server.</p>"
+        )
+        parts.append("<h2>Frequently Asked Questions</h2>")
+        for q, a in [
+            ("Who runs PrivaTools?", "PrivaTools is an open-source project under the MIT license — see the code on GitHub at taiyeba-dg/privatools. The public demo at privatools.me is maintained by independent contributors, with no advertisers, investors, or data brokers in the picture."),
+            ("What happens to files I upload?", "Server-side tools hold your file in temporary memory only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all."),
+            ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. We do not sell user data, run ads, or operate a freemium tier."),
+            ("Can I self-host PrivaTools?", "Yes. The full stack is MIT-licensed and ships as a Docker Compose project. Clone the repo and run docker compose up --build to host the whole thing on your own server."),
+        ]:
+            parts.append(f"<h3>{q}</h3><p>{a}</p>")
         return "\n".join(parts)
 
     # ── Privacy page ───────────────────────────────────────────────────────
