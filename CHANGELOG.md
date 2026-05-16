@@ -2,6 +2,97 @@
 
 All notable changes to PrivaTools will be documented in this file.
 
+## [1.5.1] — 2026-05-16 — UX polish + a11y + AEO/GEO push
+
+### 🆕 New tools (2) — total now 179
+
+- **Rotate Image** (`/tools/rotate-image`) — 90 / 180 / 270 / arbitrary angle via Pillow `Transpose` + `rotate(expand=True)`. Canvas auto-expands so nothing is cropped at non-right angles. Transparency preserved for PNG and WEBP.
+- **Flip Image** (`/tools/flip-image`) — horizontal or vertical mirror.
+
+### 🔍 SEO / AEO / GEO
+
+- **Blog index, About, Compare hub, Privacy, Terms, Pipeline, Batch** — 7 pages that had no JSON-LD now have proper schema (`Blog` + `BlogPosting` list, `AboutPage` + `FAQPage`, `CollectionPage` + `ItemList`, `WebPage`, `WebApplication`, `BreadcrumbList`).
+- **Homepage `FAQPage`** added with 6 voice-friendly Q&As, matched by visible SSR `<h3>/<p>` so Google's FAQ rich-result rules hold.
+- **Homepage SSR** now explicitly surfaces **Pipeline** and **Batch** as differentiators that no competitor offers free.
+- **`llms-full.txt`** (66 KB) added alongside `/llms.txt`. Verbose per-tool reference, architecture explainer, and citation-ready statements for AI crawlers. `robots.txt` advertises both.
+- Stale "152+ / 90+ / 105 / 141+" tool counts swept across `LandingPage`, `ComparePage`, `DynamicHead`, `opensearch.xml`, `manifest.json`, and the Foxit compare meta — all now use dynamic counts or the current canonical number.
+
+### ♿ Accessibility
+
+- **Real skip-link** in `EditorialMasthead` (`sr-only focus:not-sr-only`) jumping to `#main-content`. `id="main-content"` added to `<main>` across all 12 page components. Index.html SSR fallback skip-link harmonised to the same target.
+- **`inputMode="numeric"`** added to all 48 `type="number"` inputs across 19 tool components → triggers numeric keypad on mobile.
+
+### 🐛 Bugs
+
+- **File inputs across 60+ components** now reset `e.target.value = ""` in `onChange`. Re-selecting the same file after clearing it (X button or post-process) used to silently no-op because the browser short-circuits `onChange` on identical values.
+- **404 page rebuilt** with a fuzzy match over all 179 tools against the requested URL's last segment — surfaces a top-6 "Did you mean…" list and a Cmd-K trigger. Tool count is now dynamic.
+
+### ⌨️ UX
+
+- **Command Palette: category chips** (PDF / Image / Video-Audio / Dev / Docs / Archive) shown on the right of each result for disambiguation when two tools share a name. Hidden on mobile to keep rows uncluttered.
+- **Cmd-K synonyms** added for `rotate-image` (turn / spin / tilt / sideways) and `flip-image` (mirror / unmirror / selfie / reflect).
+
+## [1.5.0] — 2026-05-15 — Phase 7: competitor-gap tools
+
+### 🆕 New tools (6) — total now 177
+
+Six tools competitors offer that PrivaTools didn't:
+
+- **Mute Video** — stream-copy strips the audio track (lossless, instant) — MP4 / MOV / WebM / MKV / AVI
+- **Reverse Video** — plays backwards with audio reversed in sync, output H.264 + AAC
+- **Video Speed Changer** — 0.25× (slow-mo) to 4× (hyperlapse), audio pitch-corrected via FFmpeg's `atempo` so it doesn't sound chipmunk-y
+- **Audio Trimmer** — standalone audio cutter, lossless stream-copy on MP3 / WAV / AAC / FLAC / OGG / M4A
+- **Image Color Palette** — extract dominant colours from any image with HEX codes, `rgb()` values, and coverage percentages (octree quantisation)
+- **Pixelate / Blur Image** — mosaic pixelation or Gaussian blur with adjustable strength for privacy-safe sharing (block faces, license plates, addresses)
+
+### ⌨️ Discoverability
+
+- **Command Palette rewrite** — multi-token fuzzy scoring with 6-tier rank (exact name → prefix → slug-exact → contains → synonym phrase → multi-token AND) plus a popularity tie-breaker. `SYNONYMS` map tripled from 39 entries to 145+. Result cap 12 → 16. Verified 16/18 (89%) fuzzy match rate on test queries.
+
+### 💬 UX
+
+- **Human-readable HTTP errors** in `lib/api.ts` — `describeError()` maps 413 / 415 / 422 / 429 / 502 / 503 / 504 each to tailored user-facing copy instead of `Request failed (500)`. The error card got a "Try again" + "Copy error" affordance.
+- **Filename preservation** across server-side tools — output filenames are derived from the source name + a suffix (`document.pdf` → `document_compressed.pdf`), not generic `output.pdf`.
+
+### 🔍 SEO / AEO / GEO
+
+- **Hand-written TL;DRs expanded from 30 to 141 tools** with voice-friendly, 1-2 sentence answers tagged `data-speakable`.
+- **HowTo JSON-LD** added to every tool's `@graph` with 3 step entries each.
+- **`dateModified` dynamic** — uses `date.today()` so all tool pages show today's date as last-reviewed.
+- **sitemap `lastmod` = today** for all evergreen content (tool pages, blog index, compare, etc.) so search engines see fresh signals.
+
+### ♿ Accessibility
+
+- **Colour contrast** bumped to WCAG-AA across compare / blog / tool pages: `text-green-600` → `text-green-700 dark:text-green-400`, `text-red-500` → `text-red-700 dark:text-red-400`, accent badges from `bg-accent/15 text-accent` to `bg-accent/25 text-foreground border-accent/40`.
+- **Sidebar headings** changed from `<h3>` to `<h2>` for correct heading order on tool pages.
+- **Form labels** added with `htmlFor` / `id` pairs and `aria-label` on the YAML-to-JSON textarea and password-generator input.
+- **Icon-only `<a>`** on the blog "next post" arrow gained `aria-label="Read {title}"`.
+
+### 📱 Mobile
+
+- **CategoryToolNav overflow** — changed from `min-w-0 max-w-full` (didn't clip on certain viewports) to `-mx-4 sm:mx-0 overflow-hidden` edge-to-edge scroll pattern.
+- **Wide markdown tables** in blog posts get `display: block; overflow-x: auto` so they don't horizontal-scroll the whole page.
+
+## [1.4.0] — 2026-05-12 — Converter aliases + browser-only utilities
+
+### 🆕 New tools (20+)
+
+**Image converter aliases** (each is its own SEO landing page hitting the unified `image-converter` backend):
+
+JPG ↔ PNG · JPG → WebP · PNG → WebP · TIFF → JPG/PNG · BMP → JPG/PNG · GIF → JPG/PNG
+
+**Audio / video converter aliases:**
+
+M4A → MP3 · MP4 → MP3 · MOV → MP4 · AVI → MP4 · WebM → MP4 · MP4 → WebM
+
+**Browser-only dev tools:**
+
+YAML ↔ JSON · Case Converter (camelCase ↔ snake_case ↔ kebab-case ↔ PascalCase ↔ CONSTANT_CASE ↔ Title Case ↔ sentence case)
+
+### 🔍 SEO
+
+- Each alias gets a dedicated landing page with its own meta, TLDR, HowTo, and FAQ — surfaces in long-tail "convert X to Y" searches without duplicating backend code.
+
 ## [1.3.0] — 2026-05-15 — SEO / AEO / GEO sweep
 
 ### 🔍 SEO (technical)
