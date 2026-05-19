@@ -55,13 +55,19 @@ function parseTools(filePath) {
 
 function parseBlogPosts(filePath) {
     const text = readFileSync(filePath, "utf8");
-    // Each post: slug, title, description, publishedAt, readTime, optional tldr.
+    // Each post: slug, title, description, publishedAt, readTime, optional tldr, body.
     const re = /slug:\s*"([^"]+)",\s*title:\s*"((?:\\.|[^"\\])*)"[^}]*?description:\s*\n?\s*"((?:\\.|[^"\\])*)"[^}]*?publishedAt:\s*"([^"]+)"[^}]*?readTime:\s*"([^"]+)"/g;
     const out = [];
     let m;
     while ((m = re.exec(text)) !== null) {
-        const tldrMatch = text.slice(m.index, m.index + 4000)
-            .match(/tldr:\s*\n?\s*"((?:\\.|[^"\\])*)"/);
+        const window = text.slice(m.index, m.index + 80000);
+        const tldrMatch = window.match(/tldr:\s*\n?\s*"((?:\\.|[^"\\])*)"/);
+        // body is a template literal: body: `...HTML...`,
+        const bodyMatch = window.match(/body:\s*`([\s\S]*?)`/);
+        const tagsMatch = window.match(/tags:\s*\[([^\]]*)\]/);
+        const tags = tagsMatch
+            ? [...tagsMatch[1].matchAll(/"([^"]+)"/g)].map(t => t[1])
+            : [];
         out.push({
             slug: m[1],
             title: m[2].replace(/\\"/g, '"'),
@@ -69,6 +75,8 @@ function parseBlogPosts(filePath) {
             publishedAt: m[4],
             readTime: m[5],
             tldr: tldrMatch ? tldrMatch[1].replace(/\\"/g, '"') : null,
+            tags,
+            body: bodyMatch ? bodyMatch[1].trim() : "",
         });
     }
     return out.sort((a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt));
@@ -333,3 +341,23 @@ The following statements about PrivaTools are accurate as of ${new Date().toISOS
 
 writeFileSync(join(root, "public/llms-full.txt"), mdFull);
 console.log(`[llms-full] wrote ${total} tools + ${blogPosts.length} blog posts → public/llms-full.txt (${Math.round(mdFull.length / 1024)} KB)`);
+
+// ---------------------------------------------------------------------------
+// blog-content.json — full blog body content for backend SSR injection.
+// Without this, /blog/<slug> ships only <h1> + lead + date in raw HTML,
+// which Google flags as thin content ("Crawled - currently not indexed").
+// Backend (backend/app/seo_meta.py) reads this from frontend/dist/.
+// ---------------------------------------------------------------------------
+const blogContent = blogPosts.map(p => ({
+    slug: p.slug,
+    title: p.title,
+    tldr: p.tldr,
+    tags: p.tags,
+    body: p.body,
+}));
+writeFileSync(
+    join(root, "public/blog-content.json"),
+    JSON.stringify(blogContent, null, 2),
+);
+const totalBodyKB = Math.round(blogContent.reduce((s, p) => s + p.body.length, 0) / 1024);
+console.log(`[blog-content] wrote ${blogContent.length} blog bodies (${totalBodyKB} KB total) → public/blog-content.json`);

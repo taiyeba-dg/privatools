@@ -301,6 +301,27 @@ _BLOG_POSTS: dict[str, dict] = {
 }
 
 # ---------------------------------------------------------------------------
+# Blog post bodies — full HTML article content for SSR injection.
+# Without injecting the body, Google sees only <h1> + lead and flags the page
+# as thin ("Crawled - currently not indexed"). The JSON is emitted at build
+# time by frontend/scripts/gen-llms.mjs (the prebuild step), keeping
+# frontend/src/data/blog.ts as the single source of truth.
+# ---------------------------------------------------------------------------
+from pathlib import Path as _Path
+
+_BLOG_BODIES: dict[str, dict] = {}
+try:
+    _blog_json = _Path(__file__).parent.parent.parent / "frontend" / "dist" / "blog-content.json"
+    if _blog_json.exists():
+        with _blog_json.open("r", encoding="utf-8") as _f:
+            _BLOG_BODIES = {p["slug"]: p for p in json.load(_f)}
+except Exception:
+    # Missing or malformed blog-content.json must not crash the app — fall back
+    # to the lighter title-only SSR rendering.
+    _BLOG_BODIES = {}
+
+
+# ---------------------------------------------------------------------------
 # Tool popularity ranks  (slug → rank; lower = more searched/used).
 # Mirrors frontend/src/data/{tools,non-pdf-tools}.ts. Used to sort SSR output
 # so crawlers see the same most-popular-first ordering React renders. Missing
@@ -782,6 +803,56 @@ def _tool_title(name: str) -> str:
 
 def _tool_desc(desc: str) -> str:
     return desc[:160] if len(desc) > 160 else desc
+
+
+# Per-tool trust paragraph. Previously a single identical block was emitted on
+# every /tool/* and /tools/* page, which triggered Google's near-duplicate
+# detection across 179 pages. Six variants, picked deterministically by slug
+# hash, preserve the same privacy/freedom claims with materially different
+# wording so each URL has a unique paragraph.
+_TRUST_VARIANTS: tuple[str, ...] = (
+    "{name} runs on the same privacy-first stack as every PrivaTools utility: "
+    "files enter an isolated Docker container, are processed in temporary "
+    "memory, and are unlinked the moment your download begins. No account, no "
+    "watermark, no daily quota.",
+
+    "Like the rest of the {total}-tool PrivaTools suite, {name} is MIT-licensed "
+    "and self-hostable. The public demo deletes your file as soon as the "
+    "response leaves the server — verifiable in the open-source codebase on "
+    "GitHub.",
+
+    "{name} is part of PrivaTools — a free, open-source alternative to "
+    "iLovePDF, Smallpdf, and Adobe. Server-side tools process your file in an "
+    "isolated container and discard it immediately; many tools never upload "
+    "at all and run entirely in your browser.",
+
+    "Using {name} doesn't require an account, an email address, or a paid plan. "
+    "Your file is held in temp memory only for the duration of processing, then "
+    "permanently unlinked. No watermarks, no upsells, no behavioural tracking.",
+
+    "{name} is one of {total}+ free file utilities on PrivaTools. The entire "
+    "stack is open source under the MIT license, so the privacy guarantees can "
+    "be audited end-to-end. You can also run all {total} tools on your own "
+    "infrastructure with one docker compose command.",
+
+    "Every PrivaTools tool — including {name} — is genuinely free with no "
+    "premium tier, no per-day limit, and no watermark on the output. Files are "
+    "deleted from the server within seconds of your download completing. "
+    "Source code: github.com/taiyeba-dg/privatools.",
+)
+
+
+def _trust_paragraph(slug: str, name: str, total: int) -> str:
+    """Pick a deterministic trust paragraph for the given tool slug.
+
+    Uses a stable hash so the same tool always renders the same variant, but
+    different tools get different paragraphs — eliminating the identical
+    boilerplate that previously appeared on all 179 tool pages.
+    """
+    # Plain non-cryptographic hash: sum of byte values. Deterministic across
+    # Python invocations (unlike hash(), which is salted by default since 3.3).
+    idx = sum(slug.encode("utf-8")) % len(_TRUST_VARIANTS)
+    return _TRUST_VARIANTS[idx].format(name=name, total=total)
 
 
 def path_is_known(path: str) -> bool:
@@ -1438,9 +1509,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(f'<p class="tool-tldr" data-speakable="true"><strong>TL;DR:</strong> {tldr}</p>')
             parts.append(f"<p>{desc}</p>")
             parts.append(
-                f"<p>{name} is one of {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ free file tools on PrivaTools. All processing happens "
-                "on our servers with zero-knowledge architecture — your files are never stored, "
-                "never read, and never shared with third parties. No account required.</p>"
+                f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
             )
             # HowTo section
             if slug in TOOL_HOWTO:
@@ -1481,9 +1550,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(f'<p class="tool-tldr" data-speakable="true"><strong>TL;DR:</strong> {tldr}</p>')
             parts.append(f"<p>{desc}</p>")
             parts.append(
-                f"<p>{name} is one of {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ free file tools on PrivaTools. All processing happens "
-                "on our servers with zero-knowledge architecture — your files are never stored, "
-                "never read, and never shared with third parties. No account required.</p>"
+                f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
             )
             # HowTo section
             if slug in TOOL_HOWTO:
@@ -1553,9 +1620,39 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         slug = path[len("/blog/"):]
         post = _BLOG_POSTS.get(slug)
         if post:
+            body_data = _BLOG_BODIES.get(slug, {})
+            tldr = body_data.get("tldr")
+
             parts.append(f"<h1>{post['title']}</h1>")
+            if tldr:
+                parts.append(
+                    '<p class="post-tldr" data-speakable="true">'
+                    f'<strong>TL;DR:</strong> {tldr}</p>'
+                )
             parts.append(f"<p>{post['description']}</p>")
-            parts.append(f"<p>Published: {post['publishedAt']} · {post['readTime']}</p>")
+            parts.append(
+                f'<p class="post-meta">Published: {post["publishedAt"]} · '
+                f'{post["readTime"]} · By the PrivaTools team</p>'
+            )
+
+            # Full HTML article body — sourced from frontend/src/data/blog.ts via
+            # the build-time blog-content.json. Without this, the page ships only
+            # a title to crawlers and Google flags it as thin content.
+            body_html = body_data.get("body", "").strip()
+            if body_html:
+                parts.append('<article class="post-body">')
+                parts.append(body_html)
+                parts.append('</article>')
+
+            # Internal linking back to other posts gives every blog URL outbound
+            # links and helps Google discover/re-crawl the cluster as a unit.
+            other_posts = [(s, p) for s, p in _BLOG_POSTS.items() if s != slug][:6]
+            if other_posts:
+                parts.append('<h2>More from the PrivaTools Blog</h2><ul>')
+                for s, p in other_posts:
+                    parts.append(f'<li><a href="/blog/{s}">{p["title"]}</a></li>')
+                parts.append('</ul>')
+
             return "\n".join(parts)
     elif path == "/blog":
         parts.append("<h1>PrivaTools Blog — PDF & File Tools Tips, Guides & Comparisons</h1>")
