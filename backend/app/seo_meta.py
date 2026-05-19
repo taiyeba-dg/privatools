@@ -321,6 +321,19 @@ except Exception:
     _BLOG_BODIES = {}
 
 
+# Reverse map: tool_slug -> list of blog post dicts that reference it via the
+# blog's `relatedTools` array. Used to inject "Mentioned in our guides" links
+# on each tool page — gives the long-tail tools inbound internal links from
+# authoritative blog content, which helps Google allocate crawl budget.
+_TOOL_TO_BLOGS: dict[str, list[dict]] = {}
+for _slug, _post in _BLOG_BODIES.items():
+    for _tool_slug in _post.get("relatedTools") or []:
+        _TOOL_TO_BLOGS.setdefault(_tool_slug, []).append({
+            "slug": _slug,
+            "title": _post.get("title", _slug),
+        })
+
+
 # ---------------------------------------------------------------------------
 # Tool popularity ranks  (slug → rank; lower = more searched/used).
 # Mirrors frontend/src/data/{tools,non-pdf-tools}.ts. Used to sort SSR output
@@ -881,6 +894,18 @@ def path_is_known(path: str) -> bool:
     return False
 
 
+# Meta returned when the path doesn't resolve to a known route. Previously
+# unknown paths inherited the homepage title/description, which made HTTP 404
+# responses LOOK like the homepage to Google's content-based 404 detection —
+# tripping the Soft 404 report.
+_NOT_FOUND_META: tuple[str, str] = (
+    "Page Not Found (404) | PrivaTools",
+    "The page you requested doesn't exist on PrivaTools. Browse 175+ free PDF, "
+    "image, video, audio, and developer tools from the homepage, or check the "
+    "blog for guides.",
+)
+
+
 def get_meta_for_path(path: str) -> tuple[str, str]:
     """Return (title, description) for the given URL path."""
     path = path.rstrip("/") or "/"
@@ -895,12 +920,8 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
         if slug in _PDF_TOOLS:
             name, desc = _PDF_TOOLS[slug]
             return _tool_title(name), _tool_desc(desc)
-        # Unknown slug — still return a reasonable fallback
-        readable = slug.replace("-", " ").title()
-        return (
-            f"{readable} Online Free | PrivaTools",
-            f"Use {readable} online for free on PrivaTools. Privacy-first file processing — no sign-up, no uploads stored.",
-        )
+        # Unknown slug — explicit 404 so HTTP status and body content match
+        return _NOT_FOUND_META
 
     # /tools/<slug>
     if path.startswith("/tools/"):
@@ -908,20 +929,24 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
         if slug in _NONPDF_TOOLS:
             name, desc = _NONPDF_TOOLS[slug]
             return _tool_title(name), _tool_desc(desc)
-        readable = slug.replace("-", " ").title()
-        return (
-            f"{readable} Online Free | PrivaTools",
-            f"Use {readable} online for free on PrivaTools. Privacy-first file processing — no sign-up, no uploads stored.",
-        )
+        return _NOT_FOUND_META
 
     # /blog listing and /blog/<slug>
-    if path == "/blog" or path.startswith("/blog/"):
+    if path == "/blog":
+        return _STATIC_META["/blog"]
+    if path.startswith("/blog/"):
         if path in _STATIC_META:
             return _STATIC_META[path]
-        return _STATIC_META["/blog"]
+        return _NOT_FOUND_META
 
-    # Fallback
-    return _STATIC_META["/"]
+    # /compare/<slug>
+    if path.startswith("/compare/"):
+        if path in _STATIC_META:
+            return _STATIC_META[path]
+        return _NOT_FOUND_META
+
+    # Any other unknown top-level path
+    return _NOT_FOUND_META
 
 
 def get_jsonld_for_path(path: str) -> dict | None:
@@ -1455,6 +1480,28 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     """
     parts: list[str] = []
 
+    # ── 404 / unknown route ────────────────────────────────────────────────
+    # Render a real "Page not found" body so that HTTP 404 responses don't
+    # carry the homepage's title and H1, which Google interprets as a Soft 404.
+    if not path_is_known(path):
+        parts.append("<h1>Page Not Found</h1>")
+        parts.append(
+            "<p>The page you requested doesn't exist on PrivaTools. The link "
+            "may be outdated or the URL may be typed incorrectly.</p>"
+        )
+        parts.append('<h2>Try one of these instead</h2>')
+        parts.append('<ul>')
+        parts.append('<li><a href="/">Homepage</a> — browse all 175+ free tools</li>')
+        parts.append('<li><a href="/tool/merge-pdf">Merge PDF</a></li>')
+        parts.append('<li><a href="/tool/compress-pdf">Compress PDF</a></li>')
+        parts.append('<li><a href="/tool/pdf-to-word">PDF to Word</a></li>')
+        parts.append('<li><a href="/tools/image-compressor">Image Compressor</a></li>')
+        parts.append('<li><a href="/tools/jwt-decoder">JWT Decoder</a></li>')
+        parts.append('<li><a href="/blog">PrivaTools Blog</a> — guides and comparisons</li>')
+        parts.append('<li><a href="/compare">Comparisons</a> — PrivaTools vs iLovePDF, Smallpdf, Adobe, and more</li>')
+        parts.append('</ul>')
+        return "\n".join(parts)
+
     # ── Homepage ───────────────────────────────────────────────────────────
     if path == "/":
         parts.append(f"<h1>PrivaTools — Free, Open-Source Privacy-First File Tools</h1>")
@@ -1538,6 +1585,24 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                 for s, n in category_tools:
                     parts.append(f'<li><a href="/tool/{s}">{n}</a></li>')
                 parts.append("</ul>")
+            # Mentioned in our guides — backlinks from this tool to blog posts
+            # that reference it. Builds bidirectional internal-link graph that
+            # helps Google route crawl budget to long-tail tool pages.
+            mentioning_posts = _TOOL_TO_BLOGS.get(slug, [])
+            if mentioning_posts:
+                parts.append("<h2>Mentioned in our guides</h2><ul>")
+                for post in mentioning_posts:
+                    parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
+                parts.append("</ul>")
+            # Generic link to the comparison hub — gives every tool page an
+            # outbound link to the compare cluster.
+            parts.append(
+                '<p class="compare-cta">See how PrivaTools compares to '
+                '<a href="/compare/ilovepdf">iLovePDF</a>, '
+                '<a href="/compare/smallpdf">Smallpdf</a>, '
+                '<a href="/compare/adobe-acrobat">Adobe Acrobat</a>, and '
+                '<a href="/compare">other free PDF tools</a>.</p>'
+            )
             return "\n".join(parts)
 
     if path.startswith("/tools/"):
@@ -1578,6 +1643,22 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
                 for s, n in related:
                     parts.append(f'<li><a href="/tools/{s}">{n}</a></li>')
                 parts.append("</ul>")
+            # Mentioned in our guides — same reverse-map backlink as /tool/ branch.
+            mentioning_posts = _TOOL_TO_BLOGS.get(slug, [])
+            if mentioning_posts:
+                parts.append("<h2>Mentioned in our guides</h2><ul>")
+                for post in mentioning_posts:
+                    parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
+                parts.append("</ul>")
+            # Cross-category teaser — every non-PDF tool gets at least one outbound
+            # link into the PDF tool cluster (and vice versa via /tool/ branch above).
+            parts.append(
+                '<p class="cross-cta">Working with PDFs too? Try our '
+                '<a href="/tool/merge-pdf">Merge PDF</a>, '
+                '<a href="/tool/compress-pdf">Compress PDF</a>, '
+                '<a href="/tool/pdf-to-word">PDF to Word</a>, or '
+                '<a href="/">all 175+ tools</a>.</p>'
+            )
             return "\n".join(parts)
 
     # ── Compare pages ──────────────────────────────────────────────────────

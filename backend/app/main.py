@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -174,6 +174,17 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
         if suffix in _STATIC_EXTENSIONS:
             return await call_next(request)
 
+        # Canonicalize trailing slashes — 301 to the non-slashed version so
+        # Google doesn't see /about and /about/ as two URLs with two different
+        # self-referential canonicals (Search Console reports this as
+        # "Alternative page with proper canonical tag"). Root path "/" is the
+        # one exception: it must stay as "/".
+        if len(path) > 1 and path.endswith("/"):
+            target = path.rstrip("/") or "/"
+            if request.url.query:
+                target = f"{target}?{request.url.query}"
+            return RedirectResponse(url=target, status_code=301)
+
         # SPA route — serve index.html directly with injected meta tags.
         # Do NOT call call_next: StaticFiles would return a JSON 404 for any
         # path that doesn't correspond to a file on disk.
@@ -181,9 +192,10 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
             try:
                 from .seo_meta import path_is_known
                 html = _get_seo_html(path, _index_mtime_ns())
-                # Unknown paths (e.g. /tool/nonexistent-slug, /not-found, /404,
-                # /tool/, /blog/) return HTTP 404 — prevents Google's Soft 404
-                # detection from flagging the SEO-injected shell as an error.
+                # Unknown paths (e.g. /tool/nonexistent-slug, /not-found, /404)
+                # return HTTP 404 with a proper "Page not found" SSR body
+                # rendered by inject_seo — without this, the 404 page inherits
+                # the homepage title/H1 and Google flags it as Soft 404.
                 status = 200 if path_is_known(path) else 404
                 return HTMLResponse(content=html, status_code=status)
             except Exception as exc:

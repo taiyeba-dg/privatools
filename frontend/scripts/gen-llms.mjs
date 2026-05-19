@@ -68,6 +68,13 @@ function parseBlogPosts(filePath) {
         const tags = tagsMatch
             ? [...tagsMatch[1].matchAll(/"([^"]+)"/g)].map(t => t[1])
             : [];
+        // relatedTools is the list of tool slugs each post is "about" — used
+        // to build a reverse map (tool → blog posts that mention it) so each
+        // tool page can backlink to the guides that reference it.
+        const relatedMatch = window.match(/relatedTools:\s*\[([^\]]*)\]/);
+        const relatedTools = relatedMatch
+            ? [...relatedMatch[1].matchAll(/"([^"]+)"/g)].map(t => t[1])
+            : [];
         out.push({
             slug: m[1],
             title: m[2].replace(/\\"/g, '"'),
@@ -76,6 +83,7 @@ function parseBlogPosts(filePath) {
             readTime: m[5],
             tldr: tldrMatch ? tldrMatch[1].replace(/\\"/g, '"') : null,
             tags,
+            relatedTools,
             body: bodyMatch ? bodyMatch[1].trim() : "",
         });
     }
@@ -353,6 +361,7 @@ const blogContent = blogPosts.map(p => ({
     title: p.title,
     tldr: p.tldr,
     tags: p.tags,
+    relatedTools: p.relatedTools,
     body: p.body,
 }));
 writeFileSync(
