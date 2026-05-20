@@ -1,16 +1,12 @@
-import uuid
 from pptx import Presentation
-from pptx.util import Inches, Pt, Emu
-from reportlab.lib.pagesizes import landscape, A4
 from reportlab.pdfgen import canvas
-from reportlab.lib.colors import HexColor
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.filenames import temp_output
 
 
 def pptx_to_pdf(input_path: str) -> str:
     """Convert .pptx file to PDF using python-pptx + reportlab."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"pptx_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("pptx", "pdf")
 
     prs = Presentation(input_path)
     slide_width = prs.slide_width

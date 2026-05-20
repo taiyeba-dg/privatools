@@ -1,14 +1,14 @@
-import uuid
 import re
+
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.filenames import temp_output
 
 
 def rtf_to_pdf(input_path: str) -> str:
     """Convert RTF file to PDF by extracting plain text."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"rtf_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("rtf", "pdf")
 
     with open(input_path, "r", encoding="utf-8", errors="replace") as f:
         raw = f.read()

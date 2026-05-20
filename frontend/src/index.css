@@ -1,15 +1,20 @@
-/* PrivaTools — design tokens.
- *  - Linear (cool dark surfaces, Inter, multi-layer shadows, pill primary buttons)
- *  - Vercel (true monochrome neutrals, 6/8px radii, subtle elevation, black primary)
- *  - Smallpdf (1200px container, generous whitespace, curated hero grid)
- * Brand accent stays amber to remain distinct from Linear's indigo and Vercel's blue.
+/* PrivaTools — design tokens "Cipher" edition.
  *
- * Font note — sourced from Bunny Fonts (https://fonts.bunny.net), a drop-in
- * Google Fonts mirror that does not log IP / set cookies. Aligns with the
- * "no third-party uploads" privacy claim. (We can't ship .woff2s in this repo
- * without bloating it; the mirror is the next-best thing.)
+ * Editorial-privacy-tech aesthetic. A confident, refined workshop —
+ * not a SaaS landing page.
+ *
+ *  - Display:  Fraunces (variable serif, optical sizing)
+ *  - UI:       Inter (cv11/ss01) — keeps install-base, opted-in features
+ *  - Mono:     JetBrains Mono
+ *
+ *  - Warm paper light theme (#FAF7F0) with deep ink (#13110D)
+ *  - Almost-black dark theme (#0B0B0C) with bone foreground (#EDE8DA)
+ *  - Signal green accent (#0F9D58 light / #34D399 dark) — privacy = the green check
+ *  - Secondary accent: copper (#B7591A) used sparingly for "industry first" callouts
+ *
+ *  Fonts via Bunny Fonts (privacy-respecting Google Fonts mirror).
  */
-@import url('https://fonts.bunny.net/css?family=inter:400,500,600,700,800|jetbrains-mono:400,600&display=swap');
+@import url('https://fonts.bunny.net/css?family=fraunces:400,500,600,700,800,900|inter:400,500,600,700|jetbrains-mono:400,500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -17,92 +22,113 @@
 
 @layer base {
   :root {
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    --font-display: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
+    --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:    'JetBrains Mono', 'SF Mono', Menlo, monospace;
 
-    /* ── Light theme — Vercel monochrome + amber accent ────────────── */
-    /*  Primary = solid near-black (Vercel). Amber lives in --accent
-        for links, focus rings, badges, and the brand mark only. */
-    --background: 0 0% 100%;            /* #FFFFFF */
-    --foreground: 0 0% 9%;              /* #171717 */
+    /* ── Light — warm paper + deep ink ─────────────────────────────── */
+    --background: 40 36% 96%;            /* #FAF7F0 warm paper */
+    --foreground: 30 18% 8%;             /* #16140E deep ink */
+
+    --paper:      40 36% 96%;            /* base */
+    --paper-2:    38 28% 92%;            /* #ECE5D3 slightly tinted second surface */
+    --paper-3:    36 22% 88%;            /* #DFD7C2 */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
-    --card-tint: 0 0% 98%;              /* #FAFAFA */
+    --card-foreground: 30 18% 8%;
+    --card-tint: 40 30% 94%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 30 18% 8%;
 
-    --primary: 0 0% 9%;                 /* Vercel near-black primary */
-    --primary-foreground: 0 0% 100%;
+    --primary: 30 18% 8%;                /* deep ink primary CTA */
+    --primary-foreground: 40 36% 96%;
 
-    --secondary: 0 0% 96%;              /* #F5F5F5 */
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 38 24% 90%;             /* warm putty */
+    --secondary-foreground: 30 18% 8%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 30%;       /* #4D4D4D */
+    --muted: 38 22% 92%;
+    --muted-foreground: 30 8% 32%;       /* #534F46 — sufficient contrast */
 
-    --accent: 32 95% 35%;               /* Brand amber — darkened to pass WCAG AA when used as text on white */
-    --accent-foreground: 0 0% 100%;     /* White on darker amber → WCAG AAA contrast */
+    /* Signal green — accessible on warm paper, WCAG AA */
+    --accent: 152 82% 30%;               /* #0E8A56 darkened for AA on cream */
+    --accent-foreground: 40 36% 96%;
+    --accent-soft: 152 60% 92%;          /* tinted pill background */
 
-    --destructive: 0 84% 39%;
+    /* Copper, used for "industry first" — restrained */
+    --copper: 19 75% 35%;                /* #9F4D1B */
+    --copper-soft: 19 60% 90%;
+
+    --destructive: 0 70% 38%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 92%;                 /* #EAEAEA Vercel border */
-    --input: 0 0% 92%;
-    --ring: 32 95% 48%;                 /* Amber focus ring */
+    --border: 36 18% 80%;                /* #CFC7B3 warm hairline */
+    --border-strong: 36 16% 64%;         /* #A89F89 stronger rule */
+    --input: 36 18% 80%;
+    --ring: 152 82% 30%;
 
-    --radius: 0.5rem;                   /* 8px — Linear standard card */
+    --radius: 0.625rem;                  /* 10px — a touch larger than v0 */
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 0% 9%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 92%;
-    --sidebar-ring: 32 95% 48%;
+    /* Sidebar tokens preserved for shadcn compat */
+    --sidebar-background: 40 36% 96%;
+    --sidebar-foreground: 30 18% 8%;
+    --sidebar-primary: 30 18% 8%;
+    --sidebar-primary-foreground: 40 36% 96%;
+    --sidebar-accent: 38 24% 90%;
+    --sidebar-accent-foreground: 30 18% 8%;
+    --sidebar-border: 36 18% 80%;
+    --sidebar-ring: 152 82% 30%;
   }
 
   .dark {
-    /* ── Dark theme — Linear cool near-black + amber accent ────────── */
-    --background: 220 6% 4%;            /* #08090A — Linear darkest */
-    --foreground: 220 5% 97%;           /* #F7F8F8 */
+    /* ── Dark — bone on near-black, warm undertone ─────────────────── */
+    --background: 30 8% 6%;              /* #100F0C — warm near-black */
+    --foreground: 40 22% 90%;            /* #EDE6D2 bone */
 
-    --card: 220 5% 6%;                  /* #0F1011 — Linear dark */
-    --card-foreground: 220 5% 97%;
-    --card-tint: 220 5% 8%;             /* #141516 */
+    --paper:   30 8% 6%;
+    --paper-2: 30 7% 9%;                 /* #181714 second surface */
+    --paper-3: 30 6% 13%;                /* #21201D */
 
-    --popover: 220 5% 6%;
-    --popover-foreground: 220 5% 97%;
+    --card: 30 7% 8%;                    /* #161512 */
+    --card-foreground: 40 22% 90%;
+    --card-tint: 30 6% 11%;
 
-    --primary: 220 5% 97%;              /* Light primary — Linear "CTA Background" #E5E5E6 */
-    --primary-foreground: 220 6% 4%;
+    --popover: 30 7% 8%;
+    --popover-foreground: 40 22% 90%;
 
-    --secondary: 220 5% 10%;
-    --secondary-foreground: 220 6% 78%;
+    --primary: 40 22% 90%;               /* bone primary on dark = inverted */
+    --primary-foreground: 30 8% 6%;
 
-    --muted: 220 5% 9%;
-    --muted-foreground: 220 5% 70%;     /* Bumped from 58% → 70% so /80 opacity stays WCAG-AA on near-black bg */
+    --secondary: 30 6% 13%;
+    --secondary-foreground: 40 18% 78%;
 
-    --accent: 32 92% 60%;               /* Brand amber — accent only */
-    --accent-foreground: 220 6% 4%;
+    --muted: 30 6% 12%;
+    --muted-foreground: 38 12% 68%;      /* #A8A293 readable on near-black */
 
-    --destructive: 0 62% 50%;
+    /* Signal green — pops on dark */
+    --accent: 152 76% 48%;               /* #28C886 vibrant */
+    --accent-foreground: 30 8% 6%;
+    --accent-soft: 152 50% 16%;
+
+    --copper: 22 80% 60%;                /* #E48543 vivid */
+    --copper-soft: 22 30% 18%;
+
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 5% 14%;
-    --input: 220 5% 14%;
-    --ring: 32 92% 60%;
+    --border: 30 6% 18%;                 /* #2F2D29 */
+    --border-strong: 30 6% 28%;          /* #4A4742 */
+    --input: 30 6% 18%;
+    --ring: 152 76% 48%;
 
-    --sidebar-background: 220 6% 4%;
-    --sidebar-foreground: 220 5% 97%;
-    --sidebar-primary: 220 5% 97%;
-    --sidebar-primary-foreground: 220 6% 4%;
-    --sidebar-accent: 220 5% 10%;
-    --sidebar-accent-foreground: 220 5% 97%;
-    --sidebar-border: 220 5% 14%;
-    --sidebar-ring: 32 92% 60%;
+    --sidebar-background: 30 8% 6%;
+    --sidebar-foreground: 40 22% 90%;
+    --sidebar-primary: 40 22% 90%;
+    --sidebar-primary-foreground: 30 8% 6%;
+    --sidebar-accent: 30 6% 13%;
+    --sidebar-accent-foreground: 40 22% 90%;
+    --sidebar-border: 30 6% 18%;
+    --sidebar-ring: 152 76% 48%;
   }
 }
 
@@ -117,68 +143,112 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01", "ss03";
+    font-feature-settings: "cv11", "ss01", "ss03", "calt";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 15px;
-    line-height: 1.6;
+    line-height: 1.55;
+    /* Subtle paper grain — masked to keep it cheap and decorative */
+    background-image:
+      radial-gradient(circle at 0.5px 0.5px, hsl(var(--foreground) / 0.025) 0.5px, transparent 0);
+    background-size: 3px 3px;
+  }
+  .dark body {
+    background-image:
+      radial-gradient(circle at 0.5px 0.5px, hsl(var(--foreground) / 0.04) 0.5px, transparent 0);
+    background-size: 3px 3px;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-sans);
+    font-family: var(--font-display);
     letter-spacing: -0.02em;
-    line-height: 1.15;
+    line-height: 1.08;
     font-weight: 600;
+    color: hsl(var(--foreground));
+    font-variation-settings: "opsz" 144;
   }
-
-  h1 { letter-spacing: -0.035em; font-weight: 700; }
+  h1 {
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    font-variation-settings: "opsz" 144, "SOFT" 50;
+  }
+  h2 { font-weight: 600; }
+  h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.018em; }
 }
 
-/* ── Compatibility class names (still referenced by older components) ── */
-.font-sans-ui   { font-family: var(--font-sans); }
-.font-mono-meta { font-family: var(--font-mono); }
-.font-heading   { font-family: var(--font-sans); letter-spacing: -0.02em; font-weight: 700; }
-.font-serif-body, .font-editorial { font-family: var(--font-sans); }
+/* ── Legacy compat — older code still references these class names ── */
+.font-sans-ui     { font-family: var(--font-sans); }
+.font-mono-meta   { font-family: var(--font-mono); }
+.font-heading     { font-family: var(--font-display); letter-spacing: -0.02em; font-weight: 700; }
+.font-serif-body  { font-family: var(--font-display); }
+.font-editorial   { font-family: var(--font-display); }
 
-/* Old "rule" classes — neutralised hairlines */
-.rule-thin         { border-top: 1px solid hsl(var(--border)); }
-.rule-thick        { border-top: 1px solid hsl(var(--border)); }
-.rule-double       { border-top: 1px solid hsl(var(--border)); }
-.rule-accent       { border-top: 1px solid hsl(var(--primary) / 0.4); }
-.rule-accent-thick { border-top: 2px solid hsl(var(--primary)); }
-.column-divider    { border-right: 1px solid hsl(var(--border)); }
+.font-display     { font-family: var(--font-display); }
+.font-mono        { font-family: var(--font-mono); }
 
-/* Old editorial section flag — slim modern badge (Vercel-style) */
+/* ── Editorial flourishes ──────────────────────────────────────────── */
+/* § section markers — the recurring motif. */
+.section-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+.section-mark::before {
+  content: "§";
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 14px;
+  color: hsl(var(--accent));
+  font-weight: 600;
+}
+
+/* Hairline rules — single source of truth */
+.rule-hair        { border-top: 1px solid hsl(var(--border)); }
+.rule-thin        { border-top: 1px solid hsl(var(--border)); }
+.rule-thick       { border-top: 1px solid hsl(var(--border-strong)); }
+.rule-double      { border-top: 3px double hsl(var(--border-strong)); }
+.rule-accent      { border-top: 1px solid hsl(var(--accent) / 0.5); }
+.rule-accent-thick{ border-top: 2px solid hsl(var(--accent)); }
+.column-divider   { border-right: 1px solid hsl(var(--border)); }
+
+/* Section flag — pill chip, monospace, hairline border */
 .section-flag {
   display: inline-flex;
   align-items: center;
-  height: 22px;
-  padding: 0 10px;
-  background: hsl(var(--secondary));
+  gap: 0.375rem;
+  height: 24px;
+  padding: 0 0.625rem;
+  background: hsl(var(--paper-2));
   color: hsl(var(--muted-foreground));
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid hsl(var(--border));
 }
 
 .category-tag {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: hsl(var(--muted-foreground));
 }
 
 .masthead-title {
-  font-family: var(--font-sans);
-  font-size: 1.0625rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 .masthead-meta {
   font-family: var(--font-mono);
@@ -192,62 +262,86 @@
 }
 .masthead-nav a, .masthead-nav button {
   color: hsl(var(--muted-foreground));
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition: color 0.15s ease;
 }
 .masthead-nav a:hover, .masthead-nav button:hover { color: hsl(var(--foreground)); }
 .masthead-nav a.active, .masthead-nav button.active { color: hsl(var(--foreground)); }
 
-/* ── Cards ─────────────────────────────────────────────────────────── */
-/* Base card (Linear/Vercel hybrid) */
+/* ── Surfaces ─────────────────────────────────────────────────────── */
+.surface-paper {
+  background: hsl(var(--paper));
+}
+.surface-paper-2 {
+  background: hsl(var(--paper-2));
+}
+.surface-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+
+/* ── Editorial insert (general bordered block) ────────────────────── */
 .editorial-insert {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.18s ease;
 }
 .editorial-insert:hover {
-  border-color: hsl(var(--border) / 1.2);
-  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.04), 0 4px 12px -4px rgba(0,0,0,0.06);
+  border-color: hsl(var(--border-strong));
+  box-shadow:
+    0 1px 2px 0 rgba(20,15,5,0.04),
+    0 6px 16px -6px rgba(20,15,5,0.08);
 }
 
-/* Tool card — Vercel-style multi-layer shadow on hover */
+/* ── Tool card ────────────────────────────────────────────────────── */
+/* Subtle by default, decisive on hover. The tile color tints the icon
+   square and the hover halo so each category feels distinct without
+   visual chaos. */
 .tool-card {
   position: relative;
   isolation: isolate;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: 12px;
-  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    transform   0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow  0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    background  0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.tool-card::before {
+.tool-card:active {
+  transform: translateY(0);
+  transition-duration: 0.06s;
+}
+.tool-card::after {
+  /* hairline corner accent that flicks in on hover */
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(120% 60% at 50% 0%, hsl(var(--accent) / 0.08), transparent 60%);
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, hsl(var(--tile, var(--accent)) / 0.0) 0 70%, hsl(var(--tile, var(--accent)) / 0.5) 100%);
   opacity: 0;
   transition: opacity 0.2s ease;
-  pointer-events: none;
   z-index: 0;
 }
 .tool-card:hover {
-  border-color: hsl(var(--accent) / 0.45);
-  transform: translateY(-2px);
+  border-color: hsl(var(--tile, var(--accent)) / 0.45);
+  transform: translateY(-1px);
   box-shadow:
-    0 0 0 1px rgba(0,0,0,0.06),
-    0 1px 2px 0 rgba(0,0,0,0.04),
-    0 8px 28px -10px hsl(var(--accent) / 0.30);
+    0 1px 2px 0 rgba(20,15,5,0.04),
+    0 8px 24px -10px hsl(var(--tile, var(--accent)) / 0.30);
 }
 .dark .tool-card:hover {
   box-shadow:
-    0 0 0 1px hsl(var(--accent) / 0.20),
-    0 1px 2px 0 rgba(0,0,0,0.4),
-    0 12px 36px -12px hsl(var(--accent) / 0.35);
+    0 1px 2px 0 rgba(0,0,0,0.5),
+    0 12px 32px -12px hsl(var(--tile, var(--accent)) / 0.35);
 }
-.tool-card:hover::before { opacity: 1; }
+.tool-card:hover::after { opacity: 1; }
 .tool-card > * { position: relative; z-index: 1; }
 
-/* Hero tile — featured tools above-the-fold (more dramatic lift) */
+/* Hero tile — top-of-fold featured tools — more dramatic lift */
 .hero-tile {
   position: relative;
   isolation: isolate;
@@ -255,182 +349,233 @@
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: 14px;
-  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    transform   0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow  0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.hero-tile:active { transform: translateY(0); transition-duration: 0.06s; }
 .hero-tile::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(120% 80% at 50% 0%, hsl(var(--accent) / 0.12), transparent 60%);
+  background: radial-gradient(120% 80% at 50% 0%, hsl(var(--tile, var(--accent)) / 0.10), transparent 70%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
   pointer-events: none;
   z-index: 0;
 }
 .hero-tile:hover {
-  transform: translateY(-3px);
-  border-color: hsl(var(--accent) / 0.55);
+  transform: translateY(-2px);
+  border-color: hsl(var(--tile, var(--accent)) / 0.55);
   box-shadow:
-    0 0 0 1px rgba(0,0,0,0.06),
-    0 1px 2px 0 rgba(0,0,0,0.04),
-    0 18px 40px -16px hsl(var(--accent) / 0.40);
+    0 1px 2px 0 rgba(20,15,5,0.05),
+    0 14px 32px -14px hsl(var(--tile, var(--accent)) / 0.35);
 }
 .dark .hero-tile:hover {
   box-shadow:
-    0 0 0 1px hsl(var(--accent) / 0.25),
-    0 1px 2px 0 rgba(0,0,0,0.4),
-    0 18px 40px -16px hsl(var(--accent) / 0.45);
+    0 1px 2px 0 rgba(0,0,0,0.5),
+    0 16px 40px -14px hsl(var(--tile, var(--accent)) / 0.40);
 }
 .hero-tile:hover::before { opacity: 1; }
 .hero-tile > * { position: relative; z-index: 1; }
 
-/* ── Primary CTA — Vercel monochrome pill ──────────────────────────── */
-/* Black on light, light on dark. Amber accent ring on hover for warmth. */
+/* ── Buttons ──────────────────────────────────────────────────────── */
+/* Primary — ink rectangle with subtle inner highlight. Rectangular,
+   not pill: feels editorial / desktop-app, not consumer-saas. */
 .btn-editorial {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  height: 40px;
-  padding: 0 1.125rem;
+  height: 44px;
+  padding: 0 1.25rem;
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.005em;
-  border-radius: 9999px;
+  border-radius: 8px;
   transition: background 0.15s ease, box-shadow 0.18s ease, transform 0.06s ease;
   box-shadow:
-    0 1px 2px 0 rgba(0,0,0,0.10),
-    0 0 0 1px rgba(0,0,0,0.04) inset;
+    inset 0 1px 0 hsl(var(--paper) / 0.08),
+    0 1px 2px 0 rgba(20,15,5,0.20);
 }
 .btn-editorial:hover {
   background: hsl(var(--primary) / 0.92);
   box-shadow:
-    0 4px 14px -2px rgba(0,0,0,0.16),
+    inset 0 1px 0 hsl(var(--paper) / 0.12),
+    0 4px 14px -2px rgba(20,15,5,0.30),
     0 0 0 3px hsl(var(--accent) / 0.18);
 }
 .btn-editorial:active { transform: translateY(1px); }
 
 .dark .btn-editorial {
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.08) inset,
-    0 1px 2px 0 rgba(0,0,0,0.4);
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 1px 2px 0 rgba(0,0,0,0.5);
 }
 .dark .btn-editorial:hover {
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.12) inset,
-    0 4px 14px -2px rgba(0,0,0,0.5),
-    0 0 0 3px hsl(var(--accent) / 0.20);
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    0 4px 14px -2px rgba(0,0,0,0.6),
+    0 0 0 3px hsl(var(--accent) / 0.25);
 }
 
-/* Secondary outline button — same pill geometry, transparent */
+/* Accent button — solid signal green, for hero CTA when stronger
+   pull is needed. Use sparingly — never alongside primary. */
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 44px;
+  padding: 0 1.25rem;
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: background 0.15s ease, box-shadow 0.18s ease, transform 0.06s ease;
+  box-shadow:
+    inset 0 1px 0 hsl(var(--paper) / 0.20),
+    0 1px 2px 0 hsl(var(--accent) / 0.30);
+}
+.btn-accent:hover {
+  filter: brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 hsl(var(--paper) / 0.25),
+    0 6px 18px -4px hsl(var(--accent) / 0.45);
+}
+.btn-accent:active { transform: translateY(1px); }
+
+/* Secondary outline — same geometry, transparent */
 .btn-secondary-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  height: 40px;
-  padding: 0 1.125rem;
+  height: 44px;
+  padding: 0 1.25rem;
   background: hsl(var(--card));
   color: hsl(var(--foreground));
   border: 1px solid hsl(var(--border));
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 600;
-  border-radius: 9999px;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 .btn-secondary-pill:hover {
   background: hsl(var(--secondary));
-  border-color: hsl(var(--border) / 1.3);
+  border-color: hsl(var(--border-strong));
 }
 
-/* ── Stat pill (used in hero) ──────────────────────────────────────── */
+/* ── Stat pill — used in masthead, hero metadata ──────────────────── */
 .stat-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: var(--font-sans);
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
   font-weight: 500;
+  letter-spacing: 0.01em;
   color: hsl(var(--muted-foreground));
 }
 .stat-pill .dot {
   width: 5px;
   height: 5px;
   border-radius: 999px;
-  background: hsl(var(--primary));
+  background: hsl(var(--accent));
   display: inline-block;
+  box-shadow: 0 0 0 3px hsl(var(--accent) / 0.18);
 }
 
-/* ── Drop zone (TinyPNG-grade calm) ────────────────────────────────── */
+/* ── Drop zone ────────────────────────────────────────────────────── */
 .drop-zone {
-  border: 2px dashed hsl(var(--border));
+  border: 1.5px dashed hsl(var(--border-strong));
   border-radius: 14px;
+  background: hsl(var(--paper-2) / 0.5);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .drop-zone:hover, .drop-zone.drag-over {
-  border-color: hsl(var(--primary) / 0.7);
-  background: hsl(var(--primary) / 0.04);
+  border-color: hsl(var(--accent) / 0.7);
+  background: hsl(var(--accent) / 0.04);
 }
 
-/* ── Hero backdrop — Vercel-style gradient + animated mesh ─────────── */
+/* ── Hero backdrop ────────────────────────────────────────────────── */
+/* No purple gradient slop. Warm dotted vignette + a single soft green
+   ambient glow + an asymmetric paper-fold "blade" line. */
 .hero-backdrop {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(50% 40% at 50% 0%, hsl(var(--accent) / 0.14), transparent 70%),
-    radial-gradient(35% 25% at 80% 10%, hsl(220 90% 60% / 0.06), transparent 60%),
-    radial-gradient(30% 20% at 20% 30%, hsl(280 80% 60% / 0.05), transparent 60%);
+    radial-gradient(45% 35% at 50% 0%, hsl(var(--accent) / 0.10), transparent 70%),
+    radial-gradient(30% 20% at 85% 15%, hsl(var(--copper) / 0.06), transparent 60%);
 }
 .hero-backdrop::before {
   content: "";
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(to right, hsl(var(--border) / 0.4) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--border) / 0.4) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 30%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 30%, transparent 75%);
-  opacity: 0.5;
+    radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.07) 1px, transparent 0);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 35%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 35%, black 30%, transparent 80%);
+  opacity: 0.6;
 }
-.dark .hero-backdrop::before { opacity: 0.7; }
+.dark .hero-backdrop::before { opacity: 0.45; }
 
-/* Floating accent orbs in the hero — animated */
-@keyframes float-orb-1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(20px,-12px); } }
-@keyframes float-orb-2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-16px,18px); } }
+/* Asymmetric "blade" — a single diagonal hairline that bleeds across
+   the hero — establishes the editorial rhythm. */
+.hero-blade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hero-blade::before {
+  content: "";
+  position: absolute;
+  top: 38%;
+  left: -10%;
+  width: 120%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, hsl(var(--accent) / 0.4) 40%, hsl(var(--accent) / 0.4) 60%, transparent 100%);
+  transform: rotate(-2deg);
+}
+
+/* Hero orb — single, restrained */
+@keyframes orb-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px, -10px) scale(1.05); } }
 .hero-orb {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(60px);
-  opacity: 0.45;
+  filter: blur(80px);
+  opacity: 0.35;
   pointer-events: none;
   z-index: 0;
 }
-.hero-orb-1 { width: 260px; height: 260px; left: 10%; top: 10%; background: hsl(var(--accent) / 0.50); animation: float-orb-1 12s ease-in-out infinite; }
-.hero-orb-2 { width: 200px; height: 200px; right: 8%; top: 30%; background: hsl(220 90% 60% / 0.30); animation: float-orb-2 14s ease-in-out infinite; }
-.dark .hero-orb-1 { opacity: 0.30; }
-.dark .hero-orb-2 { opacity: 0.20; }
+.hero-orb-1 { width: 280px; height: 280px; left: 8%; top: 20%; background: hsl(var(--accent) / 0.55); animation: orb-drift 14s ease-in-out infinite; }
+.hero-orb-2 { width: 220px; height: 220px; right: 12%; bottom: 10%; background: hsl(var(--copper) / 0.32); animation: orb-drift 16s ease-in-out infinite reverse; }
+.dark .hero-orb-1 { opacity: 0.22; }
+.dark .hero-orb-2 { opacity: 0.18; }
 
-/* ── Animated Pipeline diagram ─────────────────────────────────────── */
-/* A "file" dot drifts left→right across the pipeline; chips pulse as it
-   passes. Total cycle: 6.4s (matched by JS-side `cycle` const).         */
+/* ── Animated Pipeline diagram ────────────────────────────────────── */
 .pipeline-anim { position: relative; }
 .pipeline-file {
   position: absolute;
   left: 0;
   top: 50%;
-  width: 18px;
-  height: 18px;
-  margin-top: -9px;
-  border-radius: 6px;
+  width: 20px;
+  height: 24px;
+  margin-top: -12px;
+  border-radius: 4px;
   background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground, 0 0% 100%));
+  color: hsl(var(--accent-foreground));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -439,11 +584,7 @@
   pointer-events: none;
   z-index: 1;
 }
-.pipeline-chip {
-  animation: pipeline-pulse 6.4s ease-in-out infinite;
-  position: relative;
-  z-index: 2;
-}
+.pipeline-chip { animation: pipeline-pulse 6.4s ease-in-out infinite; position: relative; z-index: 2; }
 @keyframes pipeline-drift {
   0%   { left: 4%;  transform: scale(0.85); opacity: 0; }
   6%   { opacity: 1; transform: scale(1); }
@@ -452,7 +593,7 @@
 }
 @keyframes pipeline-pulse {
   0%, 100% { box-shadow: none; transform: translateY(0); }
-  6%       { box-shadow: 0 0 0 4px hsl(var(--tile) / 0.25); transform: translateY(-1px); }
+  6%       { box-shadow: 0 0 0 4px hsl(var(--accent) / 0.25); transform: translateY(-1px); }
   12%      { box-shadow: none; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -460,23 +601,35 @@
   .pipeline-chip { animation: none; }
 }
 
-/* ── Per-category icon tile colors (Smallpdf-style) ────────────────── */
-/* All tinted backgrounds use the SAME pattern so we just toggle the hue. */
-.cat-organize { --tile: 200 90% 50%; }   /* cyan */
-.cat-edit     { --tile: 270 85% 60%; }   /* violet */
-.cat-optimize { --tile: 160 75% 45%; }   /* emerald */
-.cat-security { --tile: 350 85% 55%; }   /* rose */
-.cat-to-pdf   { --tile: 32  95% 50%; }   /* amber */
-.cat-from-pdf { --tile: 220 90% 60%; }   /* blue */
-.cat-advanced { --tile: 250 85% 65%; }   /* indigo */
+/* ── Per-suite tile color (set --tile per element) ────────────────── */
+.cat-organize { --tile: 200 90% 45%; }   /* cyan */
+.cat-edit     { --tile: 270 70% 55%; }   /* violet */
+.cat-optimize { --tile: 152 76% 35%; }   /* the brand green itself */
+.cat-security { --tile: 350 80% 50%; }   /* rose */
+.cat-to-pdf   { --tile: 22  85% 45%; }   /* burnt orange / copper */
+.cat-from-pdf { --tile: 220 75% 55%; }   /* blue */
+.cat-advanced { --tile: 250 75% 60%; }   /* indigo */
 
-.cat-image          { --tile: 320 85% 60%; } /* pink */
-.cat-video-audio    { --tile: 18  90% 55%; } /* orange-red */
-.cat-developer      { --tile: 195 90% 55%; } /* sky */
-.cat-archive        { --tile: 45  95% 50%; } /* yellow-amber */
-.cat-document-office{ --tile: 80  70% 50%; } /* lime */
+.cat-image          { --tile: 320 75% 55%; } /* pink */
+.cat-video-audio    { --tile: 18  85% 50%; } /* orange-red */
+.cat-developer      { --tile: 195 85% 45%; } /* sky */
+.cat-archive        { --tile: 45  85% 45%; } /* amber */
+.cat-document-office{ --tile: 80  65% 40%; } /* lime-olive */
 
-/* The actual tinted icon tile — applied to a wrapper that also has .cat-* */
+.dark .cat-organize { --tile: 200 80% 60%; }
+.dark .cat-edit     { --tile: 270 75% 70%; }
+.dark .cat-optimize { --tile: 152 70% 55%; }
+.dark .cat-security { --tile: 350 75% 65%; }
+.dark .cat-to-pdf   { --tile: 22  85% 60%; }
+.dark .cat-from-pdf { --tile: 220 80% 70%; }
+.dark .cat-advanced { --tile: 250 80% 75%; }
+.dark .cat-image          { --tile: 320 75% 70%; }
+.dark .cat-video-audio    { --tile: 18  85% 65%; }
+.dark .cat-developer      { --tile: 195 80% 60%; }
+.dark .cat-archive        { --tile: 45  85% 60%; }
+.dark .cat-document-office{ --tile: 80  60% 60%; }
+
+/* Tinted icon tile — applied to a wrapper that also has .cat-* */
 .icon-tile {
   display: inline-flex;
   align-items: center;
@@ -485,19 +638,48 @@
   width: 40px;
   border-radius: 10px;
   color: hsl(var(--tile, var(--accent)));
-  background: hsl(var(--tile, var(--accent)) / 0.12);
-  border: 1px solid hsl(var(--tile, var(--accent)) / 0.18);
-  transition: background 0.15s ease, transform 0.18s ease;
+  background: hsl(var(--tile, var(--accent)) / 0.10);
+  border: 1px solid hsl(var(--tile, var(--accent)) / 0.20);
+  transition: background 0.15s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 .tool-card:hover .icon-tile,
 .hero-tile:hover .icon-tile {
-  background: hsl(var(--tile, var(--accent)) / 0.18);
-  transform: scale(1.05);
+  background: hsl(var(--tile, var(--accent)) / 0.16);
+  border-color: hsl(var(--tile, var(--accent)) / 0.35);
+  transform: scale(1.04);
 }
-.icon-tile-sm { height: 32px; width: 32px; border-radius: 8px; }
+.icon-tile-sm { height: 34px; width: 34px; border-radius: 8px; }
 .icon-tile-lg { height: 56px; width: 56px; border-radius: 14px; }
+.icon-tile-xl { height: 72px; width: 72px; border-radius: 16px; }
 
-/* ── Animations ────────────────────────────────────────────────────── */
+/* ── Type-display utility classes ─────────────────────────────────── */
+.h-display-1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  font-variation-settings: "opsz" 144, "SOFT" 50;
+}
+.h-display-2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  font-variation-settings: "opsz" 144;
+}
+.h-display-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* ── Tabular numerals — used in stat counters ─────────────────────── */
+.nums-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "lnum";
+}
+
+/* ── Animations ───────────────────────────────────────────────────── */
 @keyframes fade-up         { from { opacity: 0; transform: translateY(8px); }  to { opacity: 1; transform: translateY(0); } }
 @keyframes fade-in         { from { opacity: 0; }                              to { opacity: 1; } }
 @keyframes slide-in-right  { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
@@ -505,14 +687,15 @@
 @keyframes slide-down      { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes scale-in        { from { opacity: 0; transform: scale(0.98); }      to { opacity: 1; transform: scale(1); } }
 @keyframes shimmer         { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
-@keyframes pulse-border    { 0%, 100% { border-color: hsl(var(--primary) / 0.3); } 50% { border-color: hsl(var(--primary) / 0.7); } }
+@keyframes pulse-border    { 0%, 100% { border-color: hsl(var(--accent) / 0.3); } 50% { border-color: hsl(var(--accent) / 0.7); } }
 @keyframes accordion-down  { from { height: 0; }                               to { height: var(--radix-accordion-content-height); } }
 @keyframes accordion-up    { from { height: var(--radix-accordion-content-height); } to { height: 0; } }
 
-.animate-fade-up        { animation: fade-up 0.4s ease-out forwards; }
+.animate-fade-up        { animation: fade-up 0.5s ease-out forwards; }
 .animate-fade-in        { animation: fade-in 0.3s ease-out forwards; }
 .animate-slide-in-right { animation: slide-in-right 0.35s ease-out forwards; }
-.animate-slide-in-left  { animation: slide-in-left 0.35s ease-out forwards; }
+/* Mobile drawer — workshop ease-out, 240ms, no overshoot. */
+.animate-slide-in-left  { animation: slide-in-left 0.24s cubic-bezier(0.16, 0.84, 0.44, 1) forwards; }
 .animate-slide-down     { animation: slide-down 0.25s ease-out forwards; }
 .animate-scale-in       { animation: scale-in 0.2s ease-out forwards; }
 .animate-pulse-border   { animation: pulse-border 2s ease-in-out infinite; }
@@ -523,185 +706,654 @@
 .stagger-4 { animation-delay: 0.16s; }
 .stagger-5 { animation-delay: 0.20s; }
 .stagger-6 { animation-delay: 0.24s; }
+.stagger-7 { animation-delay: 0.28s; }
+.stagger-8 { animation-delay: 0.32s; }
 
-/* ── Scrollbars ────────────────────────────────────────────────────── */
+/* ── Page transition — fade-up the workspace on route change ─────── */
+/* Applied to the workspace child via a key={pathname} on the wrapper. */
+.workspace-enter {
+  animation: workspace-fade-up 0.32s cubic-bezier(0.16, 0.84, 0.44, 1) both;
+}
+@keyframes workspace-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Success state — corner marks scale in, check pops ───────────── */
+@keyframes success-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.animate-success-pop { animation: success-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes corner-extend {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-corner-extend > .corner-mark { animation: corner-extend 0.35s ease-out both; }
+.animate-corner-extend > .corner-mark:nth-child(1) { animation-delay: 0.05s; }
+.animate-corner-extend > .corner-mark:nth-child(2) { animation-delay: 0.10s; }
+.animate-corner-extend > .corner-mark:nth-child(3) { animation-delay: 0.15s; }
+.animate-corner-extend > .corner-mark:nth-child(4) { animation-delay: 0.20s; }
+
+/* ── Dropzone interaction — corner marks gently extend on hover ── */
+.corner-mark { transition: transform 0.25s ease-out, opacity 0.25s ease-out; }
+
+/* On hover of any dashed-border dropzone, marks shift outward subtly. */
+.border-dashed:hover > .corner-mark:nth-child(odd):nth-child(-n+2)  { transform: translate(-2px, -2px); }
+.border-dashed:hover > .corner-mark:nth-child(2)  { transform: translate( 2px, -2px); }
+.border-dashed:hover > .corner-mark:nth-child(3)  { transform: translate(-2px,  2px); }
+.border-dashed:hover > .corner-mark:nth-child(4)  { transform: translate( 2px,  2px); }
+
+/* ── Indeterminate progress bar — shimmer travel ─────────────────── */
+@keyframes progress-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+.progress-indeterminate {
+  animation: progress-indeterminate 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* ── Spinner — slower, calmer than default ─────────────────────── */
+@keyframes spinner-calm { to { transform: rotate(360deg); } }
+.spinner-calm { animation: spinner-calm 1.2s linear infinite; }
+
+/* ── Active route marker on sidebar (vertical accent bar) ──────── */
+@keyframes underline-grow {
+  from { transform: translateY(-50%) scaleY(0); opacity: 0; }
+  to   { transform: translateY(-50%) scaleY(1);  opacity: 1; }
+}
+.animate-underline-grow {
+  animation: underline-grow 0.25s ease-out both;
+  transform-origin: center;
+}
+
+/* ── Pin a pulse animation reserved for accent dot indicators ─── */
+@keyframes accent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0   hsl(var(--accent) / 0.4); }
+  50%      { box-shadow: 0 0 0 6px hsl(var(--accent) / 0); }
+}
+.animate-accent-pulse { animation: accent-pulse 2s ease-out infinite; }
+
+/* ── Status dot — gentler than animate-pulse ───────────────────── */
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(0.92); }
+}
+.animate-status-pulse { animation: status-pulse 2.4s ease-in-out infinite; }
+
+/* ── Pipeline spark — used by connectors ──────────────────────── */
+@keyframes pipeline-spark-down {
+  0%   { top: -8px; opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.pipeline-spark-down { animation: pipeline-spark-down 1.2s ease-in-out infinite; }
+
+@keyframes pipeline-spark-x {
+  0%   { left: -6px; opacity: 0; }
+  18%  { opacity: 1; }
+  82%  { opacity: 1; }
+  100% { left: calc(100% - 6px); opacity: 0; }
+}
+.animate-pipeline-spark-x { animation: pipeline-spark-x 1.8s ease-in-out infinite; }
+
+/* ── Subtle scale-in for fresh items in a list ────────────────── */
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.85) translateY(4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-pop-in { animation: pop-in 0.28s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+
+/* ── Crossfade — for swapping content (e.g. status bar facts) ── */
+@keyframes crossfade {
+  0%   { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-crossfade { animation: crossfade 0.4s ease-out both; }
+
+/* ── Card hover lift with shine sweep ──────────────────────────── */
+.shine-sweep {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.shine-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg,
+    transparent 30%,
+    hsl(var(--accent) / 0.10) 50%,
+    transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+.shine-sweep:hover::after {
+  transform: translateX(100%);
+}
+
+/* ── Slide-up + stagger for grid items ─────────────────────────── */
+@keyframes grid-item-enter {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-grid-enter > * {
+  animation: grid-item-enter 0.4s cubic-bezier(0.16, 0.84, 0.44, 1) both;
+}
+.animate-grid-enter > *:nth-child(1)  { animation-delay: 0.02s; }
+.animate-grid-enter > *:nth-child(2)  { animation-delay: 0.05s; }
+.animate-grid-enter > *:nth-child(3)  { animation-delay: 0.08s; }
+.animate-grid-enter > *:nth-child(4)  { animation-delay: 0.11s; }
+.animate-grid-enter > *:nth-child(5)  { animation-delay: 0.14s; }
+.animate-grid-enter > *:nth-child(6)  { animation-delay: 0.17s; }
+.animate-grid-enter > *:nth-child(7)  { animation-delay: 0.20s; }
+.animate-grid-enter > *:nth-child(8)  { animation-delay: 0.23s; }
+.animate-grid-enter > *:nth-child(9)  { animation-delay: 0.26s; }
+.animate-grid-enter > *:nth-child(10) { animation-delay: 0.29s; }
+
+/* ── Input focus — subtle scale + accent ring ──────────────────── */
+@keyframes input-focus-ring {
+  0%   { box-shadow: 0 0 0 0 hsl(var(--accent) / 0.4); }
+  100% { box-shadow: 0 0 0 3px hsl(var(--accent) / 0.18); }
+}
+
+/* ── Number tick — counter animation ───────────────────────────── */
+@keyframes count-up {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-count-up { animation: count-up 0.45s cubic-bezier(0.34, 1.2, 0.64, 1) both; }
+
+/* ── Marquee — used by privacy ticker ─────────────────────────────── */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: inline-flex;
+  gap: 3rem;
+  white-space: nowrap;
+  animation: marquee-x 38s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation-duration: 120s; }
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────── */
+/* `.no-scrollbar` hides; default is a slim track with an accent-tinted thumb
+   on hover so it doubles as a position indicator without being noisy. */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Firefox — thin, muted thumb. */
+* { scrollbar-width: thin; scrollbar-color: hsl(var(--border-strong)) transparent; }
+
+/* WebKit/Blink — slim, rounded, accent on hover. */
 *::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+  background: hsl(var(--border-strong));
   border-radius: 999px;
   border: 2px solid hsl(var(--background));
+  transition: background 0.18s ease;
 }
-*::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+*::-webkit-scrollbar-thumb:hover  { background: hsl(var(--accent) / 0.55); }
+*::-webkit-scrollbar-thumb:active { background: hsl(var(--accent) / 0.70); }
+*::-webkit-scrollbar-corner       { background: transparent; }
 
-::selection { background: hsl(var(--primary) / 0.25); color: hsl(var(--foreground)); }
+::selection { background: hsl(var(--accent) / 0.25); color: hsl(var(--foreground)); }
 
-/* ── Focus ring ────────────────────────────────────────────────────── */
-:where(a, button, input, textarea, select, [tabindex]):focus-visible {
-  outline: 2px solid hsl(var(--primary));
+/* ── Focus ring ───────────────────────────────────────────────────── */
+/* Single source of truth — every interactive element shows the same ring.
+   Includes <summary> for collapsibles and role-bearing divs (some shadcn
+   primitives forward role="button" to non-button elements). */
+:where(a, button, input, textarea, select, summary, [role="button"], [role="link"], [role="menuitem"], [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--accent));
   outline-offset: 2px;
   border-radius: 6px;
 }
-
-/* ── Dark-mode glow — uses accent so it actually pops on dark surfaces ─ */
-.dark .glow-primary { box-shadow: 0 0 24px -6px hsl(var(--accent) / 0.45); }
-.glow-primary { box-shadow: 0 4px 14px -4px hsl(var(--accent) / 0.25); }
-
-/* "confetti" was referenced by tool success states but never defined */
-@keyframes confetti-pulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.005); }
+/* Accent-coloured buttons need a contrasting ring — the default accent
+   outline disappears on .btn-accent's accent background. Override with the
+   foreground (ink) colour so the ring is always visible. */
+.btn-accent:focus-visible,
+button.btn-accent:focus-visible {
+  outline: 2px solid hsl(var(--foreground));
+  outline-offset: 3px;
 }
-.animate-confetti { animation: confetti-pulse 2.5s ease-in-out infinite; }
+/* High-contrast environment — bump the ring to 3px and use foreground for
+   maximum delta against any backdrop. */
+@media (prefers-contrast: more) {
+  :where(a, button, input, textarea, select, summary, [role="button"], [role="link"], [role="menuitem"], [tabindex]):focus-visible {
+    outline: 3px solid hsl(var(--foreground));
+    outline-offset: 3px;
+  }
+}
 
-/* Reduced-motion safety net — kill every infinite/decorative animation. */
+/* Dark-mode glow */
+.dark .glow-primary { box-shadow: 0 0 24px -6px hsl(var(--accent) / 0.45); }
+.glow-primary       { box-shadow: 0 4px 14px -4px hsl(var(--accent) / 0.25); }
+
+/* Reduced-motion safety net.
+   - Decorative loops (orbs, sparks, pulses) are killed outright.
+   - One-shot reveals (fade-up, scale-in) snap to instant — content still
+     appears in its final state, just without travel/opacity tweens.
+   - Spinners and the looping privacy marquee fall through too — keep the
+     visual cue but stop the motion. */
 @media (prefers-reduced-motion: reduce) {
-  .hero-orb,
-  .hero-orb-1,
-  .hero-orb-2,
+  .hero-orb, .hero-orb-1, .hero-orb-2,
+  .animate-pulse-border, .animate-shimmer,
+  .dz-breathing, .progress-indeterminate, .spinner-calm,
+  .animate-accent-pulse, .animate-status-pulse,
+  .pipeline-spark-down, .animate-pipeline-spark-x,
   .animate-confetti,
-  .animate-pulse-border,
-  .animate-shimmer { animation: none !important; }
-  /* Entrance animations: snap-finish so layout is correct without motion. */
-  .animate-fade-up,
-  .animate-fade-in,
-  .animate-slide-in-left,
-  .animate-slide-in-right,
-  .animate-slide-down,
-  .animate-scale-in {
+  /* New ambient loops added with the micro-interaction pass. */
+  .animate-processing-pulse,
+  /* Looping decorative elements that previously slipped through. */
+  .pipeline-file, .pipeline-chip,
+  .marquee-track,
+  /* tailwind utility that lucide spinners use; kill the rotation. */
+  .animate-spin { animation: none !important; }
+
+  .animate-fade-up, .animate-fade-in,
+  .animate-slide-in-left, .animate-slide-in-right,
+  .animate-slide-down, .animate-scale-in,
+  .workspace-enter, .animate-success-pop, .animate-pop-in,
+  .animate-corner-extend > .corner-mark,
+  .animate-underline-grow,
+  .animate-grid-enter > *,
+  .animate-count-up, .animate-crossfade,
+  /* One-shot reveals added by the micro-interaction pass. */
+  .animate-copy-flash,
+  .animate-queue-row-enter, .animate-queue-row-leave,
+  .animate-dropzone-landed,
+  .section-mark.reveal-underline::after {
+    animation-duration: 0.001s !important;
+    animation-delay: 0s !important;
+  }
+
+  /* Dragging — snap end-state, kill the transition wobble. */
+  .dragging { transition: none !important; transform: none !important; }
+
+  /* Sidebar width transition — snap to final width with no animation. */
+  aside.transition-\[width\] { transition: none !important; }
+
+  /* Sticky TOC marker — snap to position, don't animate the slide. */
+  .toc-rail-marker { transition: none !important; }
+
+  /* Reading-progress bar uses transition-[width] in BlogPost / Privacy /
+     Terms; snap it to instant via the role selector that all three share. */
+  [role="progressbar"] { transition: none !important; }
+
+  /* Shine sweep on hover — kill the slow horizontal sweep. */
+  .shine-sweep::after { transition: none !important; }
+
+  /* Tailwind animate.css-style classes (used by Radix portals + framer-motion
+     wrappers) — disable the slide-in for dialog and palette so users with
+     prefers-reduced-motion don't see a 200ms slide on every open. */
+  [class*="animate-in"], [class*="fade-in-"], [class*="slide-in-"] {
     animation-duration: 0.001s !important;
     animation-delay: 0s !important;
   }
 }
 
-/* ── Hero artwork (animated SVG/DOM composition) ───────────────────── */
+/* ── Hero artwork (composition for the right side of the hero) ────── */
 .hero-artwork { perspective: 1000px; }
 
 @keyframes hero-orbit-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes hero-orbit-rev  { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
 .hero-art-ring {
   border-radius: 9999px;
-  border: 1px dashed hsl(var(--border));
+  border: 1px dashed hsl(var(--border-strong));
   opacity: 0.55;
-  animation: hero-orbit-slow 40s linear infinite;
+  animation: hero-orbit-slow 50s linear infinite;
 }
 .hero-art-ring-2 {
-  border: 1px dashed hsl(var(--accent) / 0.18);
-  animation: hero-orbit-rev 30s linear infinite;
+  border: 1px dashed hsl(var(--accent) / 0.25);
+  animation: hero-orbit-rev 38s linear infinite;
 }
 
 @keyframes hero-chip-float {
   0%, 100% { transform: translate(var(--tx), var(--ty)) translateY(0); }
   50%      { transform: translate(var(--tx), var(--ty)) translateY(-6px); }
 }
-.hero-art-chip {
-  animation: hero-chip-float 4s ease-in-out infinite;
-  will-change: transform;
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero-art-ring, .hero-art-ring-2, .hero-art-chip,
-  .hero-art-doc, .hero-art-shield { animation: none !important; }
-}
+.hero-art-chip { animation: hero-chip-float 4.5s ease-in-out infinite; will-change: transform; }
 
 @keyframes hero-doc-drift-l {
-  0%, 100% { transform: translateY(-50%) rotate(-6deg); }
-  50%      { transform: translateY(calc(-50% - 8px)) rotate(-7deg); }
+  0%, 100% { transform: translateY(-50%) rotate(-7deg); }
+  50%      { transform: translateY(calc(-50% - 8px)) rotate(-8deg); }
 }
 @keyframes hero-doc-drift-r {
-  0%, 100% { transform: translateY(-50%) rotate(7deg); }
-  50%      { transform: translateY(calc(-50% - 8px)) rotate(8deg); }
+  0%, 100% { transform: translateY(-50%) rotate(8deg); }
+  50%      { transform: translateY(calc(-50% - 8px)) rotate(9deg); }
 }
-.hero-art-doc-left  { animation: hero-doc-drift-l 6s ease-in-out infinite; }
-.hero-art-doc-right { animation: hero-doc-drift-r 6.5s ease-in-out infinite 0.4s; }
+.hero-art-doc-left  { animation: hero-doc-drift-l 6.5s ease-in-out infinite; }
+.hero-art-doc-right { animation: hero-doc-drift-r 7s   ease-in-out infinite 0.4s; }
 
 @keyframes hero-shield-breathe {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50%      { transform: translate(-50%, -50%) scale(1.04); }
 }
-.hero-art-shield { animation: hero-shield-breathe 3.5s ease-in-out infinite; }
+.hero-art-shield { animation: hero-shield-breathe 3.8s ease-in-out infinite; }
 
-/* Drop cap — neutralised (kept selector for blog backwards-compat) */
+@media (prefers-reduced-motion: reduce) {
+  .hero-art-ring, .hero-art-ring-2, .hero-art-chip,
+  .hero-art-doc-left, .hero-art-doc-right, .hero-art-shield { animation: none !important; }
+}
+
+/* Drop-cap — kept neutralised for blog backwards-compat */
 .drop-cap::first-letter { font-size: inherit; float: none; padding: 0; color: inherit; }
 
-/* ── Blog prose (editorial → modern) ───────────────────────────────── */
-.blog-prose { font-family: var(--font-sans); font-size: 17px; line-height: 1.7; color: hsl(var(--foreground)); }
+/* ── Blog prose — editorial Fraunces body ─────────────────────────── */
+.blog-prose {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.7;
+  color: hsl(var(--foreground));
+  font-variation-settings: "opsz" 14;
+}
 .blog-prose p { margin: 0 0 1.25rem; }
-.blog-prose h2 { font-size: 1.5rem; font-weight: 700; margin: 2.25rem 0 0.75rem; color: hsl(var(--foreground)); }
-.blog-prose h3 { font-size: 1.15rem; font-weight: 600; margin: 1.75rem 0 0.5rem; color: hsl(var(--foreground)); }
+.blog-prose h2 {
+  font-family: var(--font-display);
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 2.5rem 0 0.75rem;
+  color: hsl(var(--foreground));
+}
+.blog-prose h3 {
+  font-family: var(--font-display);
+  font-size: 1.225rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 1.75rem 0 0.5rem;
+  color: hsl(var(--foreground));
+}
+
+/* ── Heading hash-link anchors ────────────────────────────────────
+   Headings tagged with .heading-anchor (injected by BlogPostPage) get a
+   visible § marker on hover. The marker is positioned to the left so the
+   heading text stays put. */
+.blog-prose .heading-anchor { position: relative; transition: color 150ms ease; }
+.blog-prose .heading-anchor::before {
+  content: "§";
+  position: absolute;
+  left: -1.25rem;
+  top: 0.05em;
+  color: hsl(var(--accent));
+  opacity: 0;
+  transition: opacity 150ms ease, transform 150ms ease;
+  transform: translateX(4px);
+  font-weight: 600;
+}
+.blog-prose .heading-anchor:hover::before { opacity: 1; transform: translateX(0); }
+.blog-prose .heading-anchor:hover { color: hsl(var(--accent)); }
+@media (max-width: 640px) {
+  .blog-prose .heading-anchor::before { display: none; }
+}
 .blog-prose ul, .blog-prose ol { margin: 0 0 1.25rem 1.5rem; padding: 0; }
 .blog-prose ul { list-style: disc; }
 .blog-prose ol { list-style: decimal; }
 .blog-prose li { margin-bottom: 0.4rem; }
-.blog-prose a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 3px; }
-.blog-prose a:hover { opacity: 0.85; }
+.blog-prose a { color: hsl(var(--accent)); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.blog-prose a:hover { text-decoration-thickness: 2px; }
 .blog-prose strong { font-weight: 600; }
 .blog-prose em { font-style: italic; }
-.blog-prose code { font-family: var(--font-mono); font-size: 0.875em; background: hsl(var(--muted)); padding: 0.15em 0.4em; border-radius: 4px; }
-.blog-prose pre  { font-family: var(--font-mono); font-size: 0.85rem; background: hsl(var(--muted)); border: 1px solid hsl(var(--border)); border-radius: 6px; padding: 1rem 1.25rem; overflow-x: auto; margin: 0 0 1.5rem; }
+.blog-prose code { font-family: var(--font-mono); font-size: 0.85em; background: hsl(var(--muted)); padding: 0.15em 0.4em; border-radius: 4px; }
+.blog-prose pre  {
+  font-family: var(--font-mono); font-size: 0.85rem;
+  background: hsl(var(--paper-2));
+  border: 1px solid hsl(var(--border)); border-radius: 8px;
+  padding: 1rem 1.25rem; overflow-x: auto; margin: 0 0 1.5rem;
+}
 .blog-prose pre code { background: none; padding: 0; font-size: inherit; }
-/* Wide markdown tables overflow on narrow mobile viewports. Make every
-   blog table a horizontally-scrollable block so the page never gets
-   wider than the viewport. The inner border-collapse stays for desktop
-   look; the display:block falls back to native horizontal scrolling. */
-.blog-prose table { display: block; width: 100%; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 0 0 1.5rem; font-size: 0.9rem; -webkit-overflow-scrolling: touch; }
-.blog-prose th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid hsl(var(--border)); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: hsl(var(--muted-foreground)); white-space: nowrap; }
-.blog-prose td { padding: 0.5rem 0.75rem; border-bottom: 1px solid hsl(var(--border)); }
-.blog-prose tr:nth-child(even) td { background: hsl(var(--muted) / 0.5); }
+.blog-prose table {
+  display: block; width: 100%; max-width: 100%; overflow-x: auto;
+  border-collapse: collapse; margin: 0 0 1.5rem;
+  font-family: var(--font-sans); font-size: 0.95rem;
+  -webkit-overflow-scrolling: touch;
+}
+.blog-prose th {
+  text-align: left; padding: 0.6rem 0.85rem;
+  border-bottom: 2px solid hsl(var(--border-strong));
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: hsl(var(--muted-foreground)); white-space: nowrap;
+  font-family: var(--font-mono); font-weight: 500;
+}
+.blog-prose td { padding: 0.6rem 0.85rem; border-bottom: 1px solid hsl(var(--border)); }
+.blog-prose tr:nth-child(even) td { background: hsl(var(--paper-2) / 0.6); }
 .blog-prose blockquote {
   margin: 1.5rem 0;
-  padding: 0.5rem 0 0.5rem 1.25rem;
+  padding: 0.25rem 0 0.25rem 1.5rem;
   border-left: 3px solid hsl(var(--accent));
   color: hsl(var(--muted-foreground));
   font-style: italic;
+  font-family: var(--font-display);
 }
-.blog-prose hr {
-  border: 0;
-  border-top: 1px solid hsl(var(--border));
-  margin: 2rem 0;
-}
+.blog-prose hr { border: 0; border-top: 1px solid hsl(var(--border)); margin: 2.5rem 0; }
 .blog-prose img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin: 1.5rem 0;
-  border: 1px solid hsl(var(--border));
+  max-width: 100%; height: auto; border-radius: 8px;
+  margin: 1.5rem 0; border: 1px solid hsl(var(--border));
 }
 .blog-prose h2:first-child, .blog-prose h3:first-child { margin-top: 0; }
 
-/* ── Print styles ───────────────────────────────────────────────────
-   Hide site chrome (masthead, footer, mobile nav, command palette,
-   onboarding) and the in-page tool affordances when the user prints.
-   Also force light colors so the page reads well on paper. */
+/* "confetti" reused by tool success states */
+@keyframes confetti-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.005); }
+}
+.animate-confetti { animation: confetti-pulse 2.5s ease-in-out infinite; }
+
+/* ── Workshop micro-interactions ─────────────────────────────────────
+   Confident, precise — never bouncy. Out-expo easing
+   `cubic-bezier(0.16, 0.84, 0.44, 1)` is the house default. */
+
+/* Copy-success flash — accent ring pulse on the Copy button after the
+   click. Drives every "Copied" affordance (hash, hex, snippet, etc.). */
+@keyframes copy-flash {
+  0%   { box-shadow: 0 0 0 0   hsl(var(--accent) / 0.55); background-color: hsl(var(--accent) / 0.12); }
+  60%  { box-shadow: 0 0 0 4px hsl(var(--accent) / 0.12); background-color: hsl(var(--accent) / 0.06); }
+  100% { box-shadow: 0 0 0 0   hsl(var(--accent) / 0);    background-color: transparent; }
+}
+.animate-copy-flash { animation: copy-flash 0.5s cubic-bezier(0.16, 0.84, 0.44, 1) both; }
+
+/* Drag-drop ghost — applied to the row/cell while it's being dragged.
+   Subtle scale + cursor-grabbing + accent ring. Tactile, not jumpy. */
+.dragging {
+  cursor: grabbing !important;
+  transform: scale(0.98);
+  box-shadow:
+    0 0 0 1px hsl(var(--accent) / 0.55),
+    0 8px 22px -6px hsl(var(--accent) / 0.25),
+    0 2px 6px -1px rgba(20,15,5,0.10);
+  opacity: 0.92;
+  transition: transform 160ms cubic-bezier(0.16, 0.84, 0.44, 1),
+              box-shadow 160ms cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+
+/* File-add slide-in — used when a freshly-uploaded row lands in a queue. */
+@keyframes queue-row-enter {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-queue-row-enter { animation: queue-row-enter 0.28s cubic-bezier(0.16, 0.84, 0.44, 1) both; }
+
+@keyframes queue-row-leave {
+  from { opacity: 1; transform: translateY(0);   max-height: 80px; }
+  to   { opacity: 0; transform: translateY(-6px); max-height: 0; }
+}
+.animate-queue-row-leave { animation: queue-row-leave 0.22s cubic-bezier(0.4, 0, 1, 1) both; }
+
+/* Processing pulse — the currently-active row in a queue gets a quiet,
+   confident accent-border breath. 1.6s, infinite. */
+@keyframes processing-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px hsl(var(--accent) / 0.35); }
+  50%      { box-shadow: inset 0 0 0 1px hsl(var(--accent) / 0.85), 0 0 0 3px hsl(var(--accent) / 0.10); }
+}
+.animate-processing-pulse {
+  animation: processing-pulse 1.6s ease-in-out infinite;
+  border-color: transparent;
+}
+
+/* Drop-zone landed — quick accent flash after a successful drop, then
+   the zone re-renders as the file card. */
+@keyframes dropzone-landed {
+  0%   { background-color: hsl(var(--accent) / 0.18); border-color: hsl(var(--accent)); }
+  60%  { background-color: hsl(var(--accent) / 0.08); }
+  100% { background-color: transparent; border-color: hsl(var(--border-strong)); }
+}
+.animate-dropzone-landed { animation: dropzone-landed 0.45s cubic-bezier(0.16, 0.84, 0.44, 1) both; }
+
+/* Button press — a subtle inner-ring pulse on .btn-accent:active for
+   tactile feedback. Layered on top of the existing translateY(1px). */
+@keyframes button-press-ring {
+  0%   { box-shadow: inset 0 0 0 2px hsl(var(--accent-foreground) / 0.55); }
+  100% { box-shadow: inset 0 0 0 2px hsl(var(--accent-foreground) / 0); }
+}
+.btn-accent:active {
+  animation: button-press-ring 0.18s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Underline reveal — § kicker labels grow a delicate hairline on first
+   view. Apply via `.section-mark.reveal-underline` (opt-in, above the
+   fold) so we don't pay for it on every § in the page. */
+@keyframes underline-reveal {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+.section-mark.reveal-underline {
+  position: relative;
+  padding-bottom: 4px;
+}
+.section-mark.reveal-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, hsl(var(--accent) / 0.65), transparent 95%);
+  transform-origin: left center;
+  animation: underline-reveal 0.6s cubic-bezier(0.16, 0.84, 0.44, 1) 0.2s both;
+}
+
+/* Sticky TOC active marker — single rail that slides vertically.
+   Consumed via inline `style={{ transform: 'translateY(Npx)' }}` so the
+   transition is the only thing that lives in CSS. */
+.toc-rail-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 16px;
+  border-radius: 999px;
+  background: hsl(var(--accent));
+  transition: transform 280ms cubic-bezier(0.16, 0.84, 0.44, 1),
+              opacity 200ms ease-out;
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* ── Print styles ─────────────────────────────────────────────────── */
+/* When users print a blog post, About, Privacy, or Terms page we want a
+   clean editorial document — no app chrome, no reading aids, just the
+   article body with URL footnotes. */
 @media print {
-  /* Hide chrome */
-  header, footer,
-  [aria-label="Primary"], [aria-label="Mobile menu"], [aria-label="Breadcrumb"],
+  /* Hide app shell — topbar, sidebar, statusbar, mobile drawer, modals.
+     The article's own <header> with the post title must survive print, so
+     we exclude <header> elements nested inside an article. */
+  header:not(article *):not(article header),
+  footer:not(article *):not(article footer),
+  aside[aria-label="Tool navigation"],
+  aside[aria-label="Mobile menu"],
+  [aria-label="Primary"], [aria-label="Breadcrumb"],
   [role="dialog"], .pipeline-anim,
-  .hero-orb, .hero-backdrop, .hero-artwork,
-  /* Hide call-to-action buttons that don't make sense on paper */
+  .hero-orb, .hero-backdrop, .hero-artwork, .hero-blade,
   button, [role="button"]:not([data-print]),
-  .icon-tile, .animate-confetti {
+  .icon-tile, .animate-confetti,
+  .code-copy-btn,
+  /* Reading aids — progress bar, sticky TOC, scroll-to-top, status bar. */
+  .sticky.top-0.z-30,
+  .fixed.bottom-8,
+  [aria-label="Table of contents"],
+  [aria-label="Document navigation"],
+  /* Toasts and announce regions. */
+  [data-sonner-toaster], [data-radix-toast-viewport] {
     display: none !important;
   }
 
-  /* Strip backgrounds + force readable colors */
-  html, body, main, section, article {
+  /* Force light theme regardless of user's preference — dark backgrounds
+     waste ink and Fraunces is engineered for paper, not screens. */
+  html, body, main, section, article, aside, .blog-prose {
     background: white !important;
     color: black !important;
   }
+  .blog-prose strong, .blog-prose h1, .blog-prose h2, .blog-prose h3 { color: black !important; }
+  .blog-prose blockquote { color: #333 !important; border-left-color: #999 !important; }
+
+  /* Links — print full URL inline so the printed copy is self-contained. */
   a { color: black !important; text-decoration: underline; }
-  /* Show absolute URL after each link, RFC-style */
-  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555; }
+  a[href^="http"]::after,
+  a[href^="mailto:"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555; }
+  /* Don't print URLs for in-document anchors. */
+  a[href^="#"]::after,
+  a[href^="javascript"]::after { content: ""; }
 
-  /* Layout: edge-to-edge with print margins */
   @page { margin: 1.6cm; }
-  .blog-prose { font-size: 11pt; line-height: 1.5; max-width: none; }
-  .blog-prose pre, .blog-prose code { background: #f5f5f5 !important; color: black !important; }
+  .blog-prose { font-size: 11pt; line-height: 1.55; max-width: none; }
+  .blog-prose pre, .blog-prose code {
+    background: #f5f5f5 !important;
+    color: black !important;
+    border: 1px solid #ddd !important;
+  }
 
-  /* Avoid orphans/widows in headings */
-  h1, h2, h3 { break-after: avoid; }
-  pre, table, figure { break-inside: avoid; }
+  /* Pagination hints — avoid orphaned headings and split tables/code blocks. */
+  h1, h2, h3 { break-after: avoid; page-break-after: avoid; }
+  pre, table, figure { break-inside: avoid; page-break-inside: avoid; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* ── Baseline a11y bumps for low-opacity text ─────────────────────── */
+/* Many list / caption strings use `text-muted-foreground/50|/60|/70` for the
+   editorial dimmed look. On the warm-paper background that drops below the
+   WCAG AA 4.5:1 threshold. Raise the floor by mapping them to /85 in normal
+   mode (still visibly secondary, but readable) and to full foreground when
+   the user has requested more contrast. We only patch the opacity classes
+   used for actual text — decorative dividers keep their original opacity via
+   the `bg-` / `border-` prefixes which we leave alone. */
+.text-muted-foreground\/50 { color: hsl(var(--muted-foreground) / 0.85) !important; }
+.text-muted-foreground\/60 { color: hsl(var(--muted-foreground) / 0.88) !important; }
+.text-muted-foreground\/70 { color: hsl(var(--muted-foreground) / 0.92) !important; }
+.text-foreground\/40,
+.text-foreground\/50 { color: hsl(var(--foreground) / 0.75) !important; }
+.text-muted-foreground\/40 { color: hsl(var(--muted-foreground) / 0.80) !important; }
+
+/* ── High-contrast adjustments ────────────────────────────────────── */
+/* `prefers-contrast: more` is honored by macOS "Increase contrast" and
+   Windows high-contrast modes. Thin borders at /30 opacity are the main
+   problem — strengthen them so panels remain visually delimited. */
+@media (prefers-contrast: more) {
+  .border-accent\/30, .border-accent\/35, .border-accent\/45 {
+    border-color: hsl(var(--accent)) !important;
+  }
+  .bg-accent\/\[0\.05\], .bg-accent\/\[0\.06\] {
+    background-color: hsl(var(--accent) / 0.12) !important;
+  }
+  /* Editorial inserts and tool cards get a stronger hairline. */
+  .editorial-insert, .tool-card {
+    border-color: hsl(var(--border-strong)) !important;
+  }
+  /* Text dimmed below normal contrast — bump foreground. */
+  .text-muted-foreground,
+  .text-muted-foreground\/50,
+  .text-muted-foreground\/60,
+  .text-muted-foreground\/70,
+  .text-muted-foreground\/85 { color: hsl(var(--foreground) / 0.90) !important; }
+  .text-foreground\/40,
+  .text-foreground\/50 { color: hsl(var(--foreground) / 0.95) !important; }
 }

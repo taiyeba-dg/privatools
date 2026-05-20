@@ -1,13 +1,12 @@
-import uuid
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.filenames import temp_output
 
 
 def txt_to_pdf(input_path: str, font_size: int = 11) -> str:
     """Convert a .txt file to PDF using reportlab."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"text_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("text", "pdf")
 
     with open(input_path, "r", encoding="utf-8", errors="replace") as f:
         text = f.read()

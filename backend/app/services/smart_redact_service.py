@@ -8,26 +8,12 @@ content beneath the rectangle (not just a black overlay you can copy through).
 
 from __future__ import annotations
 
-import uuid
 from typing import Iterable, Tuple
 
 import fitz  # PyMuPDF
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
-
-
-def _hex_to_rgb(hex_color: str) -> Tuple[float, float, float]:
-    h = hex_color.lstrip("#")
-    if len(h) != 6:
-        return (0, 0, 0)
-    try:
-        return (
-            int(h[0:2], 16) / 255.0,
-            int(h[2:4], 16) / 255.0,
-            int(h[4:6], 16) / 255.0,
-        )
-    except ValueError:
-        return (0, 0, 0)
+from ..utils.colors import hex_to_rgb_float
+from ..utils.filenames import temp_output
 
 
 def smart_redact(
@@ -37,9 +23,8 @@ def smart_redact(
     case_sensitive: bool = False,
 ) -> Tuple[str, int]:
     """Apply real redaction annotations for every match of every needle."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"smart_redacted_{uuid.uuid4().hex}.pdf")
-    fill = _hex_to_rgb(color)
+    output_path = temp_output("smart_redacted", "pdf")
+    fill = hex_to_rgb_float(color)
     flags = 0 if case_sensitive else fitz.TEXT_DEHYPHENATE
 
     # Dedupe + drop empties so we don't redact giant common strings by accident.

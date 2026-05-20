@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
@@ -22,7 +23,9 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
     const [progress, setProgress] = useState<number | undefined>(undefined);
     const [progressLabel, setProgressLabel] = useState("Processing…");
 
-    const process = async () => {
+    const canProcess = !!file && status !== "processing";
+
+    const process = useCallback(async () => {
         if (!file) return;
         setStatus("processing"); setError(null); setProgress(undefined);
         try {
@@ -44,11 +47,23 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
                 }
             });
             setStatus("done");
-        } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
-    };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Failed";
+            setError(friendlyError(msg, "Couldn't convert that file."));
+            setStatus("idle");
+        }
+    }, [file, slug, outputExt, outputFilename]);
+
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [canProcess, process]);
 
     if (status === "done") return (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-8 text-center">
+        <div className="rounded-2xl border border-accent/20 bg-accent/5 p-8 text-center">
             <h2 className="text-lg font-bold text-foreground mb-1">Converted!</h2>
             <p className="text-sm text-muted-foreground mb-4">Your file has been downloaded</p>
             <Button variant="outline" onClick={() => { setFile(null); setStatus("idle"); }}>Convert another</Button>
@@ -68,8 +83,11 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
             {status === "processing" && <ProcessingBar label={progressLabel} progress={progress} />}
             {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}
             {file && status !== "processing" && (
-                <div className="flex items-center gap-3">
-                    <Button onClick={process} className="glow-primary">{label}</Button>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <Button onClick={process} className="">{label}</Button>
+                    {canProcess && (
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    )}
                     <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setFile(null)}>Clear</Button>
                 </div>
             )}

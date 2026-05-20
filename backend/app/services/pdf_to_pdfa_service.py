@@ -1,11 +1,17 @@
-import uuid
-import fitz  # PyMuPDF
+import logging
+import shutil
 from pathlib import Path
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+import fitz  # PyMuPDF
+
+from ..utils.filenames import temp_output
+
+logger = logging.getLogger(__name__)
 
 # Minimal sRGB ICC profile header (used to embed an output intent for PDF/A)
 # This is the minimum required to satisfy PDF/A-2b output intent requirements.
-_SRGB_ICC = None
+_SRGB_ICC: bytes | None = None
+
 
 def _get_srgb_icc() -> bytes:
     """Return a minimal sRGB ICC profile. Try system paths first, fall back to a stub."""
@@ -25,65 +31,60 @@ def _get_srgb_icc() -> bytes:
             _SRGB_ICC = Path(p).read_bytes()
             return _SRGB_ICC
 
-    # If no system ICC profile found, create a minimal one
-    # This is a 292-byte minimal sRGB ICC v2 profile
-    import struct
-    # We'll just use an empty bytes and let fitz handle it
+    # No system ICC profile found — return empty bytes and let fitz handle it.
     _SRGB_ICC = b""
     return _SRGB_ICC
 
 
 async def convert_to_pdfa(input_path: str) -> str:
-    """
-    Convert a PDF to PDF/A-2b using PyMuPDF.
-    
+    """Convert a PDF to PDF/A-2b using PyMuPDF + pikepdf XMP tagging.
+
     PyMuPDF can save with garbage collection and cleaning which produces
-    a well-formed PDF. We then add PDF/A metadata markers.
+    a well-formed PDF. We then add PDF/A metadata markers via pikepdf.
     """
-    ensure_temp_dir()
-    output_path = get_temp_path(f"pdfa_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("pdfa", "pdf")
 
     doc = fitz.open(input_path)
+    try:
+        # Set PDF/A metadata in the document info
+        meta = doc.metadata or {}
+        meta["producer"] = "PrivaTools PDF/A Converter"
+        meta["creator"] = "PrivaTools"
+        doc.set_metadata(meta)
 
-    # Set PDF/A metadata in the document info
-    meta = doc.metadata or {}
-    meta["producer"] = "PrivaTools PDF/A Converter"
-    meta["creator"] = "PrivaTools"
-    doc.set_metadata(meta)
+        # Save with maximum cleaning and garbage collection.
+        doc.save(
+            str(output_path),
+            garbage=4,
+            deflate=True,
+            clean=True,
+        )
+    finally:
+        doc.close()
 
-    # Save with maximum cleaning and garbage collection
-    doc.save(
-        str(output_path),
-        garbage=4,          # maximum garbage collection
-        deflate=True,       # compress streams
-        clean=True,         # clean content streams
-    )
-    doc.close()
-
-    # Now add PDF/A-2b XMP metadata using pikepdf
+    # Pass 2: tag with PDF/A-2b XMP metadata via pikepdf. If pikepdf is
+    # unavailable or the tagging step fails we still return the cleaned
+    # PDF from pass 1 — it's a valid PDF, just not certified PDF/A.
     try:
         import pikepdf
-        temp_out2 = get_temp_path(f"pdfa_xmp_{uuid.uuid4().hex}.pdf")
-        pdf = pikepdf.open(str(output_path))
-        
-        # Add XMP metadata declaring PDF/A-2b conformance
-        with pdf.open_metadata(set_pikepdf_as_editor=False) as xmp:
-            xmp["pdfaid:part"] = "2"
-            xmp["pdfaid:conformance"] = "B"
-            xmp["dc:title"] = meta.get("title", "Converted Document")
-            xmp["pdf:Producer"] = "PrivaTools PDF/A Converter"
-        
-        pdf.save(str(temp_out2))
-        pdf.close()
-        
-        # Replace original output with the XMP-tagged version
-        import shutil
-        shutil.move(str(temp_out2), str(output_path))
     except ImportError:
-        pass
-    except Exception:
-        # If XMP tagging fails, the base PDF is still valid
-        pass
+        return str(output_path)
+
+    temp_out2 = temp_output("pdfa_xmp", "pdf")
+    try:
+        with pikepdf.open(str(output_path)) as pdf:
+            with pdf.open_metadata(set_pikepdf_as_editor=False) as xmp:
+                xmp["pdfaid:part"] = "2"
+                xmp["pdfaid:conformance"] = "B"
+                xmp["dc:title"] = meta.get("title", "Converted Document")
+                xmp["pdf:Producer"] = "PrivaTools PDF/A Converter"
+            pdf.save(str(temp_out2))
+        shutil.move(str(temp_out2), str(output_path))
+    except (pikepdf.PdfError, OSError, KeyError) as exc:
+        # XMP tagging is best-effort — the cleaned PDF from pass 1 is
+        # still valid output. Clean up the partial temp file.
+        logger.debug("pdfa: XMP tagging skipped (%s)", exc)
+        temp_out2.unlink(missing_ok=True)
 
     return str(output_path)
 

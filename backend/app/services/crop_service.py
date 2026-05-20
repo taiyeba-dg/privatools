@@ -1,7 +1,9 @@
-import pikepdf
-import uuid
 from decimal import Decimal
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+import pikepdf
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 
 def crop_pdf(
@@ -11,10 +13,9 @@ def crop_pdf(
     left: float = 0.0,
     right: float = 0.0,
 ) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"cropped_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("cropped", "pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         for page in pdf.pages:
             mediabox = page.mediabox
             x0 = float(mediabox[0])

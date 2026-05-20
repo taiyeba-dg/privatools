@@ -1,4 +1,5 @@
 import re
+import sys
 from pathlib import Path
 
 
@@ -9,6 +10,9 @@ FRONTEND_DATA_FILES = [
 ]
 TOOL_ENDPOINTS_FILE = ROOT / "frontend" / "src" / "lib" / "tool-endpoints.ts"
 BACKEND_ROUTES_DIR = ROOT / "backend" / "app" / "routes"
+
+# Make `backend.app.main` importable for the live-app checks below.
+sys.path.insert(0, str(ROOT))
 
 
 def _parse_tools(data_file: Path) -> list[tuple[str, bool]]:
@@ -70,4 +74,65 @@ def test_all_non_client_only_tools_have_backend_routes():
     assert not missing, (
         "Missing backend routes for non-client-only tools: "
         + ", ".join(f"{slug} -> {endpoint}" for slug, endpoint in missing)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Live-app checks — confirm every POST endpoint declared in a route file is
+# actually wired into the FastAPI app at /api/<path>. This catches the case
+# where someone adds an `@router.post(...)` but forgets to
+# `app.include_router(...)` in main.py.
+# ---------------------------------------------------------------------------
+
+def test_every_declared_post_route_is_registered_in_app():
+    """No orphan @router.post — every one must be in app.routes."""
+    from backend.app.main import app
+
+    declared = _parse_backend_post_endpoints()
+    # FastAPI app paths come back as "/api/foo", we declared as "/foo".
+    registered: set[str] = set()
+    for r in app.routes:
+        path = getattr(r, "path", None)
+        methods = getattr(r, "methods", None) or set()
+        if not path or "POST" not in methods:
+            continue
+        if path.startswith("/api/"):
+            registered.add(path[len("/api"):])
+
+    orphan = sorted(declared - registered)
+    assert not orphan, (
+        f"@router.post() declared but app never includes the router: {orphan}"
+    )
+
+
+def test_no_duplicate_post_endpoint_in_app():
+    """Two routers registering the same /api/<x> is a silent footgun."""
+    from collections import Counter
+    from backend.app.main import app
+
+    paths = []
+    for r in app.routes:
+        path = getattr(r, "path", None)
+        methods = getattr(r, "methods", None) or set()
+        if path and path.startswith("/api/") and "POST" in methods:
+            paths.append(path)
+    duplicates = [p for p, count in Counter(paths).items() if count > 1]
+    assert not duplicates, f"Duplicate POST routes registered: {duplicates}"
+
+
+def test_phased_route_modules_are_all_included():
+    """Every phaseN_tools / new_tools / v12_tools / pdf_extra module must be
+    wired into app.include_router(...) in main.py."""
+    main_py = (ROOT / "backend" / "app" / "main.py").read_text("utf-8")
+    expected_modules = [
+        "phase1_tools", "phase2_tools", "phase3_tools", "phase4_tools",
+        "phase5_tools", "phase6_tools", "phase7_tools",
+        "new_tools", "v12_tools", "pdf_extra",
+    ]
+    missing = [
+        m for m in expected_modules
+        if f"app.include_router({m}.router" not in main_py
+    ]
+    assert not missing, (
+        f"Phased route modules not included in main.py: {missing}"
     )

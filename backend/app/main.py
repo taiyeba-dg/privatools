@@ -8,11 +8,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from .rate_limit import limiter
 from .seo_meta import inject_seo
+from .middleware import (
+    AccessLogMiddleware,
+    RequestIDMiddleware,
+    configure_logging,
+    register_error_handlers,
+)
+from .utils.health import run_readiness_checks
 
+# Configure root logger as early as possible so import-time messages
+# (router registration, lifespan startup) are captured with the same
+# format as request-time logs.
+configure_logging()
 logger = logging.getLogger("privatools")
 
 from .routes import (
@@ -43,16 +55,39 @@ from .routes import (
 from .utils.cleanup import cleanup_old_files, ensure_temp_dir
 
 
+# Janitor interval / max-age — tunable from the environment so the
+# defaults (sweep every 5 min, drop files older than 10 min) can be
+# tightened in tests or relaxed for slower workers without a deploy.
+_JANITOR_INTERVAL = int(os.environ.get("CLEANUP_INTERVAL_SECONDS", "300"))
+_JANITOR_MAX_AGE = int(os.environ.get("TEMP_MAX_AGE_SECONDS", "600"))
+
+
 async def _cleanup_task():
-    """Remove temp files older than 10 minutes, runs every 5 minutes."""
+    """Background janitor: sweep TEMP_DIR on a fixed cadence.
+
+    Sleeps first so we don't compete with startup work. Catches and
+    logs per-iteration exceptions so a transient FS error never
+    silently kills the loop — without this, a long-running worker
+    could accumulate disk usage indefinitely after a single failure.
+    """
     while True:
-        await asyncio.sleep(300)
-        cleanup_old_files(600)
+        try:
+            await asyncio.sleep(_JANITOR_INTERVAL)
+            cleanup_old_files(_JANITOR_MAX_AGE)
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # noqa: BLE001 — never let the janitor die
+            logger.exception("cleanup task iteration failed")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_temp_dir()
+    logger.info(
+        "lifespan: TEMP_DIR ready, janitor every %ds, max-age %ds",
+        _JANITOR_INTERVAL,
+        _JANITOR_MAX_AGE,
+    )
     # Skip rembg pre-warm — it can hang on the numba import path under the
     # slim image. The first remove-background request will warm the model
     # lazily; subsequent ones are fast.
@@ -60,10 +95,20 @@ async def lifespan(app: FastAPI):
         import fitz  # PyMuPDF
         logger.info("PyMuPDF loaded: %s", fitz.version)
     except Exception:
-        pass
+        logger.warning("PyMuPDF failed to import — fitz-backed tools will 500")
     task = asyncio.create_task(_cleanup_task())
-    yield
-    task.cancel()
+    try:
+        yield
+    finally:
+        task.cancel()
+        # Give the task a moment to unwind so its `finally` clauses run
+        # before the event loop closes. Suppress CancelledError — that
+        # is the expected outcome.
+        try:
+            await task
+        except (asyncio.CancelledError, Exception):  # noqa: BLE001
+            pass
+        logger.info("lifespan: shutdown complete")
 
 
 _is_prod = os.environ.get("ENVIRONMENT", "").lower() == "production"
@@ -82,8 +127,12 @@ def _env_positive_int(name: str, default: int) -> int:
 # ---------------------------------------------------------------------------
 # Rate limiter
 # ---------------------------------------------------------------------------
-_rate_limit = os.environ.get("RATE_LIMIT", "30/minute")
-limiter = Limiter(key_func=get_remote_address, default_limits=[_rate_limit])
+# Limiter instance is defined in `app.rate_limit` so route modules can
+# import it without pulling in `app.main` (which imports every route at
+# startup and would create a circular dependency). We do NOT install
+# SlowAPIMiddleware — per-route `@limiter.limit(...)` decorators already
+# fire on their own, and adding the middleware would change rate-limit
+# semantics across every route in one go.
 
 # ---------------------------------------------------------------------------
 # Security headers middleware
@@ -96,6 +145,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        # Force Cache-Control: no-store on dynamic /api/ responses so tool
+        # outputs (per-user, per-request) are never retained by a shared
+        # CDN, transparent proxy, or browser back/forward cache. Skip
+        # routes that already set their own Cache-Control (sitemap +
+        # og-image emit a long max-age via `cache_response`).
+        if request.url.path.startswith("/api/") and "cache-control" not in {
+            k.lower() for k in response.headers
+        }:
+            response.headers["Cache-Control"] = "no-store, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         if request.url.scheme == "https" or os.environ.get("FORCE_HSTS"):
             response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
         response.headers["Content-Security-Policy"] = (
@@ -120,6 +180,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 _SKIP_SEO_PREFIXES = (
     "/api/", "/sitemap", "/robots", "/manifest", "/sw.js",
     "/icons", "/assets", "/favicon", "/og-image", "/llms",
+    # Health / readiness probes must return JSON, never the SPA shell.
+    "/healthz", "/readyz",
     # Search-engine site verification files — must serve their actual content
     # (a short token), not the SPA index.html shell. Adding generic prefixes
     # so future verification files for the same engines don't need a redeploy.
@@ -209,17 +271,37 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 # Max upload size (500 MB — 24 GB RAM server)
 # ---------------------------------------------------------------------------
+# This is a Content-Length pre-check — cheap and catches almost every
+# oversize upload before the request body is even read. Chunked
+# (Transfer-Encoding: chunked) uploads without a Content-Length header
+# slip past here; the per-route `read_upload` / `stream_upload_to_disk`
+# helpers in `app.utils.route_helpers` re-enforce the same cap on the
+# stream itself, so an attacker can't bypass the limit by omitting the
+# header.
 MAX_UPLOAD_BYTES = _env_positive_int("MAX_UPLOAD_MB", 500) * 1024 * 1024
 
 class UploadSizeLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.method in ("POST", "PUT", "PATCH"):
             content_length = request.headers.get("content-length")
-            if content_length and int(content_length) > MAX_UPLOAD_BYTES:
-                return JSONResponse(
-                    status_code=413,
-                    content={"detail": f"File too large. Maximum upload size is {MAX_UPLOAD_BYTES // (1024*1024)} MB."},
-                )
+            if content_length:
+                try:
+                    size = int(content_length)
+                except ValueError:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"detail": "Invalid Content-Length header."},
+                    )
+                if size > MAX_UPLOAD_BYTES:
+                    return JSONResponse(
+                        status_code=413,
+                        content={
+                            "detail": (
+                                f"File is too large — maximum upload size is "
+                                f"{MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
+                            )
+                        },
+                    )
         return await call_next(request)
 
 
@@ -241,23 +323,12 @@ class RequestTimeoutMiddleware(BaseHTTPMiddleware):
 
 
 # ---------------------------------------------------------------------------
-# Request logging middleware — structured request/response logging
+# Request logging — the structured access log lives in
+# :mod:`app.middleware.access_log` so the middleware module stays the
+# single source of truth for request lifecycle behaviour. See
+# :class:`AccessLogMiddleware` for the field schema and slow-request
+# WARNING threshold.
 # ---------------------------------------------------------------------------
-import time as _time
-
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        # Skip logging for static assets
-        if any(request.url.path.startswith(p) for p in ("/assets", "/icons", "/favicon")):
-            return await call_next(request)
-        start = _time.monotonic()
-        response = await call_next(request)
-        duration_ms = round((_time.monotonic() - start) * 1000)
-        logger.info(
-            "%s %s → %d (%dms)",
-            request.method, request.url.path, response.status_code, duration_ms,
-        )
-        return response
 
 
 app = FastAPI(
@@ -268,26 +339,77 @@ app = FastAPI(
     redoc_url=None if _is_prod else "/redoc",
 )
 
-# Wire rate limiter
+# Wire rate limiter (slowapi)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:8080").split(",")
+# Wire global exception handlers — translates ToolError + bare Python
+# exceptions (FileNotFoundError, MemoryError, pikepdf.PasswordError…)
+# into JSON bodies with frontend-friendly `detail` strings. Registered
+# AFTER the rate-limit handler so RateLimitExceeded keeps its dedicated
+# 429 path (slowapi exposes a Retry-After header that our generic
+# handler wouldn't add).
+register_error_handlers(app)
+
+# CORS origin allow-list. We keep it small and explicit — no wildcards.
+# Dev defaults cover local Vite + the FastAPI dev server.
+_default_origins = "http://localhost:8000,http://localhost:8080,http://localhost:5173"
+_origins = [
+    o.strip()
+    for o in os.environ.get("ALLOWED_ORIGINS", _default_origins).split(",")
+    if o.strip()
+]
+if "*" in _origins:
+    logger.warning("ALLOWED_ORIGINS contains '*' — refusing for safety, falling back to defaults")
+    _origins = [o for o in _origins if o != "*"]
+
+# Trusted Host allow-list — rejects requests whose Host header doesn't
+# match. Prevents host-header injection / cache-poisoning attacks behind
+# a misconfigured proxy. Dev defaults cover localhost + 127.0.0.1 so the
+# test client and local nginx still work. Production must set
+# TRUSTED_HOSTS=privatools.com,www.privatools.com in /opt/privatool/.env.
+# Dev defaults cover localhost, 127.0.0.1, and the `testserver` host that
+# starlette's TestClient / httpx ASGITransport use by default. Production
+# must set TRUSTED_HOSTS=privatools.com,www.privatools.com in
+# /opt/privatool/.env to override this.
+_default_hosts = "127.0.0.1,localhost,testserver"
+_trusted_hosts = [
+    h.strip()
+    for h in os.environ.get("TRUSTED_HOSTS", _default_hosts).split(",")
+    if h.strip()
+]
 
 from starlette.middleware.gzip import GZipMiddleware
+# Order is bottom-up: the LAST add_middleware call is the OUTERMOST
+# layer, so RequestIDMiddleware here runs first on every request and
+# can stamp `request.state.request_id` before anything else touches it.
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(SPASEOMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(UploadSizeLimitMiddleware)
 app.add_middleware(RequestTimeoutMiddleware)
-app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(AccessLogMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in _origins],
+    allow_origins=_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "X-Request-ID",
+        "X-Original-Size",
+        "X-Compressed-Size",
+        "X-Stripped-Items",
+    ],
 )
+# TrustedHostMiddleware: rejects requests whose Host header isn't in the
+# allow-list. Added AFTER CORS so it sits OUTSIDE the CORS layer in the
+# request stack — bad Host headers fail fast with a 400 without burning
+# any CORS-preflight cycles. We also include the explicit hostnames the
+# uvicorn listener binds to so the systemd health probe (curl /healthz
+# against 127.0.0.1) doesn't get rejected.
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=_trusted_hosts)
+app.add_middleware(RequestIDMiddleware)
 
 
 
@@ -369,7 +491,64 @@ app.include_router(og_image.router)
 
 @app.get("/api/health")
 async def health():
+    """Backwards-compatible health endpoint — kept for the frontend
+    `BackendStatusBanner` that probes `/api/health` on startup."""
     return JSONResponse({"status": "ok"})
+
+
+@app.get("/healthz")
+async def healthz():
+    """Liveness probe — returns 200 as long as the process is up.
+
+    Kubernetes-style convention. Cheap, no dependency checks, no
+    side-effects. Use this for "is the process running" monitoring
+    (uptime checks, load-balancer health pings).
+    """
+    return JSONResponse({"status": "ok"})
+
+
+@app.get("/readyz")
+async def readyz():
+    """Readiness probe — verifies dependencies and temp dir are usable.
+
+    Used by the load-balancer / orchestrator to decide whether to send
+    traffic. Returns 503 with a per-check breakdown when any required
+    dependency is missing so the on-call engineer can see at a glance
+    which one regressed.
+
+    Checks (see :mod:`app.utils.health`): pikepdf / fitz / PIL importable,
+    tessdata directory present, ghostscript binary in PATH. Also
+    re-verifies the temp dir is writable (same check the original
+    readyz did).
+    """
+    fs_ok = True
+    fs_reason: str | None = None
+    try:
+        ensure_temp_dir()
+        # Touch a probe file — proves the FS is writable, not just present.
+        probe = Path(os.environ.get("TEMP_DIR", "temp")) / ".readyz_probe"
+        probe.write_bytes(b"ok")
+        probe.unlink(missing_ok=True)
+    except OSError as exc:
+        fs_ok = False
+        # Log error class only, never the path that failed (could
+        # reveal disk layout to an attacker probing /readyz).
+        logger.error(
+            "readyz: temp dir not writable",
+            extra={"error_class": type(exc).__name__},
+        )
+        fs_reason = "temp dir not writable"
+
+    deps_ok, checks = run_readiness_checks()
+    checks["temp_dir"] = fs_ok
+
+    if deps_ok and fs_ok:
+        return JSONResponse({"status": "ready", "checks": checks})
+
+    body: dict = {"status": "degraded", "checks": checks}
+    if fs_reason:
+        body["reason"] = fs_reason
+    return JSONResponse(body, status_code=503)
 
 
 # Mount frontend static files with SPA catch-all
@@ -394,7 +573,18 @@ if _frontend_path.exists():
     # SPA catch-all: serve static files when they exist on disk,
     # otherwise serve index.html so React Router handles routing.
     @app.get("/{full_path:path}")
-    async def spa_fallback(full_path: str):
+    async def spa_fallback(full_path: str, request: Request):
+        # API paths must NEVER fall through to the SPA index. If a request
+        # reaches this handler with an `/api/` prefix, it means no router
+        # matched it — i.e. the endpoint genuinely doesn't exist. Return a
+        # JSON 404 so the frontend's fetch wrapper can distinguish "tool
+        # broken" (HTML body, would otherwise parse-error) from "no such
+        # endpoint" (proper JSON detail).
+        if full_path.startswith("api/"):
+            return JSONResponse(
+                {"detail": "Not found", "path": str(request.url)},
+                status_code=404,
+            )
         # Prevent path traversal
         if ".." in full_path:
             return JSONResponse({"detail": "Not found"}, status_code=404)

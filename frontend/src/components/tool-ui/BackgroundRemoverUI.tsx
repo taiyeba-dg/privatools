@@ -1,7 +1,13 @@
-import { useState, useRef } from "react";
-import { Upload, Download, Loader2, AlertCircle, Eraser } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+/**
+ * BackgroundRemoverUI — strip the background from an image.
+ *
+ * Workshop touches: corner registration marks on dropzone, before/after
+ * preview with a checkerboard transparency pattern on the "after" pane, and
+ * a drag-handle slider that wipes between source and result for comparison.
+ */
+import { useCallback, useEffect, useState, useRef } from "react";
+import { Download, Loader2, AlertCircle, Eraser, CheckCircle2, X } from "lucide-react";
+import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 
 export function BackgroundRemoverUI() {
@@ -12,7 +18,12 @@ export function BackgroundRemoverUI() {
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
     const [resultUrl, setResultUrl] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);
+    const [sliderPct, setSliderPct] = useState(50);
     const ref = useRef<HTMLInputElement>(null);
+
+    // Defensive cleanup — if the user navigates away while a result blob is
+    // still live, revoke it so we don't leak the rendered URL.
+    useEffect(() => () => { if (resultUrl) URL.revokeObjectURL(resultUrl); }, [resultUrl]);
 
     const handleFile = (f: File) => {
         setFile(f);
@@ -21,9 +32,12 @@ export function BackgroundRemoverUI() {
         reader.readAsDataURL(f);
     };
 
-    const process = async () => {
+    const canProcess = !!file && status !== "processing";
+
+    const process = useCallback(async () => {
         if (!file) return;
-        setStatus("processing"); setError(null);
+        setStatus("processing");
+        setError(null);
         try {
             const res = await uploadFile("/remove-background", file);
             const blob = await res.blob();
@@ -31,30 +45,58 @@ export function BackgroundRemoverUI() {
             setResultBlob(blob);
             setResultUrl(url);
             setStatus("done");
-        } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Failed";
+            setError(friendlyError(msg, "Couldn't remove the background."));
+            setStatus("idle");
+        }
+    }, [file]);
+
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [canProcess, process]);
+
+    const reset = () => {
+        setFile(null); setPreviewSrc(null);
+        if (resultUrl) URL.revokeObjectURL(resultUrl);
+        setResultBlob(null); setResultUrl(null); setStatus("idle");
     };
 
     if (status === "done" && resultUrl) return (
-        <div className="space-y-5">
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
-                <h2 className="text-lg font-bold text-foreground mb-4">Background Removed!</h2>
-                <div className="grid grid-cols-2 gap-4 mb-6 max-w-md mx-auto">
-                    <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Before</p>
-                        <div className="rounded-xl border border-border bg-card p-2 aspect-square overflow-hidden">
-                            {previewSrc && <img src={previewSrc} alt="Original" className="w-full h-full object-contain" />}
-                        </div>
+        <div className="space-y-4">
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative px-4 py-3 border-b border-border bg-paper-2/40 flex items-center justify-between">
+                    <CornerMarks />
+                    <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+                        <CheckCircle2 size={12} />
+                        Background removed
                     </div>
-                    <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">After</p>
-                        <div className="rounded-xl border border-border p-2 aspect-square overflow-hidden" style={{ background: "repeating-conic-gradient(#e5e5e5 0% 25%, transparent 0% 50%) 50% / 16px 16px" }}>
-                            <img src={resultUrl} alt="No background" className="w-full h-full object-contain" />
-                        </div>
-                    </div>
+                    <button onClick={reset} className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors">
+                        Process another
+                    </button>
                 </div>
-                <div className="flex justify-center gap-3 flex-wrap">
-                    <Button className="glow-primary" onClick={() => resultBlob && downloadBlob(resultBlob, `nobg_${file?.name || "image.png"}`)}><Download size={15} /> Download PNG</Button>
-                    <Button variant="outline" onClick={() => { setFile(null); setPreviewSrc(null); setResultBlob(null); setResultUrl(null); setStatus("idle"); }}>Process another</Button>
+                <div className="p-5 space-y-3">
+                    <p className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <span className="text-accent">§</span> Drag the slider to compare
+                    </p>
+                    <BeforeAfterSlider
+                        before={previewSrc || ""}
+                        after={resultUrl}
+                        value={sliderPct}
+                        onChange={setSliderPct}
+                    />
+                </div>
+                <div className="px-5 pb-5">
+                    <button
+                        onClick={() => resultBlob && downloadBlob(resultBlob, `nobg_${file?.name || "image.png"}`)}
+                        className="btn-accent w-full sm:w-auto"
+                    >
+                        <Download size={13} /> Download PNG
+                    </button>
                 </div>
             </div>
         </div>
@@ -62,35 +104,158 @@ export function BackgroundRemoverUI() {
 
     return (
         <div className="space-y-4">
-            <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+            {/* Dropzone */}
+            <div
+                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
                 onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-                className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-12 px-6 text-center",
-                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 bg-secondary/20")}>
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload image"
+                className={cn(
+                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-10 px-6 text-center group",
+                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
+                )}
+            >
+                <CornerMarks />
                 <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" className="hidden" onChange={e => { e.target.files?.[0] && handleFile(e.target.files[0]); e.target.value = ""; }} />
-                <Eraser size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
-                <p className="text-sm font-semibold text-foreground">{file ? file.name : "Drop image here"}</p>
-                {file && <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>}
-                <p className="text-[11px] text-muted-foreground/80">AI-powered background removal · Runs on-device</p>
+                <div className={cn(
+                    "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
+                    drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
+                )}>
+                    <Eraser size={20} className="text-accent" strokeWidth={1.75} />
+                </div>
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
+                    {file ? "Replace image" : "Drop image to remove background"}
+                </p>
+                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                    JPEG · PNG · WebP — AI runs on the server (your file is deleted after)
+                </p>
             </div>
 
-            {previewSrc && (
-                <div className="rounded-xl border border-border bg-card p-3 flex justify-center">
-                    <img src={previewSrc} alt="Preview" className="max-h-40 rounded-lg object-contain" />
+            {/* Preview before processing */}
+            {previewSrc && file && (
+                <div className="rounded-xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
+                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <span><span className="text-accent">§</span> Source · {file.name}</span>
+                        <span>{formatFileSize(file.size)}</span>
+                    </div>
+                    <div className="p-4 flex items-center justify-center bg-paper-2/30">
+                        <img src={previewSrc} alt="Preview" className="max-h-60 rounded-md object-contain" />
+                    </div>
+                    <div className="px-3 py-2 border-t border-border bg-paper-2/40 flex justify-end">
+                        <button onClick={reset} className="inline-flex items-center gap-1 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors">
+                            <X size={11} /> Remove
+                        </button>
+                    </div>
                 </div>
             )}
 
-            {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}
+            {error && (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    <AlertCircle size={13} className="shrink-0" />{error}
+                </div>
+            )}
 
             {file && (
-                <Button onClick={process} disabled={status === "processing"} className="w-full glow-primary">
-                    {status === "processing" ? <><Loader2 size={15} className="animate-spin" /> Removing background…</> : "Remove Background"}
-                </Button>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                        {status === "processing"
+                            ? <><Loader2 size={13} className="animate-spin" /> Removing background…</>
+                            : <><Eraser size={13} /> Remove background</>}
+                    </button>
+                    {canProcess && (
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    )}
+                </div>
             )}
         </div>
+    );
+}
+
+/**
+ * Wipe-style before/after slider. Pointer events on the wrapper move the
+ * divider; the range input is the accessible fallback / keyboard control.
+ */
+function BeforeAfterSlider({
+    before, after, value, onChange,
+}: { before: string; after: string; value: number; onChange: (v: number) => void }) {
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const handlePointer = (e: React.PointerEvent) => {
+        if (e.buttons !== 1 && e.type !== "pointerdown") return;
+        const r = wrapRef.current?.getBoundingClientRect();
+        if (!r) return;
+        const pct = Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100));
+        onChange(pct);
+    };
+    return (
+        <div className="space-y-2">
+            <div
+                ref={wrapRef}
+                onPointerDown={handlePointer}
+                onPointerMove={handlePointer}
+                className="relative w-full overflow-hidden rounded-lg border border-border bg-paper-2/40 select-none touch-pan-y"
+                style={{
+                    aspectRatio: "1 / 1",
+                    background: "repeating-conic-gradient(hsl(var(--paper-2)) 0% 25%, hsl(var(--card)) 0% 50%) 50% / 16px 16px",
+                }}
+            >
+                {/* After (full) sits underneath */}
+                {after && <img src={after} alt="Background removed" className="absolute inset-0 w-full h-full object-contain" />}
+                {/* Before is clipped from the right so it only shows on the left side */}
+                {before && (
+                    <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{ clipPath: `inset(0 ${100 - value}% 0 0)` }}
+                    >
+                        <img src={before} alt="Original" className="absolute inset-0 w-full h-full object-contain bg-paper-2/40" />
+                    </div>
+                )}
+                {/* Divider */}
+                <div className="absolute top-0 bottom-0 w-0.5 bg-accent pointer-events-none" style={{ left: `${value}%` }} />
+                <div
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-9 w-9 rounded-full bg-accent text-background flex items-center justify-center pointer-events-none shadow-md"
+                    style={{ left: `${value}%` }}
+                    aria-hidden="true"
+                >
+                    <span className="font-mono text-[9.5px] tracking-wider">↔</span>
+                </div>
+                <span className="absolute top-2 left-2 font-mono text-[9.5px] tracking-wider uppercase rounded bg-background/85 text-foreground px-1.5 h-5 inline-flex items-center">Before</span>
+                <span className="absolute top-2 right-2 font-mono text-[9.5px] tracking-wider uppercase rounded bg-accent/85 text-background px-1.5 h-5 inline-flex items-center">After</span>
+            </div>
+            <input
+                type="range"
+                min={0} max={100} value={value}
+                onChange={e => onChange(+e.target.value)}
+                aria-label="Compare slider position"
+                className="w-full h-2 accent-[hsl(var(--accent))] touch-manipulation"
+            />
+        </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}>
+                <span className="absolute top-0 left-0 h-px w-3 bg-accent/70" />
+                <span className="absolute top-0 left-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -top-1 -right-1`}>
+                <span className="absolute top-0 right-0 h-px w-3 bg-accent/70" />
+                <span className="absolute top-0 right-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -bottom-1 -left-1`}>
+                <span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" />
+                <span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -bottom-1 -right-1`}>
+                <span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" />
+                <span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" />
+            </span>
+        </>
     );
 }

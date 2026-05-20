@@ -1,7 +1,10 @@
-import pikepdf
-import uuid
 from decimal import Decimal
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+import pikepdf
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 # Standard page sizes in points (width x height)
 PAGE_SIZES = {
@@ -15,23 +18,22 @@ PAGE_SIZES = {
 def resize_pdf(
     input_path: str,
     page_size: str = "a4",
-    width: float = None,
-    height: float = None,
+    width: float | None = None,
+    height: float | None = None,
 ) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"resized_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("resized", "pdf")
 
     if page_size == "custom":
         if width is None or height is None:
-            raise ValueError("Custom page size requires both width and height")
+            raise ValidationError("Custom page size requires both width and height")
         target_w, target_h = float(width), float(height)
     else:
         key = page_size.lower()
         if key not in PAGE_SIZES:
-            raise ValueError(f"Unknown page size: {page_size}")
+            raise ValidationError(f"Unknown page size: {page_size}")
         target_w, target_h = PAGE_SIZES[key]
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         for page in pdf.pages:
             page["/MediaBox"] = pikepdf.Array([
                 Decimal("0"),

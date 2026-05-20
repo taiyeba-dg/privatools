@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import logging
+import os
 import re
 import tempfile
 import uuid
@@ -38,8 +39,32 @@ def _open_pdf(data: bytes) -> fitz.Document:
         raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
 
 
-def _new_temp_file(suffix: str) -> tempfile.NamedTemporaryFile:
-    return tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+class _TempPath:
+    """Tiny shim that mimics the relevant ``tempfile.NamedTemporaryFile``
+    surface (``.name``, ``.close()``) but is created via ``mkstemp`` so
+    there's no race between creating the file under one path and reopening
+    it under the same path. Existing callers that do ``tmp.close()``
+    followed by writing to ``tmp.name`` keep working unchanged.
+    """
+
+    __slots__ = ("name", "_fd")
+
+    def __init__(self, suffix: str) -> None:
+        self._fd, self.name = tempfile.mkstemp(suffix=suffix)
+
+    def close(self) -> None:
+        # Close the fd if it's still open. Safe to call multiple times.
+        fd = self._fd
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+            self._fd = None  # type: ignore[assignment]
+
+
+def _new_temp_file(suffix: str) -> "_TempPath":
+    return _TempPath(suffix)
 
 
 def _to_float(value: object, label: str) -> float:
@@ -189,6 +214,9 @@ async def pdf_to_epub(file: UploadFile = File(...)):
 @router.post("/markdown-to-pdf")
 async def markdown_to_pdf(file: UploadFile = File(...)):
     """Convert Markdown text to PDF with full formatting support."""
+    fname = (file.filename or "").lower()
+    if not any(fname.endswith(ext) for ext in (".md", ".markdown", ".txt")):
+        raise HTTPException(status_code=400, detail="Please upload a .md, .markdown, or .txt file")
     raw = await _read_upload(file, MAX_TEXT_BYTES, "Input file")
     text = raw.decode("utf-8", errors="replace")
 
@@ -275,6 +303,9 @@ async def markdown_to_pdf(file: UploadFile = File(...)):
 @router.post("/csv-to-pdf")
 async def csv_to_pdf(file: UploadFile = File(...)):
     """Convert CSV to a PDF table."""
+    fname = (file.filename or "").lower()
+    if not any(fname.endswith(ext) for ext in (".csv", ".tsv", ".txt")):
+        raise HTTPException(status_code=400, detail="Please upload a .csv or .tsv file")
     raw = await _read_upload(file, MAX_TEXT_BYTES, "CSV file")
     text = raw.decode("utf-8", errors="replace")
 

@@ -1,24 +1,47 @@
-import uuid
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+"""Convert a public URL to PDF using WeasyPrint.
+
+WeasyPrint will happily follow file://, http:// to private IPs, and
+gopher://-style URLs out of the box, which makes it a textbook SSRF
+foot-gun on a multi-tenant server. We validate the URL here (same
+ruleset as html_to_pdf_service._validate_url) before WeasyPrint sees
+it, then hand WeasyPrint the original URL.
+
+This module previously delegated SSRF validation to the html_to_pdf
+service. That worked, but meant a regression here would silently
+remove protection. Validation now lives in both places.
+"""
+
+from __future__ import annotations
+
+from ..utils.exceptions import DependencyError, ProcessingError
+from ..utils.filenames import temp_output
+from .html_to_pdf_service import _validate_url
 
 
 def url_to_pdf(url: str) -> str:
-    """Convert a URL to PDF using WeasyPrint (renders locally).
-    
-    WeasyPrint is imported lazily to avoid crashing the server
-    if the system libraries aren't available.
+    """Fetch `url`, render it to PDF, and return the temp-file path.
+
+    WeasyPrint is imported lazily so the server can still boot on hosts
+    that don't have the system gobject/pango/cairo libraries available.
     """
-    ensure_temp_dir()
-    output_path = get_temp_path(f"webpage_{uuid.uuid4().hex}.pdf")
+    _validate_url(url)  # raises 400 HTTPException on private / file:// / etc.
+
+    output_path = temp_output("webpage", "pdf")
 
     try:
         from weasyprint import HTML
-        html = HTML(url=url)
-        html.write_pdf(str(output_path))
-    except ImportError:
-        raise RuntimeError(
-            "WeasyPrint is not available on this system. "
+    except ImportError as exc:
+        raise DependencyError(
+            "WeasyPrint is not available on this server. "
             "Install system dependencies: gobject, pango, cairo."
-        )
+        ) from exc
+
+    try:
+        HTML(url=url).write_pdf(str(output_path))
+    except Exception as exc:
+        # WeasyPrint surfaces a wide variety of errors (DNS, TLS, HTTP, parse).
+        # Collapse them into a single ProcessingError so the user gets a
+        # sane message instead of an internal traceback.
+        raise ProcessingError(f"Could not fetch or render '{url}': {exc}") from exc
 
     return str(output_path)

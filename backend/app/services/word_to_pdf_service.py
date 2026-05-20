@@ -1,16 +1,13 @@
-import uuid
-import fitz  # PyMuPDF
 from docx import Document
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.filenames import temp_output
 
 
 def word_to_pdf(input_path: str) -> str:
     """Convert a .docx file to PDF using python-docx + reportlab."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"word_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("word", "pdf")
 
     doc = Document(input_path)
     c = canvas.Canvas(str(output_path), pagesize=A4)

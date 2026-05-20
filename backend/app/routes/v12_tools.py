@@ -171,7 +171,16 @@ async def view_exif_endpoint(file: UploadFile = File(...)):
         content = await file.read()
         if not content:
             raise HTTPException(status_code=400, detail="Empty file")
-        temp_path = get_temp_path(f"exif_{uuid.uuid4().hex}_{file.filename}")
+        # Use only the extension from the upload — the filename itself is
+        # untrusted user input and shouldn't be interpolated into a path
+        # even with get_temp_path's sanitization.
+        suffix = ""
+        if "." in (file.filename or ""):
+            ext = (file.filename or "").rsplit(".", 1)[-1].lower()
+            # Whitelist short alphanumeric extensions only.
+            if 1 <= len(ext) <= 8 and ext.isalnum():
+                suffix = f".{ext}"
+        temp_path = get_temp_path(f"exif_{uuid.uuid4().hex}{suffix}")
         temp_path.write_bytes(content)
         data = view_exif_service.view_exif(str(temp_path))
         return JSONResponse(content=data, background=BackgroundTask(remove_files, str(temp_path)))

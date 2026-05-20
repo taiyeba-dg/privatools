@@ -3,6 +3,7 @@ import asyncio
 import logging
 import tempfile
 import os
+from functools import lru_cache
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
@@ -13,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".gif"}
 
+# Allowlist of language codes we accept in the API surface — keeps the
+# validation cheap and prevents users from forging odd ISO codes. Whether
+# the lang pack is actually installed on the host is checked below via
+# pytesseract.get_languages().
 VALID_LANGS = {
     "eng", "fra", "deu", "spa", "ita", "por", "chi_sim", "chi_tra", "jpn", "kor",
     "ara", "hin", "rus", "nld", "pol", "tur", "vie", "ukr", "ces", "ron", "hun",
@@ -21,6 +26,20 @@ VALID_LANGS = {
     "pan", "urd",
 }
 VALID_OUTPUTS = {"json", "txt"}
+
+
+@lru_cache(maxsize=1)
+def _installed_langs() -> frozenset[str]:
+    """Languages tesseract actually has installed. Cached; empty on failure.
+
+    Returning an empty set falls back to the static allowlist — better to be
+    permissive than to break the endpoint when pytesseract can't list packs.
+    """
+    try:
+        import pytesseract
+        return frozenset(pytesseract.get_languages(config=""))
+    except Exception:
+        return frozenset()
 
 
 def _extract_text(image_path: str, lang: str) -> str:
@@ -53,39 +72,69 @@ async def image_ocr(
             detail=f"Unsupported image format. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
         )
 
-    if lang not in VALID_LANGS:
-        raise HTTPException(status_code=400, detail=f"Invalid language code: {lang}")
+    # Support multi-language combos like "eng+fra"
+    lang_parts = [p.strip() for p in lang.split("+") if p.strip()]
+    if not lang_parts:
+        raise HTTPException(status_code=400, detail="Invalid language code")
+    for part in lang_parts:
+        if part not in VALID_LANGS:
+            raise HTTPException(status_code=400, detail=f"Invalid language code: {part}")
+
+    # Cross-check against actually-installed packs (best-effort — empty set
+    # means we couldn't query tesseract so we skip the check).
+    installed = _installed_langs()
+    if installed:
+        missing = [p for p in lang_parts if p not in installed]
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Language pack not installed: {', '.join(missing)}. "
+                    f"Available: {', '.join(sorted(installed))}"
+                ),
+            )
+
     if output not in VALID_OUTPUTS:
         raise HTTPException(status_code=400, detail=f"output must be one of: {', '.join(sorted(VALID_OUTPUTS))}")
 
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="Uploaded image is empty")
-    # Write to temp file
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-    tmp.write(content)
-    tmp.close()
+    # Magic-byte check — protects against an HTML/JS/etc. upload tagged
+    # with a .png extension. Pulling validate_image_content from utils so
+    # the bytes are vetted before we hand them to PIL/tesseract.
+    from ..utils.cleanup import validate_image_content
+    validate_image_content(content)
+    # Atomically create temp file via mkstemp (0600 perms, no race
+    # between create-and-reopen on shared /tmp).
+    fd, tmp_path = tempfile.mkstemp(suffix=ext)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(content)
+    except Exception:
+        remove_files(tmp_path)
+        raise
 
     try:
-        text = await asyncio.to_thread(_extract_text, tmp.name, lang)
+        text = await asyncio.to_thread(_extract_text, tmp_path, lang)
     except RuntimeError as e:
-        remove_files(tmp.name)
+        remove_files(tmp_path)
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
-        remove_files(tmp.name)
+        remove_files(tmp_path)
         logger.exception("OCR failed")
         raise HTTPException(status_code=500, detail="OCR processing failed. Is Tesseract installed?")
     finally:
         # Clean up input file
-        remove_files(tmp.name)
+        remove_files(tmp_path)
 
     if output == "txt":
-        txt_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8")
-        txt_tmp.write(text)
-        txt_tmp.close()
-        cleanup = BackgroundTask(remove_files, txt_tmp.name)
+        fd_txt, txt_path = tempfile.mkstemp(suffix=".txt")
+        with os.fdopen(fd_txt, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        cleanup = BackgroundTask(remove_files, txt_path)
         return FileResponse(
-            path=txt_tmp.name,
+            path=txt_path,
             filename="extracted_text.txt",
             media_type="text/plain; charset=utf-8",
             background=cleanup,

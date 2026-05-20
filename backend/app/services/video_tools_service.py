@@ -8,15 +8,17 @@ These all share the same constraints:
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import subprocess
 import tempfile
-import uuid
-from io import BytesIO
 from pathlib import Path
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.exceptions import ToolTimeoutError, ValidationError
+from ..utils.filenames import temp_output
+
+logger = logging.getLogger(__name__)
 
 FFMPEG_TIMEOUT = 180  # seconds — covers ~10 min of input at preset speeds
 
@@ -27,32 +29,38 @@ VIDEO_OUTPUT_FORMATS = {"mp4", "mov", "webm", "mkv", "avi"}
 
 
 def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT) -> None:
-    """Run ffmpeg with full args list; raise ValueError on failure."""
+    """Run ffmpeg with full args list; raise typed exception on failure."""
     try:
         proc = subprocess.run(
             ["ffmpeg", "-y", "-loglevel", "error", *args],
             capture_output=True, timeout=timeout, text=True,
+            check=False,  # we handle returncode ourselves
         )
     except subprocess.TimeoutExpired as exc:
-        raise ValueError(f"ffmpeg timed out after {timeout}s — try a shorter clip.") from exc
+        raise ToolTimeoutError(
+            f"ffmpeg timed out after {timeout}s — try a shorter clip."
+        ) from exc
+    except FileNotFoundError as exc:
+        raise ValidationError("ffmpeg is not installed on this server.") from exc
 
     if proc.returncode != 0:
         # Trim ffmpeg stderr so the user gets the most relevant line.
         last = (proc.stderr or "").strip().splitlines()
         msg = last[-1] if last else f"ffmpeg exited with code {proc.returncode}"
-        raise ValueError(f"ffmpeg failed: {msg}")
+        raise ValidationError(f"ffmpeg failed: {msg}")
 
 
 def _probe_duration(input_path: str) -> float:
     """Return video duration in seconds (0 if probe fails)."""
     try:
-        out = subprocess.check_output(
+        result = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration",
              "-of", "default=noprint_wrappers=1:nokey=1", input_path],
-            timeout=15, text=True,
+            capture_output=True, timeout=15, text=True, check=True,
         )
-        return float(out.strip())
-    except Exception:
+        return float(result.stdout.strip())
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError) as exc:
+        logger.debug("ffprobe duration failed: %s", exc)
         return 0.0
 
 
@@ -65,15 +73,15 @@ def video_to_pdf(input_path: str, frames: int = 12) -> str:
     with someone who only opens PDFs.
     """
     from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Image as RLImage
+    from reportlab.platypus import Image as RLImage
+    from reportlab.platypus import SimpleDocTemplate
 
-    ensure_temp_dir()
     if frames < 1 or frames > 100:
-        raise ValueError("frames must be between 1 and 100")
+        raise ValidationError("frames must be between 1 and 100")
 
     duration = _probe_duration(input_path) or 1.0
     work_dir = tempfile.mkdtemp(prefix="vid2pdf_")
-    output_path = get_temp_path(f"video_to_pdf_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("video_to_pdf", "pdf")
 
     try:
         # Extract evenly-spaced frames — fps filter avoids re-decoding the
@@ -86,7 +94,7 @@ def video_to_pdf(input_path: str, frames: int = 12) -> str:
         ])
         files = sorted(Path(work_dir).glob("frame_*.jpg"))[:frames]
         if not files:
-            raise ValueError("Could not extract any frames from the video.")
+            raise ValidationError("Could not extract any frames from the video.")
 
         page_w, page_h = letter
         margin = 36
@@ -114,9 +122,10 @@ def video_to_pdf(input_path: str, frames: int = 12) -> str:
 def video_convert(input_path: str, target_format: str) -> str:
     fmt = target_format.lower().strip()
     if fmt not in VIDEO_OUTPUT_FORMATS:
-        raise ValueError(f"target_format must be one of: {', '.join(sorted(VIDEO_OUTPUT_FORMATS))}")
-    ensure_temp_dir()
-    output_path = get_temp_path(f"video_convert_{uuid.uuid4().hex}.{fmt}")
+        raise ValidationError(
+            f"target_format must be one of: {', '.join(sorted(VIDEO_OUTPUT_FORMATS))}"
+        )
+    output_path = temp_output("video_convert", fmt)
 
     # Sensible per-format codec choices:
     args = ["-i", input_path]
@@ -152,10 +161,11 @@ VIDEO_PRESETS = {
 
 def video_resize(input_path: str, preset: str = "720p") -> str:
     if preset not in VIDEO_PRESETS:
-        raise ValueError(f"preset must be one of: {', '.join(VIDEO_PRESETS.keys())}")
+        raise ValidationError(
+            f"preset must be one of: {', '.join(VIDEO_PRESETS.keys())}"
+        )
     w, h = VIDEO_PRESETS[preset]
-    ensure_temp_dir()
-    output_path = get_temp_path(f"video_resize_{uuid.uuid4().hex}.mp4")
+    output_path = temp_output("video_resize", "mp4")
     _run_ffmpeg([
         "-i", input_path,
         "-vf", f"scale={w}:{h}",
@@ -172,8 +182,7 @@ def video_resize(input_path: str, preset: str = "720p") -> str:
 def video_thumbnail(input_path: str, time_seconds: float = 1.0) -> str:
     if time_seconds < 0:
         time_seconds = 0
-    ensure_temp_dir()
-    output_path = get_temp_path(f"video_thumb_{uuid.uuid4().hex}.jpg")
+    output_path = temp_output("video_thumb", "jpg")
     _run_ffmpeg([
         "-ss", str(time_seconds),
         "-i", input_path,
@@ -189,8 +198,7 @@ def video_thumbnail(input_path: str, time_seconds: float = 1.0) -> str:
 
 
 def gif_to_mp4(input_path: str) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"gif_to_mp4_{uuid.uuid4().hex}.mp4")
+    output_path = temp_output("gif_to_mp4", "mp4")
     _run_ffmpeg([
         "-i", input_path,
         # H.264 needs even dimensions; the pad filter keeps it safe for any input.
@@ -209,14 +217,14 @@ def gif_to_mp4(input_path: str) -> str:
 def _has_audio(path: str) -> bool:
     """Return True if the file has at least one audio stream."""
     try:
-        out = subprocess.check_output(
+        result = subprocess.run(
             ["ffprobe", "-v", "error", "-select_streams", "a",
              "-show_entries", "stream=codec_type",
              "-of", "default=nw=1", path],
-            timeout=10, text=True,
+            capture_output=True, timeout=10, text=True, check=True,
         )
-        return "audio" in out
-    except Exception:
+        return "audio" in result.stdout
+    except (subprocess.SubprocessError, FileNotFoundError):
         return False
 
 
@@ -231,11 +239,10 @@ def video_merge(input_paths: list[str]) -> str:
     "Error binding filtergraph inputs/outputs" failure.
     """
     if len(input_paths) < 2:
-        raise ValueError("Need at least 2 videos to merge.")
+        raise ValidationError("Need at least 2 videos to merge.")
     if len(input_paths) > 20:
-        raise ValueError("Too many videos to merge in one call (max 20).")
-    ensure_temp_dir()
-    output_path = get_temp_path(f"video_merge_{uuid.uuid4().hex}.mp4")
+        raise ValidationError("Too many videos to merge in one call (max 20).")
+    output_path = temp_output("video_merge", "mp4")
     n = len(input_paths)
 
     # Probe whether ANY input has audio. If none do, drop the audio stream
@@ -288,11 +295,10 @@ def video_merge(input_paths: list[str]) -> str:
 def audio_merge(input_paths: list[str]) -> str:
     """Concatenate audio tracks. Output is MP3 for broadest compatibility."""
     if len(input_paths) < 2:
-        raise ValueError("Need at least 2 audio files to merge.")
+        raise ValidationError("Need at least 2 audio files to merge.")
     if len(input_paths) > 50:
-        raise ValueError("Too many audio files to merge in one call (max 50).")
-    ensure_temp_dir()
-    output_path = get_temp_path(f"audio_merge_{uuid.uuid4().hex}.mp3")
+        raise ValidationError("Too many audio files to merge in one call (max 50).")
+    output_path = temp_output("audio_merge", "mp3")
     inputs: list[str] = []
     for p in input_paths:
         inputs += ["-i", p]
@@ -309,16 +315,38 @@ def audio_merge(input_paths: list[str]) -> str:
 
 
 def burn_subtitles(video_path: str, srt_path: str) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"video_subs_{uuid.uuid4().hex}.mp4")
-    # ffmpeg's subtitles= filter wants the .srt path inline; escape special chars.
-    safe_srt = srt_path.replace(":", r"\:").replace(",", r"\,")
-    _run_ffmpeg([
-        "-i", video_path,
-        "-vf", f"subtitles='{safe_srt}'",
-        "-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
-        "-c:a", "copy",
-        "-movflags", "+faststart",
-        str(output_path),
-    ])
-    return str(output_path)
+    """Burn-in subtitles from `srt_path` onto `video_path`.
+
+    The .srt path is interpolated inline into ffmpeg's `subtitles=` filter
+    expression, which uses ':' as an argument separator, ',' as a filter
+    separator, '\\' as an escape and quotes for protection — every one of
+    those needs special handling, or a path containing `:`, `,`, or `\\`
+    (entirely possible since temp filenames are random) silently produces
+    a bogus filter and ffmpeg fails.
+
+    We copy the srt file to a sanitized path inside the temp dir and use
+    that — much simpler and lets us avoid the escape-rule maze entirely.
+    """
+    output_path = temp_output("video_subs", "mp4")
+
+    # Re-stage the .srt at a path that contains nothing the ffmpeg filter
+    # syntax treats as special (alphanumerics + underscore + dot only).
+    safe_srt_path = temp_output("subs", "srt")
+    shutil.copy2(srt_path, str(safe_srt_path))
+
+    try:
+        _run_ffmpeg([
+            "-i", video_path,
+            "-vf", f"subtitles={safe_srt_path}",
+            "-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
+            "-c:a", "copy",
+            "-movflags", "+faststart",
+            str(output_path),
+        ])
+        return str(output_path)
+    finally:
+        # The sanitized copy is only useful for the duration of this call.
+        try:
+            safe_srt_path.unlink(missing_ok=True)
+        except OSError:
+            pass

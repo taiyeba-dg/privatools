@@ -1,6 +1,7 @@
-import uuid
 import fitz  # PyMuPDF
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.filenames import temp_output
+from ..utils.page_range import parse_page_range
 
 
 # Available stamp presets
@@ -17,11 +18,10 @@ STAMP_PRESETS = {
 
 
 def stamp_pdf(input_path: str, stamp_type: str = "confidential",
-              custom_text: str = None, opacity: float = 0.3,
+              custom_text: str | None = None, opacity: float = 0.3,
               position: str = "center", pages: str = "all") -> str:
     """Add a stamp to PDF pages using PyMuPDF."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"stamped_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("stamped", "pdf")
 
     # Get stamp config
     if stamp_type == "custom" and custom_text:
@@ -42,52 +42,55 @@ def stamp_pdf(input_path: str, stamp_type: str = "confidential",
     faded_color = (r, g, b)
 
     doc = fitz.open(input_path)
-
-    # Parse page selection
-    if pages == "all":
-        page_indices = range(len(doc))
-    else:
+    try:
+        total = len(doc)
+        # Use the shared parser so "1-3,5,end" and "all" both work, with
+        # a graceful fallback to every-page if parsing fails (the stamp
+        # tool historically swallowed errors here so users could pass
+        # half-typed ranges without losing their upload).
         try:
-            page_indices = [int(p.strip()) - 1 for p in pages.split(",")]
-            page_indices = [p for p in page_indices if 0 <= p < len(doc)]
+            page_indices = parse_page_range(pages or "all", total, allow_empty=True)
         except ValueError:
-            page_indices = range(len(doc))
+            page_indices = list(range(total))
+        if not page_indices:
+            page_indices = list(range(total))
 
-    for pg_idx in page_indices:
-        page = doc[pg_idx]
-        rect = page.rect
-        cx, cy = rect.width / 2, rect.height / 2
+        for pg_idx in page_indices:
+            page = doc[pg_idx]
+            rect = page.rect
+            cx, cy = rect.width / 2, rect.height / 2
 
-        # Font size based on page width and text length
-        font_size = min(rect.width / (len(text) * 0.55), 72)
+            # Font size based on page width and text length
+            font_size = min(rect.width / (len(text) * 0.55), 72)
 
-        tw = fitz.get_text_length(text, fontname="helv", fontsize=font_size)
+            tw = fitz.get_text_length(text, fontname="helv", fontsize=font_size)
 
-        if position == "diagonal":
-            # PyMuPDF only supports 0/90/180/270 — use center for diagonal
-            text_point = fitz.Point(cx - tw / 2, cy + font_size / 3)
-            rotate = 0
-        elif position == "top":
-            text_point = fitz.Point(cx - tw / 2, rect.height * 0.12)
-            rotate = 0
-        elif position == "bottom":
-            text_point = fitz.Point(cx - tw / 2, rect.height * 0.92)
-            rotate = 0
-        else:  # center
-            text_point = fitz.Point(cx - tw / 2, cy + font_size / 3)
-            rotate = 0
+            if position == "diagonal":
+                # PyMuPDF only supports 0/90/180/270 — use center for diagonal
+                text_point = fitz.Point(cx - tw / 2, cy + font_size / 3)
+                rotate = 0
+            elif position == "top":
+                text_point = fitz.Point(cx - tw / 2, rect.height * 0.12)
+                rotate = 0
+            elif position == "bottom":
+                text_point = fitz.Point(cx - tw / 2, rect.height * 0.92)
+                rotate = 0
+            else:  # center
+                text_point = fitz.Point(cx - tw / 2, cy + font_size / 3)
+                rotate = 0
 
-        page.insert_text(
-            text_point,
-            text,
-            fontsize=font_size,
-            fontname="helv",
-            color=faded_color,
-            rotate=rotate,
-            overlay=True,
-        )
+            page.insert_text(
+                text_point,
+                text,
+                fontsize=font_size,
+                fontname="helv",
+                color=faded_color,
+                rotate=rotate,
+                overlay=True,
+            )
 
-    doc.save(str(output_path), garbage=4, deflate=True)
-    doc.close()
+        doc.save(str(output_path), garbage=4, deflate=True)
+    finally:
+        doc.close()
 
     return str(output_path)

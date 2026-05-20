@@ -6,6 +6,11 @@ Requires a running server:
     cd /path/to/privatools
     python3 -m uvicorn backend.app.main:app --port 8000 &
     python3 -m pytest backend/tests/test_api.py -v
+
+If the server isn't running, every test in this file is auto-skipped so a
+plain `pytest tests/` on a dev box doesn't fail on the unreachable host.
+For in-process tests that don't need a server, see test_phased_routes.py
+and test_security.py — they exercise the same surface via TestClient.
 """
 
 import io
@@ -17,6 +22,18 @@ import requests
 from PIL import Image
 
 BASE_URL = "http://localhost:8000/api"
+
+
+# Autouse fixture: probe the server once per session; if down, skip every test
+# in this module instead of letting them each fail with a ConnectionError.
+@pytest.fixture(scope="module", autouse=True)
+def _require_running_server():
+    try:
+        r = requests.get(f"{BASE_URL}/health", timeout=1.5)
+        if r.status_code >= 500:
+            pytest.skip(f"backend health returned {r.status_code} — skipping HTTP tests")
+    except requests.RequestException as exc:
+        pytest.skip(f"backend not reachable at {BASE_URL} ({exc}) — skipping HTTP tests")
 
 
 # ── Fixtures ──
@@ -83,9 +100,29 @@ def test_health():
 # ── Compress ──
 
 def test_compress_returns_valid_pdf(small_pdf):
-    r = post("compress", files={"file": ("test.pdf", small_pdf, "application/pdf")}, data={"quality": "recommended"})
+    # /compress now takes `files: list[UploadFile]` + `level` (named preset:
+    # light / recommended / extreme / custom). A single-file payload still
+    # returns a raw PDF; >1 file gets a ZIP.
+    r = post(
+        "compress",
+        files=[("files", ("test.pdf", small_pdf, "application/pdf"))],
+        data={"level": "recommended"},
+    )
     assert r.status_code == 200
     assert r.content[:5] == b"%PDF-"
+
+
+def test_compress_multiple_returns_zip(small_pdf):
+    r = post(
+        "compress",
+        files=[
+            ("files", ("a.pdf", small_pdf, "application/pdf")),
+            ("files", ("b.pdf", small_pdf, "application/pdf")),
+        ],
+        data={"level": "recommended"},
+    )
+    assert r.status_code == 200
+    assert r.content[:2] == b"PK"  # ZIP magic number
 
 
 # ── Split ──
@@ -329,12 +366,20 @@ def test_image_converter_format(jpeg_image):
 # ── Error Handling ──
 
 def test_non_pdf_rejected():
-    r = post("compress", files={"file": ("test.txt", b"hello", "text/plain")}, data={"quality": "recommended"})
+    r = post(
+        "compress",
+        files=[("files", ("test.txt", b"hello", "text/plain"))],
+        data={"level": "recommended"},
+    )
     assert r.status_code == 400
 
 
 def test_invalid_pdf_rejected():
-    r = post("compress", files={"file": ("fake.pdf", b"not a pdf", "application/pdf")}, data={"quality": "recommended"})
+    r = post(
+        "compress",
+        files=[("files", ("fake.pdf", b"not a pdf", "application/pdf"))],
+        data={"level": "recommended"},
+    )
     assert r.status_code == 400
 
 

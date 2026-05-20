@@ -1,12 +1,14 @@
-import uuid
-import io
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+import logging
+
+from ..utils.exceptions import ProcessingError
+from ..utils.filenames import temp_output
+
+logger = logging.getLogger(__name__)
 
 
 def svg_to_png(input_path: str, scale: float = 2.0) -> str:
-    """Convert SVG to PNG. Tries cairosvg first, then reportlab/PIL fallback."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"svg_{uuid.uuid4().hex}.png")
+    """Convert SVG to PNG. Tries cairosvg first, then PyMuPDF as fallback."""
+    output_path = temp_output("svg", "png")
 
     # Read the SVG file
     with open(input_path, "rb") as f:
@@ -21,23 +23,27 @@ def svg_to_png(input_path: str, scale: float = 2.0) -> str:
             scale=scale,
         )
         return str(output_path)
-    except (ImportError, OSError):
-        pass
+    except (ImportError, OSError) as exc:
+        # ImportError → cairosvg not installed
+        # OSError → libcairo / pango system libs missing
+        logger.debug("svg_to_png: cairosvg unavailable (%s) — trying fitz", exc)
 
     # Fallback: use PyMuPDF (supports SVG in recent versions)
     try:
         import fitz
-        # Open SVG as a document
         doc = fitz.open(stream=svg_data, filetype="svg")
-        if len(doc) > 0:
-            page = doc[0]
-            mat = fitz.Matrix(scale * 2, scale * 2)  # Higher scale for quality
-            pix = page.get_pixmap(matrix=mat, alpha=True)
-            pix.save(str(output_path))
+        try:
+            if len(doc) > 0:
+                page = doc[0]
+                mat = fitz.Matrix(scale * 2, scale * 2)  # Higher scale for quality
+                pix = page.get_pixmap(matrix=mat, alpha=True)
+                pix.save(str(output_path))
+                return str(output_path)
+        finally:
             doc.close()
-            return str(output_path)
-        doc.close()
-    except Exception:
-        pass
+    except (RuntimeError, ValueError) as exc:
+        logger.debug("svg_to_png: fitz fallback failed (%s)", exc)
 
-    raise RuntimeError("SVG conversion failed — install cairosvg system dependencies")
+    raise ProcessingError(
+        "SVG conversion failed — cairosvg system dependencies are missing."
+    )

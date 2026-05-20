@@ -11,9 +11,11 @@ import tempfile
 import zipfile
 from pathlib import PurePosixPath
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
+
+from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +81,14 @@ def _cleanup_paths(*paths: str) -> None:
             pass
 
 
+# Strip ASCII control chars (NUL..US, DEL). Filenames that flow into a
+# ``Content-Disposition`` response header must NOT contain CR/LF — a
+# crafted upload could otherwise inject arbitrary response headers.
+_FN_CTL_RE = re.compile(r"[\x00-\x1f\x7f]")
+
+
 def _safe_filename(name: str | None, fallback: str) -> str:
-    base = os.path.basename(name or "").strip()
+    base = _FN_CTL_RE.sub("", os.path.basename(name or "").strip())
     return base or fallback
 
 
@@ -98,15 +106,32 @@ async def _read_upload(file: UploadFile, max_size: int = 0, label: str = "File")
 
 
 def _new_temp_file(suffix: str) -> str:
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    tmp.close()
-    return tmp.name
+    """Return a fresh temp file path. Uses :func:`tempfile.mkstemp` so the
+    create-then-reopen pattern can't race with another process writing the
+    same filename on a shared ``/tmp`` (older code used
+    ``NamedTemporaryFile(delete=False)`` which closes the fd before the
+    caller reopens by path).
+    """
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    # We only need the path; close the fd immediately. mkstemp atomically
+    # creates with 0600 perms so a later open(path, 'wb') is safe from
+    # races on a multi-tenant /tmp.
+    os.close(fd)
+    return path
 
 
 def _write_temp_file(content: bytes, suffix: str) -> str:
-    path = _new_temp_file(suffix)
-    with open(path, "wb") as handle:
-        handle.write(content)
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(content)
+    except Exception:
+        # Best-effort cleanup if write failed.
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        raise
     return path
 
 
@@ -452,7 +477,8 @@ async def video_to_gif(
 
 
 @router.post("/extract-audio")
-async def extract_audio(file: UploadFile = File(...), format: str = Form("mp3")):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def extract_audio(request: Request, file: UploadFile = File(...), format: str = Form("mp3")):
     audio_format = format.lower().strip()
     codec_map = {
         "mp3": "libmp3lame",
@@ -637,15 +663,33 @@ async def extract_archive(file: UploadFile = File(...)):
 
 
 @router.post("/create-zip")
-async def create_zip(files: list[UploadFile] = File(...), password: str = Form("")):
+async def create_zip(
+    files: list[UploadFile] = File(...),
+    password: str = Form(""),
+    compression: int = Form(6, ge=0, le=9),
+):
+    """Bundle the uploaded files into a ZIP.
+
+    `compression` is 0–9. 0 stores files uncompressed (fastest, largest
+    output). 1–9 uses deflate where 1 is fastest and 9 is smallest. Matches
+    the slider on the frontend CreateZipUI.
+    """
     if password:
         raise HTTPException(status_code=400, detail="Password-protected ZIP creation is not supported yet")
+
+    if compression == 0:
+        zip_method = zipfile.ZIP_STORED
+        zip_args: dict = {}
+    else:
+        zip_method = zipfile.ZIP_DEFLATED
+        # compresslevel was added to zipfile.ZipFile in Python 3.7
+        zip_args = {"compresslevel": compression}
 
     output_path = _new_temp_file(".zip")
     used_names: set[str] = set()
 
     try:
-        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        with zipfile.ZipFile(output_path, "w", zip_method, **zip_args) as archive:
             for upload in files:
                 safe_name = _safe_filename(upload.filename, "file")
                 safe_name = _unique_name(safe_name, used_names)

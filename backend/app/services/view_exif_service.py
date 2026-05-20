@@ -21,44 +21,44 @@ def _jsonable(v: Any) -> Any:
         if isinstance(v, bytes):
             try:
                 return v.decode("utf-8", errors="replace")[:500]
-            except Exception:
+            except (UnicodeDecodeError, LookupError):
                 return f"<{len(v)} bytes>"
         return str(v)[:500]
 
 
 def view_exif(input_path: str) -> dict[str, Any]:
-    img = Image.open(input_path)
-    info: dict[str, Any] = {
-        "format": img.format,
-        "mode": img.mode,
-        "size": [img.width, img.height],
-        "exif": {},
-        "info": {},
-        "gps": {},
-    }
-    try:
-        exif = img.getexif()
-    except Exception:
-        exif = None
-
-    if exif:
-        for tag_id, value in exif.items():
-            tag = ExifTags.TAGS.get(tag_id, f"Tag{tag_id}")
-            info["exif"][tag] = _jsonable(value)
-
-        # GPS sub-IFD
+    # `with` makes sure we close the underlying file handle even if EXIF
+    # parsing raises mid-iteration. Previously a bad GPS IFD on certain
+    # images would skip the explicit img.close() and leak a descriptor.
+    with Image.open(input_path) as img:
+        info: dict[str, Any] = {
+            "format": img.format,
+            "mode": img.mode,
+            "size": [img.width, img.height],
+            "exif": {},
+            "info": {},
+            "gps": {},
+        }
         try:
-            gps_ifd = exif.get_ifd(0x8825)
-        except Exception:
-            gps_ifd = None
-        if gps_ifd:
-            for tag_id, value in gps_ifd.items():
-                tag = ExifTags.GPSTAGS.get(tag_id, f"GPSTag{tag_id}")
-                info["gps"][tag] = _jsonable(value)
+            exif = img.getexif()
+        except (AttributeError, OSError, ValueError):
+            exif = None
 
-    # Embedded text/info (e.g., PNG tEXt chunks)
-    for k, v in (img.info or {}).items():
-        info["info"][str(k)] = _jsonable(v)
+        if exif:
+            for tag_id, value in exif.items():
+                tag = ExifTags.TAGS.get(tag_id, f"Tag{tag_id}")
+                info["exif"][tag] = _jsonable(value)
 
-    img.close()
+            try:
+                gps_ifd = exif.get_ifd(0x8825)
+            except (KeyError, AttributeError, ValueError):
+                gps_ifd = None
+            if gps_ifd:
+                for tag_id, value in gps_ifd.items():
+                    tag = ExifTags.GPSTAGS.get(tag_id, f"GPSTag{tag_id}")
+                    info["gps"][tag] = _jsonable(value)
+
+        for k, v in (img.info or {}).items():
+            info["info"][str(k)] = _jsonable(v)
+
     return info

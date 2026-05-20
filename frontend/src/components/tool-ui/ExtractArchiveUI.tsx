@@ -1,39 +1,19 @@
-import { useState } from "react";
-import { Upload, Loader2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { Archive } from "lucide-react";
+import { SimpleProcessUI } from "./SimpleProcessUI";
 
 export function ExtractArchiveUI() {
-  const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
-  const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  const process = async () => {
-    if (!file) return;
-    setStatus("processing"); setError(null);
-    try { await processAndDownload("/extract-archive", file.raw, buildOutputFilename(file.name, "extracted", "zip")); setStatus("done"); }
-    catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
-  };
-
-  return (
-    <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 transition-all">
-        <Upload size={22} className="text-muted-foreground" />
-        <p className="text-sm font-medium text-foreground">{file ? file.name : "Drop archive here"}</p>
-        <p className="text-xs text-muted-foreground">{file ? file.size : "ZIP, TAR, TAR.GZ, TGZ, TAR.BZ2, TAR.XZ"}</p>
-        <input type="file" accept=".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz" className="hidden" onChange={e => { if (e.target.files?.[0]) { const f = e.target.files[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); } e.target.value = ""; }} />
-      </label>
-      {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} />{error}</div>}
-      {status === "done" ? (
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
-          <p className="text-sm font-semibold text-emerald-400 mb-3">Extracted!</p>
-          <Button variant="outline" onClick={() => { setFile(null); setStatus("idle"); }}>Extract another</Button>
-        </div>
-      ) : (
-        <Button className="w-full" disabled={!file || status === "processing"} onClick={process}>
-          {status === "processing" ? <><Loader2 size={14} className="animate-spin mr-2" />Extracting…</> : "Extract Archive"}
-        </Button>
-      )}
-    </div>
-  );
+    return (
+        <SimpleProcessUI
+            endpoint="/extract-archive"
+            accepts=".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz"
+            outputSuffix="extracted"
+            outputExt="zip"
+            dropIcon={Archive}
+            dropTitle="Drop archive to extract"
+            dropSubtitle="ZIP · TAR · TAR.GZ · TAR.BZ2 · TAR.XZ"
+            actionLabel="Extract archive"
+            processingLabel="Extracting…"
+            doneTitle="Extracted"
+        />
+    );
 }

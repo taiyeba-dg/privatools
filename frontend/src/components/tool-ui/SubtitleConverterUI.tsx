@@ -1,19 +1,30 @@
 /**
- * Subtitle converter — SRT ↔ VTT (and basic ASS → SRT).
- * 100% client-side: parses + emits in the browser.
+ * SubtitleConverterUI — SRT ↔ VTT (and basic ASS → SRT/VTT) in-browser.
+ * Workshop: lab-card with cue counter, format toggle, signal-green CTA.
  */
 import { useMemo, useRef, useState } from "react";
-import { Upload, AlertCircle, X, FileText, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Upload, AlertCircle, X, FileText, Download, ShieldCheck, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadBlob, formatFileSize } from "@/lib/api";
+
+const SAMPLE_SRT = `1
+00:00:00,500 --> 00:00:03,200
+Welcome to PrivaTools.
+
+2
+00:00:03,500 --> 00:00:07,800
+Subtitle conversion runs entirely in your browser.
+
+3
+00:00:08,100 --> 00:00:11,400
+No upload — your captions never touch a server.
+`;
 
 type Target = "srt" | "vtt";
 
 interface Cue { index: number; start: number; end: number; text: string }
 
 function parseTime(t: string): number {
-    // Accepts "HH:MM:SS,mmm" (SRT) or "HH:MM:SS.mmm" (VTT)
     const m = t.replace(",", ".").match(/^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/);
     if (!m) return 0;
     return +m[1] * 3600 + +m[2] * 60 + +m[3] + (+(m[4] || "0") / 1000);
@@ -28,7 +39,6 @@ function formatTime(sec: number, sep: "," | "."): string {
 }
 
 function parseSrtVtt(text: string): Cue[] {
-    // Strip VTT header if present
     const body = text.replace(/^WEBVTT[^\n]*\n/, "").trim();
     const blocks = body.split(/\r?\n\r?\n+/).filter(Boolean);
     const cues: Cue[] = [];
@@ -61,15 +71,10 @@ function parseAss(text: string): Cue[] {
 }
 
 function toSrt(cues: Cue[]): string {
-    return cues.map(c =>
-        `${c.index}\n${formatTime(c.start, ",")} --> ${formatTime(c.end, ",")}\n${c.text}`
-    ).join("\n\n") + "\n";
+    return cues.map(c => `${c.index}\n${formatTime(c.start, ",")} --> ${formatTime(c.end, ",")}\n${c.text}`).join("\n\n") + "\n";
 }
-
 function toVtt(cues: Cue[]): string {
-    return "WEBVTT\n\n" + cues.map(c =>
-        `${formatTime(c.start, ".")} --> ${formatTime(c.end, ".")}\n${c.text}`
-    ).join("\n\n") + "\n";
+    return "WEBVTT\n\n" + cues.map(c => `${formatTime(c.start, ".")} --> ${formatTime(c.end, ".")}\n${c.text}`).join("\n\n") + "\n";
 }
 
 export function SubtitleConverterUI() {
@@ -105,13 +110,32 @@ export function SubtitleConverterUI() {
         downloadBlob(blob, `${baseName}.${target}`);
     };
 
+    const loadSample = () => {
+        // Synthesize a File from the sample text so the existing rendering path works.
+        const f = new File([SAMPLE_SRT], "sample.srt", { type: "application/x-subrip" });
+        setFile(f);
+        setText(SAMPLE_SRT);
+    };
+
     return (
         <div className="space-y-4">
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] px-4 py-3 flex items-start gap-3">
-                <FileText size={14} className="text-emerald-400 mt-0.5 shrink-0" />
-                <p className="text-[13px] text-muted-foreground leading-snug">
-                    <span className="text-foreground font-medium">100% browser-side.</span> Parsing happens in JavaScript — your subtitles never touch a server.
-                </p>
+            <div className="rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
+                <ShieldCheck size={16} className="text-accent shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                    <p className="text-[13px] text-foreground leading-snug">
+                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium mr-1.5">§ 100% in-browser</span>
+                        Parsing happens in JavaScript — subtitles never touch a server.
+                    </p>
+                </div>
+                {!file && (
+                    <button
+                        type="button"
+                        onClick={loadSample}
+                        className="shrink-0 inline-flex items-center gap-1 px-2 h-7 rounded-md border border-accent/40 bg-accent/[0.08] font-mono text-[10px] tracking-[0.06em] uppercase text-accent hover:bg-accent/[0.12] transition-colors"
+                    >
+                        <Sparkles size={11} /> Try sample
+                    </button>
+                )}
             </div>
 
             {!file ? (
@@ -121,68 +145,85 @@ export function SubtitleConverterUI() {
                     onDrop={e => { e.preventDefault(); setDrag(false); onPick(e.dataTransfer.files[0] || null); }}
                     onClick={() => inputRef.current?.click()}
                     onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Upload subtitle file"
+                    role="button" tabIndex={0} aria-label="Upload subtitle file"
                     className={cn(
-                        "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-12 px-6 text-center",
-                        drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20"
+                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 px-6 text-center group",
+                        drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
+                    <CornerMarks />
                     <input ref={inputRef} type="file" accept=".srt,.vtt,.ass" className="hidden" onChange={e => { onPick(e.target.files?.[0] || null); e.target.value = ""; }} />
-                    <Upload size={22} className="text-muted-foreground" />
-                    <p className="text-sm font-semibold text-foreground">Pick a subtitle file</p>
-                    <p className="text-xs text-muted-foreground">.srt, .vtt, or .ass</p>
+                    <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
+                        <Upload size={20} className="text-accent" strokeWidth={1.75} />
+                    </div>
+                    <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Pick a subtitle file</p>
+                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">.srt · .vtt · .ass</p>
                 </div>
             ) : (
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 px-4 py-3">
-                    <FileText size={18} className="text-accent shrink-0" />
+                <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
+                    <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
+                        <FileText size={15} className="text-accent" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
+                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
                             {formatFileSize(file.size)}{result.ok && ` · ${result.count} cues`}
                         </p>
                     </div>
-                    <button onClick={() => onPick(null)} aria-label="Remove" className="text-muted-foreground hover:text-foreground">
-                        <X size={16} />
+                    <button onClick={() => onPick(null)} aria-label="Remove" className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60">
+                        <X size={13} />
                     </button>
                 </div>
             )}
 
-            <div className="rounded-xl border border-border bg-card/40 p-5">
-                <p className="text-sm font-semibold text-foreground mb-3">Convert to</p>
-                <div className="flex gap-2">
-                    {(["vtt", "srt"] as Target[]).map(t => (
-                        <button
-                            key={t}
-                            type="button"
-                            onClick={() => setTarget(t)}
-                            aria-pressed={target === t}
-                            className={cn(
-                                "flex-1 h-10 rounded-full border text-[14px] font-semibold transition-colors",
-                                target === t ? "border-accent bg-accent/5 text-foreground" : "border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-                            )}
-                        >
-                            {t === "vtt" ? "WebVTT (.vtt)" : "SubRip (.srt)"}
-                        </button>
-                    ))}
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                    <span className="text-accent">§</span> Convert to
+                </div>
+                <div className="p-3 grid grid-cols-2 gap-2">
+                    {(["vtt", "srt"] as Target[]).map(t => {
+                        const active = target === t;
+                        return (
+                            <button
+                                key={t}
+                                onClick={() => setTarget(t)}
+                                className={cn(
+                                    "rounded-lg border p-3 text-center transition-colors",
+                                    active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40"
+                                )}
+                            >
+                                <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>
+                                    {t === "vtt" ? "WebVTT" : "SubRip"}
+                                </p>
+                                <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-0.5">.{t}</p>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
             {!result.ok && file && (
-                <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                    <AlertCircle size={15} />{result.error}
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    <AlertCircle size={13} className="shrink-0" />{result.error}
                 </div>
             )}
 
-            {result.ok && (
-                <div className="flex items-center gap-3">
-                    <Button onClick={handleDownload} className="rounded-full h-10 px-5 bg-foreground text-background hover:bg-foreground/90">
-                        <Download size={14} className="mr-1.5" /> Download .{target}
-                    </Button>
-                    <span className="text-[12px] text-muted-foreground">{result.count} cues converted</span>
-                </div>
-            )}
+            <button onClick={handleDownload} disabled={!result.ok} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                <Download size={13} /> Download .{target}
+                {result.ok && <span className="font-mono text-[11px] tracking-wider text-accent/70 ml-1">({result.count} cues)</span>}
+            </button>
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
     );
 }

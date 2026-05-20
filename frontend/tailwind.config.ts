@@ -14,17 +14,23 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Playfair Display", "Georgia", "serif"],
-        body: ["Source Serif 4", "Georgia", "serif"],
-        mono: ["JetBrains Mono", "Menlo", "monospace"],
-        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
+        heading: ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
+        body:    ["Inter", "system-ui", "sans-serif"],
+        sans:    ["Inter", "system-ui", "sans-serif"],
+        mono:    ["JetBrains Mono", "Menlo", "monospace"],
+        serif:   ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
+        "border-strong": "hsl(var(--border-strong))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        paper:    "hsl(var(--paper))",
+        "paper-2": "hsl(var(--paper-2))",
+        "paper-3": "hsl(var(--paper-3))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -44,6 +50,11 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          soft: "hsl(var(--accent-soft))",
+        },
+        copper: {
+          DEFAULT: "hsl(var(--copper))",
+          soft: "hsl(var(--copper-soft))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

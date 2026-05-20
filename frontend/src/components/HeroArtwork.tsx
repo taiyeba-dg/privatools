@@ -1,107 +1,156 @@
 /**
- * Animated SVG hero artwork — depicts the privacy promise visually.
+ * Hero artwork — a live, looping pipeline demonstration.
  *
- * Composition (back → front):
- *   1. Faint orbital rings, slowly rotating.
- *   2. Six color-coded category "chips" — orbit at different radii / phases.
- *   3. A central rounded-square shield containing a stylized lock + the
- *      brand monogram. This is the "vault" everything funnels into.
- *   4. Two stylized document cards floating on either side, drifting.
+ * Concept: a document enters from the left, passes through 4 labelled
+ * processing nodes (Merge → Compress → Watermark → Sign), each lighting
+ * up as the file passes through, and exits as a signed/sealed output.
  *
- * All animation is pure CSS (SMIL has been deprecated in some renderers).
- * Respects prefers-reduced-motion.
+ * The artwork is the product. Stationary, but always moving. Editorial
+ * composition — annotated like a technical schematic.
+ *
+ * Pure CSS animation. Respects prefers-reduced-motion.
  */
-import { CSSProperties } from "react";
+import { FileText, Combine, ArchiveRestore, ShieldCheck, CheckCheck } from "lucide-react";
 
-// (label, hsl tile, angle deg) — colors mirror the per-category icon-tile values
-const CHIPS: { label: string; tile: string; angle: number; r: number; delay: number }[] = [
-    { label: "PDF",   tile: "200 90% 50%", angle: -90, r: 130, delay: 0 },
-    { label: "Image", tile: "320 85% 60%", angle: -30, r: 130, delay: 0.6 },
-    { label: "Video", tile: "18 90% 55%",  angle: 30,  r: 130, delay: 1.2 },
-    { label: "Dev",   tile: "195 90% 55%", angle: 90,  r: 130, delay: 1.8 },
-    { label: "Edit",  tile: "270 85% 60%", angle: 150, r: 130, delay: 2.4 },
-    { label: "AI",    tile: "32 95% 50%",  angle: 210, r: 130, delay: 3.0 },
+const NODES = [
+    { Icon: Combine,        label: "Merge",      delay: 0.0 },
+    { Icon: ArchiveRestore, label: "Compress",   delay: 1.6 },
+    { Icon: ShieldCheck,    label: "Watermark",  delay: 3.2 },
+    { Icon: CheckCheck,     label: "Sign",       delay: 4.8 },
 ];
 
 export function HeroArtwork() {
     return (
-        <div
+        <figure
             aria-hidden="true"
-            className="hero-artwork relative w-[340px] h-[340px] sm:w-[420px] sm:h-[420px] mx-auto pointer-events-none select-none"
+            className="relative w-full max-w-[460px] mx-auto pointer-events-none select-none"
         >
-            {/* Outer orbital ring */}
-            <div className="absolute inset-0 hero-art-ring" />
-            {/* Inner orbital ring */}
-            <div className="absolute inset-[40px] hero-art-ring hero-art-ring-2" />
+            {/* Schematic frame — technical-drawing aesthetic */}
+            <div className="relative rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-5 shadow-[0_30px_60px_-30px_rgba(20,15,5,0.25)] dark:shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)]">
+                {/* Corner registration marks — classic editorial drafting flourish */}
+                <CornerMarks />
 
-            {/* Floating category chips */}
-            {CHIPS.map(c => {
-                const rad = (c.angle * Math.PI) / 180;
-                const x = Math.cos(rad) * c.r;
-                const y = Math.sin(rad) * c.r;
-                const style: CSSProperties = {
-                    transform: `translate(calc(50% + ${x}px - 50%), calc(50% + ${y}px - 50%))`,
-                    animationDelay: `${c.delay}s`,
-                    "--tile": c.tile,
-                } as CSSProperties;
-                return (
-                    <span
-                        key={c.label}
-                        className="hero-art-chip absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                        style={style}
-                    >
-                        <span
-                            className="block text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border"
-                            style={{
-                                color: `hsl(var(--tile))`,
-                                background: `hsl(var(--tile) / 0.10)`,
-                                borderColor: `hsl(var(--tile) / 0.28)`,
-                            }}
-                        >
-                            {c.label}
-                        </span>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-accent animate-[pulse_2s_ease-in-out_infinite]" />
+                        Pipeline · Live
                     </span>
-                );
-            })}
-
-            {/* Side document cards */}
-            <span className="hero-art-doc hero-art-doc-left absolute left-2 top-1/2 -translate-y-1/2">
-                <DocCard tone="light" />
-            </span>
-            <span className="hero-art-doc hero-art-doc-right absolute right-2 top-1/2 -translate-y-1/2">
-                <DocCard tone="dark" />
-            </span>
-
-            {/* Center shield */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hero-art-shield">
-                <div className="relative h-[88px] w-[88px] sm:h-[104px] sm:w-[104px] rounded-2xl bg-card border border-accent/40 shadow-[0_8px_30px_-8px_hsl(var(--accent)/0.45)] flex items-center justify-center">
-                    {/* glow */}
-                    <span className="absolute inset-0 rounded-2xl pointer-events-none"
-                          style={{ boxShadow: "inset 0 0 32px -10px hsl(var(--accent) / 0.35)" }} />
-                    {/* shield/lock svg */}
-                    <svg viewBox="0 0 24 24" className="h-9 w-9 sm:h-11 sm:w-11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "hsl(var(--accent))" }}>
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                        <rect x="9" y="11" width="6" height="5" rx="1" />
-                        <path d="M10 11V9a2 2 0 0 1 4 0v2" />
-                    </svg>
+                    <span>Fig. 01</span>
                 </div>
+
+                {/* Pipeline track */}
+                <div className="relative">
+                    {/* Backbone line connecting all nodes */}
+                    <div className="absolute top-7 left-7 right-7 h-px bg-gradient-to-r from-border via-border-strong to-border" />
+                    {/* Moving spark — the "file" travels along the backbone */}
+                    <span className="absolute top-7 left-7 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_12px_3px_hsl(var(--accent)/0.6)] animate-[hero-spark_6.4s_linear_infinite]" />
+
+                    <div className="relative grid grid-cols-4 gap-3">
+                        {NODES.map((n, i) => (
+                            <Node key={n.label} {...n} index={i} />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Output indicator */}
+                <div className="mt-5 flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.08em] uppercase text-muted-foreground">
+                        <FileText size={11} />
+                        <span>input.pdf</span>
+                    </div>
+                    <div className="flex-1 mx-3 h-px bg-border border-t border-dashed" />
+                    <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.08em] uppercase text-accent">
+                        <span>signed.pdf</span>
+                        <CheckCheck size={11} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Editorial caption underneath */}
+            <figcaption className="mt-4 text-center font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground/85">
+                <span className="text-accent">Fig. 01</span>
+                <span className="mx-2 opacity-50">—</span>
+                One file, four tools, never uploaded
+            </figcaption>
+
+            <style>{`
+                @keyframes hero-spark {
+                    0%   { left: 7%;  opacity: 0; }
+                    5%   { opacity: 1; }
+                    25%  { left: 30%; opacity: 1; }
+                    50%  { left: 55%; opacity: 1; }
+                    75%  { left: 80%; opacity: 1; }
+                    95%  { left: 95%; opacity: 1; }
+                    100% { left: 95%; opacity: 0; }
+                }
+                @keyframes hero-node-pulse {
+                    0%, 100% {
+                        box-shadow: 0 0 0 0 hsl(var(--accent) / 0);
+                        border-color: hsl(var(--border));
+                        background: hsl(var(--card));
+                    }
+                    5%, 15% {
+                        box-shadow: 0 0 0 4px hsl(var(--accent) / 0.20),
+                                    0 8px 22px -6px hsl(var(--accent) / 0.40);
+                        border-color: hsl(var(--accent) / 0.55);
+                        background: hsl(var(--accent) / 0.06);
+                    }
+                }
+                .hero-node {
+                    animation: hero-node-pulse 6.4s ease-in-out infinite;
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .hero-node, [class*="hero-spark"] { animation: none !important; }
+                }
+            `}</style>
+        </figure>
+    );
+}
+
+function Node({
+    Icon, label, delay, index,
+}: {
+    Icon: typeof FileText; label: string; delay: number; index: number;
+}) {
+    return (
+        <div className="flex flex-col items-center text-center">
+            <div
+                className="hero-node h-14 w-14 rounded-xl border border-border bg-card flex items-center justify-center transition-colors"
+                style={{ animationDelay: `${delay}s` }}
+            >
+                <Icon size={20} className="text-foreground/80" strokeWidth={1.75} />
+            </div>
+            <div className="mt-2 font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                <span className="text-accent">0{index + 1}</span>
+                <span className="mx-1 opacity-50">·</span>
+                {label}
             </div>
         </div>
     );
 }
 
-function DocCard({ tone }: { tone: "light" | "dark" }) {
+function CornerMarks() {
+    const arm = "absolute h-3 w-3";
+    const line = "absolute bg-accent";
     return (
-        <span className="block w-[58px] sm:w-[68px] h-[78px] sm:h-[88px] rounded-md border bg-card-tint shadow-[0_4px_14px_-4px_rgba(0,0,0,0.20)] relative"
-              style={{ borderColor: tone === "light" ? "hsl(var(--border))" : "hsl(var(--border) / 1.6)" }}>
-            {/* fake lines */}
-            <span className="absolute left-2 right-3 top-2 h-1 rounded bg-foreground/12" />
-            <span className="absolute left-2 right-5 top-4 h-1 rounded bg-foreground/12" />
-            <span className="absolute left-2 right-2 top-6 h-1 rounded bg-foreground/12" />
-            <span className="absolute left-2 right-7 top-8 h-1 rounded bg-foreground/12" />
-            <span className="absolute left-2 right-4 top-10 h-1 rounded bg-foreground/12" />
-            {/* corner fold */}
-            <span className="absolute right-0 top-0 w-3 h-3 bg-card border-l border-b border-border rounded-bl" />
-        </span>
+        <>
+            <span className={`${arm} -top-1 -left-1`}>
+                <span className={`${line} top-0 left-0 h-px w-3`} />
+                <span className={`${line} top-0 left-0 w-px h-3`} />
+            </span>
+            <span className={`${arm} -top-1 -right-1`}>
+                <span className={`${line} top-0 right-0 h-px w-3`} />
+                <span className={`${line} top-0 right-0 w-px h-3`} />
+            </span>
+            <span className={`${arm} -bottom-1 -left-1`}>
+                <span className={`${line} bottom-0 left-0 h-px w-3`} />
+                <span className={`${line} bottom-0 left-0 w-px h-3`} />
+            </span>
+            <span className={`${arm} -bottom-1 -right-1`}>
+                <span className={`${line} bottom-0 right-0 h-px w-3`} />
+                <span className={`${line} bottom-0 right-0 w-px h-3`} />
+            </span>
+        </>
     );
 }

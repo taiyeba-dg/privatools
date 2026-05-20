@@ -1,10 +1,8 @@
-import uuid
-
 import pikepdf
-from fastapi import HTTPException
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.cleanup import safe_open_pdf
 from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 
 def _iter_fields(fields_array):
@@ -73,7 +71,7 @@ def _extract_button_options(field) -> list[str]:
     normal_appearance = ap["/N"]
     try:
         states = list(normal_appearance.keys())
-    except Exception:
+    except (AttributeError, TypeError):
         return []
 
     options: list[str] = []
@@ -106,7 +104,7 @@ def _is_truthy_checkbox(value: str) -> bool:
 
 
 def get_form_fields(input_path: str) -> list:
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         try:
             acroform = pdf.Root.AcroForm
             fields_array = acroform.Fields
@@ -142,10 +140,9 @@ def get_form_fields(input_path: str) -> list:
 
 
 def fill_form(input_path: str, field_values: dict) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"filled_form_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("filled_form", "pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         try:
             acroform = pdf.Root.AcroForm
             fields_array = acroform.Fields
@@ -182,7 +179,8 @@ def fill_form(input_path: str, field_values: dict) -> str:
 
         try:
             acroform["/NeedAppearances"] = pikepdf.Boolean(True)
-        except Exception:
+        except (AttributeError, TypeError):
+            # Older AcroForm with read-only dict — value isn't critical.
             pass
 
         pdf.save(str(output_path))

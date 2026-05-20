@@ -1,11 +1,13 @@
-import pikepdf
-import uuid
 import io
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
-from reportlab.pdfgen import canvas
+
+import pikepdf
 from reportlab.lib.colors import Color
 from reportlab.lib.utils import ImageReader
-from PIL import Image
+from reportlab.pdfgen import canvas
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
+from ..utils.images import open_image_safe
 
 
 def add_watermark(
@@ -17,20 +19,19 @@ def add_watermark(
     watermark_image_path: str | None = None,
     image_scale: float = 0.25,
 ) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"watermarked_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("watermarked", "pdf")
     image_reader = None
     image_size = (0, 0)
 
     if watermark_image_path:
-        with Image.open(watermark_image_path) as img:
+        with open_image_safe(watermark_image_path) as img:
             rgba = img.convert("RGBA")
             alpha = rgba.getchannel("A").point(lambda p: int(p * opacity))
             rgba.putalpha(alpha)
             image_size = rgba.size
             image_reader = ImageReader(rgba)
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         for page in pdf.pages:
             mediabox = page.mediabox
             width = float(mediabox[2]) - float(mediabox[0])

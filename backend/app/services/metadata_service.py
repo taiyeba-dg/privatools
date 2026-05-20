@@ -1,13 +1,10 @@
-import uuid
-from datetime import datetime
-import pikepdf
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 
 def read_metadata(input_path: str) -> dict:
     """Read PDF metadata (title, author, subject, keywords, creation date)."""
-    with pikepdf.open(input_path) as pdf:
-        meta = pdf.open_metadata()
+    with safe_open_pdf(input_path) as pdf:
         docinfo = pdf.docinfo
 
         def _get(key: str) -> str:
@@ -32,10 +29,9 @@ def read_metadata(input_path: str) -> dict:
 def write_metadata(input_path: str, title: str = "", author: str = "",
                    subject: str = "", keywords: str = "") -> str:
     """Write PDF metadata fields and return path to the updated file."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"metadata_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("metadata", "pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         with pdf.open_metadata() as meta:
             if title:
                 meta["dc:title"] = title

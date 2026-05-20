@@ -9,6 +9,7 @@ from starlette.background import BackgroundTask
 from PIL import Image
 
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.route_helpers import read_upload
 from ..services import watermark_service
 
 router = APIRouter()
@@ -16,7 +17,11 @@ logger = logging.getLogger(__name__)
 
 MAX_WATERMARK_IMAGE_BYTES = 20 * 1024 * 1024  # 20 MB
 
-VALID_POSITIONS = {"center", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right", "diagonal", "tile"}
+VALID_POSITIONS = {
+    "center", "top", "bottom",
+    "top-left", "top-right", "bottom-left", "bottom-right",
+    "diagonal", "tile",
+}
 
 
 @router.post("/watermark")
@@ -35,12 +40,21 @@ async def watermark_pdf(
     clean_text = (text or "").strip()
     has_image_watermark = bool(watermark_image and watermark_image.filename)
     if not has_image_watermark and not clean_text:
-        raise HTTPException(status_code=400, detail="Provide watermark text or upload a watermark image")
+        raise HTTPException(
+            status_code=400,
+            detail="Provide watermark text or upload a watermark image",
+        )
     if clean_text and len(clean_text) > 200:
-        raise HTTPException(status_code=400, detail="Watermark text must be 200 characters or fewer")
+        raise HTTPException(
+            status_code=400,
+            detail="Watermark text must be 200 characters or fewer",
+        )
 
     if position not in VALID_POSITIONS:
-        raise HTTPException(status_code=400, detail=f"Position must be one of: {', '.join(sorted(VALID_POSITIONS))}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Position must be one of: {', '.join(sorted(VALID_POSITIONS))}",
+        )
 
     ensure_temp_dir()
     temp_path = None
@@ -48,22 +62,27 @@ async def watermark_pdf(
     watermark_image_path = None
 
     try:
-        content = await file.read()
-        if not content:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        # read_upload enforces the MAX_UPLOAD_MB cap and "file is empty" check
+        # in one place instead of re-deriving the logic here.
+        content = await read_upload(file, label=file.filename or "PDF file")
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
         if has_image_watermark and watermark_image is not None:
-            image_bytes = await watermark_image.read()
-            if not image_bytes:
-                raise HTTPException(status_code=400, detail="Uploaded watermark image is empty")
+            image_bytes = await read_upload(
+                watermark_image,
+                label=watermark_image.filename or "Watermark image",
+                max_bytes=MAX_WATERMARK_IMAGE_BYTES,
+            )
             try:
                 with Image.open(io.BytesIO(image_bytes)) as img:
                     img.verify()
             except Exception as exc:
-                raise HTTPException(status_code=400, detail="Watermark image must be a valid PNG/JPG/WebP file") from exc
+                raise HTTPException(
+                    status_code=400,
+                    detail="Watermark image must be a valid PNG/JPG/WebP file",
+                ) from exc
 
             suffix = Path(watermark_image.filename).suffix.lower() or ".png"
             watermark_image_path = get_temp_path(f"watermark_{uuid.uuid4().hex}{suffix}")

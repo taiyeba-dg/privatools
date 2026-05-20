@@ -370,3 +370,89 @@ writeFileSync(
 );
 const totalBodyKB = Math.round(blogContent.reduce((s, p) => s + p.body.length, 0) / 1024);
 console.log(`[blog-content] wrote ${blogContent.length} blog bodies (${totalBodyKB} KB total) → public/blog-content.json`);
+
+// ---------------------------------------------------------------------------
+// sitemap.xml — static fallback rendered at build time.
+//
+// The backend (backend/app/routes/sitemap.py) serves a live sitemap.xml with
+// today's date as lastmod, and that route takes precedence at runtime. This
+// static version exists so:
+//   1. crawlers that hit the bare frontend (no backend) still get a sitemap
+//   2. build-time verification (Task A8) can confirm URL counts are in range
+//   3. dev/preview environments without the backend running still expose all
+//      canonical URLs to local crawl tools
+//
+// Lists below must stay in sync with backend/app/routes/sitemap.py — the
+// `test_sitemap_*_slugs_*` tests in backend/tests/test_spa_fallback.py
+// enforce slug parity against the frontend data files. Keep this slug set
+// as the union of frontend `tools.ts` + `non-pdf-tools.ts` + blog posts,
+// not a hand-maintained list.
+// ---------------------------------------------------------------------------
+const BASE = "https://privatools.me";
+const TODAY = new Date().toISOString().slice(0, 10);
+
+// Per-tool priorities — high-volume tools get the bump.
+const HIGH_PRIORITY = new Set([
+    "merge-pdf", "split-pdf", "compress-pdf",
+    "pdf-to-word", "pdf-to-excel", "pdf-to-jpg",
+    "jpg-to-pdf", "word-to-pdf", "image-to-pdf",
+    "edit-pdf", "sign-pdf", "ocr-pdf",
+    "protect-pdf", "unlock-pdf", "rotate-pdf",
+    "redact-pdf", "watermark",
+    "image-compressor", "image-converter", "heic-to-jpg",
+    "remove-background", "video-to-gif",
+]);
+
+const entry = (loc, lastmod, priority, changefreq) =>
+    `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
+
+let sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+
+// Static / marketing / legal pages
+sitemap += entry(BASE, TODAY, "1.0", "daily");
+sitemap += entry(`${BASE}/about`, TODAY, "0.6", "monthly");
+sitemap += entry(`${BASE}/privacy`, "2026-03-29", "0.4", "yearly");
+sitemap += entry(`${BASE}/terms`, "2026-03-29", "0.4", "yearly");
+sitemap += entry(`${BASE}/batch`, TODAY, "0.7", "weekly");
+sitemap += entry(`${BASE}/pipeline`, TODAY, "0.7", "weekly");
+sitemap += entry(`${BASE}/compare`, TODAY, "0.7", "monthly");
+sitemap += entry(`${BASE}/blog`, TODAY, "0.8", "weekly");
+let urlCount = 8;
+
+// Blog posts
+for (const p of blogPosts) {
+    sitemap += entry(`${BASE}/blog/${p.slug}`, p.publishedAt, "0.6", "weekly");
+    urlCount++;
+}
+
+// Compare pages — keep in sync with backend/app/routes/sitemap.py COMPARE_PAGES
+const COMPARE_PAGES = [
+    "ilovepdf", "smallpdf", "adobe-acrobat", "sejda", "pdf24",
+    "foxit", "lightpdf", "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
+];
+for (const slug of COMPARE_PAGES) {
+    sitemap += entry(`${BASE}/compare/${slug}`, TODAY, "0.7", "monthly");
+    urlCount++;
+}
+
+// Tool pages — dedupe per category just in case
+const seenPdf = new Set();
+for (const t of pdfTools) {
+    if (seenPdf.has(t.slug)) continue;
+    seenPdf.add(t.slug);
+    const pri = HIGH_PRIORITY.has(t.slug) ? "0.9" : "0.8";
+    sitemap += entry(`${BASE}/tool/${t.slug}`, TODAY, pri, "weekly");
+    urlCount++;
+}
+const seenNp = new Set();
+for (const t of nonPdfTools) {
+    if (seenNp.has(t.slug)) continue;
+    seenNp.add(t.slug);
+    const pri = HIGH_PRIORITY.has(t.slug) ? "0.9" : "0.8";
+    sitemap += entry(`${BASE}/tools/${t.slug}`, TODAY, pri, "weekly");
+    urlCount++;
+}
+
+sitemap += `</urlset>\n`;
+writeFileSync(join(root, "public/sitemap.xml"), sitemap);
+console.log(`[sitemap] wrote ${urlCount} URLs → public/sitemap.xml (${Math.round(sitemap.length / 1024)} KB)`);

@@ -1,9 +1,11 @@
-import pikepdf
-import uuid
 import io
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
-from reportlab.pdfgen import canvas
+
+import pikepdf
 from reportlab.lib.colors import black
+from reportlab.pdfgen import canvas
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 VALID_POSITIONS = {
     "bottom-right",
@@ -22,10 +24,9 @@ def add_bates_numbering(
     digits: int = 6,
     position: str = "bottom-right",
 ) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"bates_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("bates", "pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         for i, page in enumerate(pdf.pages):
             bates_num = f"{prefix}{str(start_number + i).zfill(digits)}"
             mediabox = page.mediabox

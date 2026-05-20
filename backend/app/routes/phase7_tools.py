@@ -48,10 +48,10 @@ def _run_ffmpeg(args: list[str], label: str) -> None:
 @router.post("/mute-video")
 async def mute_video_endpoint(file: UploadFile = File(...)):
     """Strip the audio track from a video. Stream-copies video so it's instant."""
-    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
         raise HTTPException(status_code=400, detail="Please upload a video file (MP4, MOV, WebM, MKV, AVI, M4V).")
+    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     ensure_temp_dir()
     in_path = get_temp_path(f"mute_in_{uuid.uuid4().hex}{suffix}")
     out_path = get_temp_path(f"mute_out_{uuid.uuid4().hex}{suffix}")
@@ -74,10 +74,10 @@ async def mute_video_endpoint(file: UploadFile = File(...)):
 # ─── Reverse video (play backwards, audio reversed too) ──────────────────
 @router.post("/reverse-video")
 async def reverse_video_endpoint(file: UploadFile = File(...)):
-    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
         raise HTTPException(status_code=400, detail="Please upload a video file.")
+    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     ensure_temp_dir()
     in_path = get_temp_path(f"rev_in_{uuid.uuid4().hex}{suffix}")
     # Output as .mp4 regardless of input for max compatibility.
@@ -107,10 +107,10 @@ async def video_speed_endpoint(
     file: UploadFile = File(...),
     speed: float = Form(1.5, ge=0.25, le=4.0),
 ):
-    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_VIDEO:
         raise HTTPException(status_code=400, detail="Please upload a video file.")
+    data = await read_upload(file, label="Video", max_bytes=MAX_VIDEO_BYTES)
     ensure_temp_dir()
     in_path = get_temp_path(f"speed_in_{uuid.uuid4().hex}{suffix}")
     out_path = get_temp_path(f"speed_out_{uuid.uuid4().hex}.mp4")
@@ -159,15 +159,20 @@ async def audio_trim_endpoint(
     start: str = Form("00:00:00"),
     end: str = Form("00:00:30"),
 ):
-    data = await read_upload(file, label="Audio", max_bytes=MAX_VIDEO_BYTES)
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_AUDIO:
         raise HTTPException(status_code=400, detail="Please upload an audio file (MP3, WAV, AAC, FLAC, OGG, M4A).")
-    # Validate timestamps: H:MM:SS or seconds
+    data = await read_upload(file, label="Audio", max_bytes=MAX_VIDEO_BYTES)
+    # Validate timestamps: H:MM:SS or seconds. Use fullmatch + a hard length
+    # cap so an attacker can't pass a multi-MB form value to force pathological
+    # regex backtracking (defence-in-depth — Starlette already caps form size).
     import re as _re
-    if not _re.match(r"^(\d+:\d{1,2}:\d{1,2}(?:\.\d+)?|\d+(\.\d+)?)$", start.strip()):
+    _TS_RE = _re.compile(r"\d+:\d{1,2}:\d{1,2}(?:\.\d+)?|\d+(?:\.\d+)?", _re.ASCII)
+    s_strip = start.strip()
+    e_strip = end.strip()
+    if len(s_strip) > 32 or not _TS_RE.fullmatch(s_strip):
         raise HTTPException(status_code=400, detail="Start must be HH:MM:SS or seconds")
-    if not _re.match(r"^(\d+:\d{1,2}:\d{1,2}(?:\.\d+)?|\d+(\.\d+)?)$", end.strip()):
+    if len(e_strip) > 32 or not _TS_RE.fullmatch(e_strip):
         raise HTTPException(status_code=400, detail="End must be HH:MM:SS or seconds")
     ensure_temp_dir()
     in_path = get_temp_path(f"atrim_in_{uuid.uuid4().hex}{suffix}")
@@ -234,10 +239,10 @@ async def pixelate_image_endpoint(
     """
     from PIL import Image, ImageFilter
 
-    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_IMAGE:
         raise HTTPException(status_code=400, detail="Please upload an image file.")
+    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
     img = Image.open(io.BytesIO(data))
     if img.mode not in ("RGB", "RGBA"):
         img = img.convert("RGB")
@@ -286,10 +291,10 @@ async def rotate_image_endpoint(
     """Rotate an image by 90, 180, 270, or an arbitrary angle (counter-clockwise)."""
     from PIL import Image
 
-    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_IMAGE:
         raise HTTPException(status_code=400, detail="Please upload an image file.")
+    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
     img = Image.open(io.BytesIO(data))
     # Preserve alpha if PNG/WEBP — convert if needed
     has_alpha = img.mode in ("RGBA", "LA") or "transparency" in img.info
@@ -333,13 +338,13 @@ async def flip_image_endpoint(
     """Mirror an image horizontally or vertically."""
     from PIL import Image
 
-    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_IMAGE:
         raise HTTPException(status_code=400, detail="Please upload an image file.")
     direction = (direction or "").lower().strip()
     if direction not in ("horizontal", "vertical", "h", "v"):
         raise HTTPException(status_code=400, detail="direction must be 'horizontal' or 'vertical'")
+    data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
     img = Image.open(io.BytesIO(data))
     if img.mode not in ("RGB", "RGBA"):
         img = img.convert("RGBA" if (img.mode in ("LA",) or "transparency" in img.info) else "RGB")

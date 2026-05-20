@@ -4,15 +4,29 @@ import {
     Minus, Highlighter, Undo2, Trash2, Copy, ChevronRight, ZoomIn,
     ZoomOut, X, ChevronLeft,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob } from "@/lib/api";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 import { createPortal } from "react-dom";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// PDF.js is loaded dynamically the first time a user drops a file so the
+// ~440 KB library is excluded from the EditPdfUI route chunk. The promise
+// is memoised at module scope to avoid re-importing on every PDF open.
+type PdfjsLibType = typeof import("pdfjs-dist");
+let pdfjsLibPromise: Promise<PdfjsLibType> | null = null;
+const loadPdfjs = (): Promise<PdfjsLibType> => {
+    if (!pdfjsLibPromise) {
+        pdfjsLibPromise = (async () => {
+            const [lib, workerUrl] = await Promise.all([
+                import("pdfjs-dist"),
+                import("pdfjs-dist/build/pdf.worker.min.mjs?url"),
+            ]);
+            lib.GlobalWorkerOptions.workerSrc = workerUrl.default;
+            return lib;
+        })();
+    }
+    return pdfjsLibPromise;
+};
 
 const API_BASE = "/api";
 
@@ -41,11 +55,11 @@ type Edit = TextEdit | RectEdit | HighlightEdit | WhiteoutEdit;
 
 type ToolId = "text" | "highlight" | "whiteout" | "shapes";
 
-const TOOLS: { id: ToolId; icon: any; label: string }[] = [
-    { id: "text", icon: Type, label: "Text" },
-    { id: "highlight", icon: Highlighter, label: "Highlight" },
-    { id: "whiteout", icon: Eraser, label: "Whiteout" },
-    { id: "shapes", icon: Square, label: "Rectangle" },
+const TOOLS: { id: ToolId; icon: any; label: string; hint: string }[] = [
+    { id: "text",      icon: Type,        label: "Text",      hint: "Click to drop a text box" },
+    { id: "highlight", icon: Highlighter, label: "Highlight", hint: "Click + drag area to highlight" },
+    { id: "whiteout",  icon: Eraser,      label: "Whiteout",  hint: "Cover with a white rectangle" },
+    { id: "shapes",    icon: Square,      label: "Rectangle", hint: "Draw an outlined rectangle" },
 ];
 
 export function EditPdfUI() {
@@ -70,6 +84,7 @@ export function EditPdfUI() {
         if (!file) return;
         (async () => {
             try {
+                const pdfjsLib = await loadPdfjs();
                 const buf = await file.arrayBuffer();
                 const doc = await pdfjsLib.getDocument({ data: buf }).promise;
                 setPdfDoc(doc);
@@ -138,7 +153,9 @@ export function EditPdfUI() {
         setSelectedId(dup.id);
     };
 
-    const process = async () => {
+    const canProcess = !!file && edits.length > 0 && state !== "processing" && !edits.some(e => e.type === "text" && !(e as TextEdit).text.trim());
+
+    const process = useCallback(async () => {
         if (!file || edits.length === 0) return;
         setState("processing"); setError(null);
         try {
@@ -146,11 +163,23 @@ export function EditPdfUI() {
             fd.append("file", file);
             fd.append("edits", JSON.stringify(edits.map(({ id, ...rest }) => rest)));
             const res = await fetch(`${API_BASE}/edit-pdf`, { method: "POST", body: fd });
-            if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Unexpected error" })); throw new Error(b.detail); }
+            if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Could not apply edits" })); throw new Error(b.detail); }
             setResultBlob(await res.blob());
             setState("done");
-        } catch (e: any) { setError(e.message); setState("editing"); }
-    };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Could not apply edits";
+            setError(friendlyError(msg, "Couldn't edit that PDF."));
+            setState("editing");
+        }
+    }, [file, edits]);
+
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [canProcess, process]);
 
     const handleDownload = () => {
         if (resultBlob) downloadBlob(resultBlob, file ? `${file.name.replace(/\.pdf$/i, "")}_edited.pdf` : "edited.pdf");
@@ -161,14 +190,31 @@ export function EditPdfUI() {
 
     /* ═══ Done state ═══ */
     if (state === "done") return (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
-            <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
-            <h2 className="text-lg font-bold text-foreground mb-1">PDF Edited Successfully!</h2>
-            <p className="text-sm text-muted-foreground mb-6">{edits.length} edit{edits.length !== 1 ? "s" : ""} applied.</p>
-            <div className="flex justify-center gap-3 flex-wrap">
-                <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download</Button>
-                <Button variant="outline" className="border-border text-muted-foreground"
-                    onClick={() => { setFile(null); setState("idle"); setEdits([]); setResultBlob(null); setSelectedId(null); setPdfDoc(null); }}>Edit another</Button>
+        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="relative p-7 sm:p-9 animate-corner-extend">
+                <CornerMarks />
+                <div className="flex items-start gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="section-mark mb-2">Edits applied</p>
+                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                            <span className="italic text-accent">{edits.length}</span> change{edits.length !== 1 && "s"} written
+                        </h2>
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            <button onClick={handleDownload} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                <Download size={13} /> Download
+                            </button>
+                            <button
+                                onClick={() => { setFile(null); setState("idle"); setEdits([]); setResultBlob(null); setSelectedId(null); setPdfDoc(null); }}
+                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                            >
+                                Edit another
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -176,7 +222,7 @@ export function EditPdfUI() {
     /* ═══ Upload state ═══ */
     if (state === "idle") return (
         <FileUploadZone file={null} onFileSelect={pick} onClear={() => { }} accept=".pdf"
-            label="Upload a PDF to edit" hint="Add text, highlights, whiteout, and shapes — all processing stays on your server" />
+            label="Drop PDF to edit visually" hint="Click anywhere on a page to add text, highlight, white-out, or draw a rectangle · changes are server-applied on Apply" />
     );
 
     /* ═══ Full-viewport editor ═══ */
@@ -214,19 +260,27 @@ export function EditPdfUI() {
                 <div className="w-px h-5" style={{ background: "hsl(224 15% 16%)" }} />
 
                 {/* Apply */}
-                <button onClick={process}
-                    disabled={edits.length === 0 || edits.some(e => e.type === "text" && !(e as TextEdit).text.trim())}
-                    className={cn("flex items-center gap-1.5 rounded-lg px-5 py-1.5 text-sm font-semibold transition-all",
-                        edits.length > 0 ? "text-white shadow-lg" : "text-white/20 cursor-not-allowed")}
-                    style={edits.length > 0 ? { background: "hsl(216 90% 60%)", boxShadow: "0 0 20px -4px hsl(216 90% 60% / 0.4)" } : { background: "hsl(224 15% 14%)" }}>
-                    Apply changes <ChevronRight size={14} />
-                </button>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <button onClick={process}
+                        disabled={edits.length === 0 || edits.some(e => e.type === "text" && !(e as TextEdit).text.trim())}
+                        className={cn("flex items-center gap-1.5 rounded-lg px-5 py-1.5 text-sm font-semibold transition-all",
+                            edits.length > 0 ? "text-white shadow-lg" : "text-white/20 cursor-not-allowed")}
+                        style={edits.length > 0 ? { background: "hsl(216 90% 60%)", boxShadow: "0 0 20px -4px hsl(216 90% 60% / 0.4)" } : { background: "hsl(224 15% 14%)" }}>
+                        Apply changes <ChevronRight size={14} />
+                    </button>
+                    {canProcess && (
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-white/60 bg-white/10 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    )}
+                </div>
             </div>
 
             {/* ─── Toolbar ─── */}
             <div className="flex items-center justify-center gap-1 px-4 h-10 shrink-0" style={{ background: "hsl(224 15% 14%)", borderBottom: "1px solid hsl(224 15% 16%)" }}>
                 {TOOLS.map(t => (
                     <button key={t.id} onClick={() => setActiveTool(t.id)}
+                        title={t.hint}
+                        aria-label={`${t.label} tool — ${t.hint}`}
+                        aria-pressed={activeTool === t.id}
                         className={cn("flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium transition-all",
                             activeTool === t.id ? "text-white" : "text-white/35 hover:text-white/60")}
                         style={activeTool === t.id ? { background: "hsl(216 90% 60% / 0.15)", color: "hsl(216 90% 70%)" } : {}}>
@@ -239,7 +293,7 @@ export function EditPdfUI() {
                     <Undo2 size={14} /> Undo
                 </button>
                 <div className="flex-1" />
-                <span className="text-[10px] text-white/25">{edits.length ? `${edits.length} edit${edits.length !== 1 ? "s" : ""}` : "Click on the page to start editing"}</span>
+                <span className="text-[10px] text-white/25">{edits.length ? `${edits.length} edit${edits.length !== 1 ? "s" : ""} queued · Apply when ready` : `${TOOLS.find(t => t.id === activeTool)?.hint} · click on the page`}</span>
             </div>
 
             {/* ─── Canvas ─── */}
@@ -354,6 +408,18 @@ export function EditPdfUI() {
     );
 
     return createPortal(editor, document.body);
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
+    );
 }
 
 /* ═══ Floating text toolbar ═══ */

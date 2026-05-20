@@ -1,14 +1,14 @@
-import uuid
 import pikepdf
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 
 def set_permissions(input_path: str, owner_password: str = "",
                     allow_print: bool = True, allow_copy: bool = True,
                     allow_modify: bool = True, allow_annotate: bool = True) -> str:
     """Set PDF permissions (print, copy, modify, annotate)."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"perms_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("perms", "pdf")
 
     perms = pikepdf.Permissions(
         print_lowres=allow_print,
@@ -21,7 +21,7 @@ def set_permissions(input_path: str, owner_password: str = "",
         accessibility=True,
     )
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         pdf.save(
             str(output_path),
             encryption=pikepdf.Encryption(

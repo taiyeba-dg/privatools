@@ -7,10 +7,11 @@ import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
+from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..services import (
     barcode_service,
     collage_service,
@@ -79,7 +80,8 @@ def _validate_public_url(raw_url: str) -> str:
 
 # ─── URL → PDF ────────────────────────────────────────────
 @router.post("/url-to-pdf")
-async def url_to_pdf(url: str = Form(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def url_to_pdf(request: Request, url: str = Form(...)):
     """Convert a public URL to PDF."""
     safe_url = _validate_public_url(url)
     out = None

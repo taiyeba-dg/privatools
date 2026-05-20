@@ -1,97 +1,227 @@
-import { useState, useRef } from "react";
-import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle, Crop } from "lucide-react";
-import { Button } from "@/components/ui/button";
+/**
+ * CropUI — trim margins (top/right/bottom/left) from one or many PDFs in points.
+ * Multi-file via useMultiFileProcessor — same margins applied to every input.
+ */
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Loader2, CheckCircle2, AlertCircle, Crop, RotateCcw, Upload, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
+
+const MAX_PT = 500;
+const clamp = (v: string) => {
+    const n = parseInt(v, 10);
+    if (isNaN(n) || n < 0) return "0";
+    if (n > MAX_PT) return String(MAX_PT);
+    return String(n);
+};
 
 export function CropUI() {
-    const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
+    const proc = useMultiFileProcessor();
     const [top, setTop] = useState("50");
     const [bottom, setBottom] = useState("50");
     const [left, setLeft] = useState("30");
     const [right, setRight] = useState("30");
-    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
-    const pick = (fl: FileList) => { const f = fl[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); setState("idle"); setError(null); };
+    const canProcess = proc.entries.length > 0 && phase !== "processing";
+    const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
 
-    const process = async () => {
-        if (!file) return;
-        setState("processing"); setError(null);
-        try {
-            await processAndDownload("/crop", file.raw, buildOutputFilename(file.name, "cropped", "pdf"), { top, bottom, left, right });
-            setState("done");
-        } catch (e: any) { setError(e.message || "Cropping failed"); setState("idle"); }
-    };
+    const process = useCallback(async (retry = false) => {
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/crop",
+            outputSuffix: "cropped",
+            outputExt: "pdf",
+            params: { top, bottom, left, right },
+        }, retry);
+        setPhase("done");
+    }, [proc, top, bottom, left, right]);
 
-    if (state === "done") return (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
-            <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
-            <h2 className="text-lg font-bold text-foreground mb-1">Cropped!</h2>
-            <p className="text-sm text-muted-foreground mb-6">Your PDF margins have been adjusted.</p>
-            <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFile(null); setState("idle"); }}>Crop another</Button>
-        </div>
-    );
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            proc.downloadAll("archive_cropped");
+        }
+    }, [phase, proc]);
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
+                e.preventDefault();
+                void process(false);
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [canProcess, process]);
+
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        return (
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Cropped</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {isMulti
+                                    ? <><span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"} cropped{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                    : <><span className="italic text-accent">Margins</span> trimmed</>}
+                            </h2>
+                            {isMulti && proc.doneCount > 0 && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PDF downloaded"}
+                                </p>
+                            )}
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {proc.doneCount > 0 && (
+                                    <button onClick={() => proc.downloadAll("archive_cropped")} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
+                                    </button>
+                                )}
+                                <button onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
+                                    <RotateCcw size={12} /> Crop more
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
-            {!file ? (
-                <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                    onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
-                    onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-                    className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-                        drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
-                    <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
-                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
-                        <Crop size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
-                    </div>
-                    <p className="text-sm font-semibold text-foreground">Select a PDF to crop</p>
-                    <p className="text-xs text-muted-foreground">Drag & drop or click to browse</p>
+            <div
+                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
+                onClick={() => ref.current?.click()}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload PDFs"
+                className={cn(
+                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
+                )}
+            >
+                <CornerMarks />
+                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
+                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
+                    {proc.entries.length ? <Upload size={20} className="text-accent" strokeWidth={1.75} /> : <Crop size={20} className="text-accent" strokeWidth={1.75} />}
                 </div>
-            ) : (
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
+                    {proc.entries.length ? "Add more PDFs" : "Select PDFs to crop"}
+                </p>
+                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                    Multi-file OK · same margins applied to all · max {MAX_FILE_SIZE_LABEL} each
+                </p>
+            </div>
+
+            {proc.entries.length > 0 && (
                 <>
-                    <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary"><FileText size={14} className="text-muted-foreground" /></div>
-                        <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{file.name}</p><p className="text-xs text-muted-foreground">{file.size}</p></div>
-                        <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                        busy={phase === "processing"}
+                    />
+
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span><span className="text-accent">§</span> Crop margins</span>
+                            <span>1 pt = 1/72 inch</span>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 items-center">
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { label: "Top",    value: top,    set: setTop },
+                                    { label: "Bottom", value: bottom, set: setBottom },
+                                    { label: "Left",   value: left,   set: setLeft },
+                                    { label: "Right",  value: right,  set: setRight },
+                                ].map(m => (
+                                    <div key={m.label} className="space-y-1">
+                                        <label className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">{m.label}</label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                inputMode="numeric"
+                                                min={0} max={MAX_PT}
+                                                value={m.value}
+                                                onChange={e => m.set(clamp(e.target.value))}
+                                                onBlur={e => m.set(clamp(e.target.value || "0"))}
+                                                className="w-full rounded-md border border-border bg-card px-3 py-2 font-mono text-[14px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors pr-9"
+                                            />
+                                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted-foreground">pt</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="relative aspect-[3/4] bg-paper-2/40 border border-border rounded-md mx-auto w-full max-w-[180px]">
+                                <div
+                                    className="absolute border-2 border-accent bg-card transition-all duration-150"
+                                    style={{
+                                        top: `${Math.min(45, (parseInt(top) || 0) / MAX_PT * 100)}%`,
+                                        bottom: `${Math.min(45, (parseInt(bottom) || 0) / MAX_PT * 100)}%`,
+                                        left: `${Math.min(45, (parseInt(left) || 0) / MAX_PT * 100)}%`,
+                                        right: `${Math.min(45, (parseInt(right) || 0) / MAX_PT * 100)}%`,
+                                    }}
+                                />
+                                <span className="absolute top-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-accent">crop area</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-                        <p className="text-sm font-semibold text-foreground">Crop Margins (points)</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            {[
-                                { label: "Top", value: top, set: setTop },
-                                { label: "Bottom", value: bottom, set: setBottom },
-                                { label: "Left", value: left, set: setLeft },
-                                { label: "Right", value: right, set: setRight },
-                            ].map(m => (
-                                <div key={m.label} className="space-y-1.5">
-                                    <label className="text-xs font-medium text-muted-foreground">{m.label}</label>
-                                    <input type="number" inputMode="numeric" min="0" max="500" value={m.value} onChange={e => m.set(e.target.value)}
-                                        className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" />
-                                </div>
-                            ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">1 point = 1/72 inch. Set how much to trim from each edge.</p>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <button type="button" onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Cropping… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><Crop size={13} /> Crop {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "PDF"}</>}
+                        </button>
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        <button
+                            type="button"
+                            onClick={() => { setTop("50"); setBottom("50"); setLeft("30"); setRight("30"); }}
+                            className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1 ml-auto"
+                        >
+                            Reset to defaults
+                        </button>
                     </div>
-
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                            <AlertCircle size={15} className="shrink-0" />{error}
-                        </div>
-                    )}
-
-                    <Button onClick={process} disabled={state === "processing"} className="glow-primary">
-                        {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Cropping…</> : "Crop PDF"}
-                    </Button>
                 </>
             )}
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
     );
 }

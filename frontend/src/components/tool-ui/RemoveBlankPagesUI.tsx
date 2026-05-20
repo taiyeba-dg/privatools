@@ -1,67 +1,141 @@
-import { useState } from "react";
-import { Upload, FileText, Trash2, Download, Loader2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
+/**
+ * RemoveBlankPagesUI — auto-detect and drop blank pages.
+ * Workshop: file upload + sensitivity slider with live label.
+ */
+import { useCallback, useEffect, useState } from "react";
+import { Loader2, AlertCircle, FileX2, CheckCircle2, RotateCcw } from "lucide-react";
+import { friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
+import { FileUploadZone } from "./FileUploadZone";
 
 export function RemoveBlankPagesUI() {
-  const [file, setFile] = useState<File | null>(null);
-  const [sensitivity, setSensitivity] = useState([85]);
-  const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-  const [error, setError] = useState<string | null>(null);
+    const [file, setFile] = useState<File | null>(null);
+    const [sensitivity, setSensitivity] = useState(85);
+    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
+    const [error, setError] = useState<string | null>(null);
 
-  const handleFile = (f: File) => { setFile(f); setError(null); };
+    const canProcess = !!file && status !== "processing";
 
-  const process = async () => {
-    if (!file) return;
-    setStatus("processing"); setError(null);
-    try {
-      await processAndDownload("/remove-blank-pages", file, buildOutputFilename(file.name, "cleaned", "pdf"), { sensitivity: sensitivity[0] });
-      setStatus("done");
-    } catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
-  };
+    const process = useCallback(async () => {
+        if (!file) return;
+        setStatus("processing");
+        setError(null);
+        try {
+            await processAndDownload(
+                "/remove-blank-pages",
+                file,
+                buildOutputFilename(file.name, "cleaned", "pdf"),
+                { sensitivity }
+            );
+            setStatus("done");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Couldn't remove blank pages";
+            setError(friendlyError(msg, "Couldn't remove blank pages."));
+            setStatus("idle");
+        }
+    }, [file, sensitivity]);
 
-  return (
-    <div className="space-y-5">
-      <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-12 cursor-pointer hover:border-accent/40 hover:bg-secondary/50 transition-all">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary"><Upload size={22} className="text-muted-foreground" /></div>
-        <div className="text-center"><p className="text-sm font-medium text-foreground">Drop your PDF here</p><p className="text-xs text-muted-foreground mt-1">or click to browse</p></div>
-        <input type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files?.[0] && handleFile(e.target.files[0]); e.target.value = ""; }} />
-      </label>
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
+                e.preventDefault();
+                process();
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [canProcess, process]);
 
-      {file && (
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
-          <FileText size={16} className="text-primary shrink-0" />
-          <span className="text-sm text-foreground flex-1 truncate">{file.name}</span>
-          <button onClick={() => { setFile(null); setStatus("idle"); }} className="text-muted-foreground hover:text-foreground"><Trash2 size={14} /></button>
+    if (status === "done") return (
+        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="relative p-7 sm:p-9 animate-corner-extend">
+                <CornerMarks />
+                <div className="flex items-start gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="section-mark mb-2">Blanks removed</p>
+                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                            <span className="italic text-accent">Cleaned</span> PDF downloaded
+                        </h2>
+                        <button
+                            onClick={() => { setFile(null); setStatus("idle"); }}
+                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                        >
+                            <RotateCcw size={12} /> Clean another
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      )}
+    );
 
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-foreground">Detection Settings</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm text-foreground">Blank page sensitivity</Label>
-            <span className="text-sm font-mono text-primary">{sensitivity[0]}%</span>
-          </div>
-          <Slider min={50} max={100} step={5} value={sensitivity} onValueChange={setSensitivity} aria-label="Blank-page detection sensitivity, 50 to 100 percent" />
-          <p className="text-xs text-muted-foreground">Higher sensitivity removes pages with slight scan noise.</p>
+    return (
+        <div className="space-y-4">
+            <FileUploadZone
+                file={file}
+                onFileSelect={setFile}
+                onClear={() => setFile(null)}
+                accept=".pdf"
+                label="Drop PDF to clean"
+                hint="Auto-detects and removes empty pages"
+            />
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                    <span><span className="text-accent">§</span> Detection sensitivity</span>
+                    <span className="text-accent">{sensitivity}%</span>
+                </div>
+                <div className="p-4 space-y-3">
+                    <input
+                        type="range"
+                        min={50}
+                        max={100}
+                        step={5}
+                        value={sensitivity}
+                        onChange={e => setSensitivity(parseInt(e.target.value, 10))}
+                        className="w-full accent-accent"
+                        aria-label="Blank-page detection sensitivity"
+                    />
+                    <div className="flex justify-between font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
+                        <span>50 — strict (only truly blank)</span>
+                        <span>100 — loose (drops faint scans)</span>
+                    </div>
+                </div>
+            </div>
+
+            {error && (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    <AlertCircle size={13} className="shrink-0" />{error}
+                </div>
+            )}
+
+            <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    onClick={process}
+                    disabled={!canProcess}
+                    className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                    {status === "processing"
+                        ? <><Loader2 size={13} className="animate-spin" /> Scanning…</>
+                        : <><FileX2 size={13} /> Remove blank pages</>}
+                </button>
+                {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+            </div>
         </div>
-      </div>
+    );
+}
 
-      {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}
-
-      {status === "done" ? (
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
-          <p className="text-sm font-semibold text-emerald-400 mb-3">Blank pages removed!</p>
-          <Button variant="outline" onClick={() => { setFile(null); setStatus("idle"); }}>Process another</Button>
-        </div>
-      ) : (
-        <Button className="w-full" disabled={!file || status === "processing"} onClick={process}>
-          {status === "processing" ? <><Loader2 size={14} className="animate-spin mr-2" />Scanning…</> : "Remove Blank Pages"}
-        </Button>
-      )}
-    </div>
-  );
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
+    );
 }

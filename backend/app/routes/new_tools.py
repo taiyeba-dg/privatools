@@ -1,17 +1,24 @@
 """Routes for newly-added tools (split-in-half, highlight-pdf)."""
 
-from __future__ import annotations
+# NOTE: deliberately no `from __future__ import annotations`. The
+# `@limiter.limit(...)` decorator wraps the handler via `functools.wraps`,
+# and FastAPI's signature introspection then resolves the wrapped
+# function's ForwardRef-style annotations against the WRAPPER's
+# `__globals__` (slowapi.extension) — where names like `UploadFile`
+# aren't defined. Concrete annotations evaluate eagerly and dodge that
+# bug; `str | None` already works natively on Python 3.10+ here.
 
 import logging
 import uuid
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 import json
 import re
 
+from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..services import (
     highlight_service,
     pdf_to_svg_service,
@@ -177,7 +184,9 @@ _HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 @router.post("/smart-redact")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def smart_redact_endpoint(
+    request: Request,
     file: UploadFile = File(...),
     needles: str = Form(...),  # JSON-encoded list of strings
     color: str = Form("#000000"),

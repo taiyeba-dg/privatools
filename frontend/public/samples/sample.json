@@ -1,0 +1,30 @@
+{
+  "name": "PrivaTools",
+  "version": "1.4.0",
+  "description": "179 file tools that don't see your files",
+  "philosophy": {
+    "privacy": "local-first",
+    "uploads": false,
+    "tracking": false
+  },
+  "categories": ["pdf", "image", "video", "audio", "developer", "archive"],
+  "highlights": [
+    {
+      "feature": "Local AI",
+      "detail": "Summarize and redact entirely in your browser"
+    },
+    {
+      "feature": "Pipelines",
+      "detail": "Chain Merge -> Compress -> Watermark in one pass"
+    },
+    {
+      "feature": "Open source",
+      "detail": "MIT licensed, one Docker command to self-host"
+    }
+  ],
+  "stats": {
+    "tools": 179,
+    "categories": 6,
+    "average_jobs_per_user_per_day": 4
+  }
+}

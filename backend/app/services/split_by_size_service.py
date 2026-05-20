@@ -10,13 +10,14 @@ SAMPLE_EVERY pages, then trims back if we overshot.
 from __future__ import annotations
 
 import os
-import uuid
 import zipfile
 from pathlib import Path
 
 import pikepdf
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.cleanup import safe_open_pdf
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 # How many pages to add before re-checking the on-disk size. Lower = more
 # accurate boundary, higher = less work per chunk. 5 is a good compromise for
@@ -26,26 +27,25 @@ MIN_CHUNK_PAGES = 1
 
 
 def split_by_size(input_path: str, max_size_mb: float = 10.0) -> str:
-    ensure_temp_dir()
     if max_size_mb <= 0:
-        raise ValueError("max_size_mb must be > 0")
+        raise ValidationError("max_size_mb must be > 0")
 
     max_bytes = int(max_size_mb * 1024 * 1024)
-    zip_path = get_temp_path(f"split_size_{uuid.uuid4().hex}.zip")
+    zip_path = temp_output("split_size", "zip")
     chunk_paths: list[Path] = []
 
     def _save_chunk(pages_for_chunk: list) -> Path:
-        out_path = get_temp_path(f"chunk_{uuid.uuid4().hex}.pdf")
+        out_path = temp_output("chunk", "pdf")
         with pikepdf.Pdf.new() as out:
             out.pages.extend(pages_for_chunk)
             out.save(str(out_path))
         return out_path
 
     try:
-        with pikepdf.open(input_path) as src:
+        with safe_open_pdf(input_path) as src:
             total_pages = len(src.pages)
             if total_pages == 0:
-                raise ValueError("Cannot split an empty PDF.")
+                raise ValidationError("Cannot split an empty PDF.")
 
             chunks: list[list] = []
             current: list = []

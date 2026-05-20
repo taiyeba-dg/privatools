@@ -43,7 +43,14 @@ export function useHistory() {
 
     const addEntry = useCallback((entry: Omit<HistoryEntry, "timestamp">) => {
         setHistory(prev => {
-            // Remove duplicate, add to front
+            // De-dupe by slug. If the existing entry is < 10s old, skip the
+            // re-render entirely — useEffect-driven addEntry calls (page mount,
+            // hot-reload, navigation back) shouldn't churn localStorage every
+            // time. We still bump the timestamp for older revisits.
+            const existing = prev.find(e => e.slug === entry.slug);
+            if (existing && Date.now() - existing.timestamp < 10_000) {
+                return prev;
+            }
             const filtered = prev.filter(e => e.slug !== entry.slug);
             const updated = [{ ...entry, timestamp: Date.now() }, ...filtered].slice(0, MAX_ENTRIES);
             saveHistory(updated);
@@ -51,10 +58,37 @@ export function useHistory() {
         });
     }, []);
 
-    const clearHistory = useCallback(() => {
-        setHistory([]);
-        localStorage.removeItem(STORAGE_KEY);
+    const removeEntry = useCallback((slug: string) => {
+        setHistory(prev => {
+            const updated = prev.filter(e => e.slug !== slug);
+            saveHistory(updated);
+            return updated;
+        });
     }, []);
 
-    return { history, addEntry, clearHistory };
+    const clearHistory = useCallback(() => {
+        setHistory([]);
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* */ }
+    }, []);
+
+    return { history, addEntry, removeEntry, clearHistory };
+}
+
+/**
+ * Format a timestamp as "just now", "10 min ago", "2 hr ago", "Mar 5".
+ * Resolution is intentionally coarse — sidebar entries don't need second-level
+ * precision and refreshing every second would be wasteful.
+ */
+export function formatRelativeTime(ts: number, now: number = Date.now()): string {
+    const seconds = Math.max(0, Math.floor((now - ts) / 1000));
+    if (seconds < 30) return "just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hr ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    // Older than a week → just show the date
+    return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

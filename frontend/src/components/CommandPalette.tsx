@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ArrowRight, Clock, Command } from "lucide-react";
+import { Search, ArrowRight, Clock, GitBranch, Layers, BookOpen, Scale, Info, Home, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
 import { nonPdfTools, nonPdfCategoryMeta, NonPdfCategory } from "@/data/non-pdf-tools";
@@ -8,6 +8,12 @@ import { useHistory } from "@/hooks/useHistory";
 
 // Per-tool synonyms — invisible search hints so "join pdfs" finds merge-pdf,
 // "shrink" finds compress-pdf, etc. Keep concise; add only common phrasings.
+//
+// New synonyms should be added directly on the tool object's `synonyms`
+// field in `src/data/tools.ts` / `src/data/non-pdf-tools.ts`. This map is
+// kept as a legacy override — entries here are merged into the inline
+// field, so old aliases stay searchable without forcing churn on the
+// canonical tool catalog.
 const SYNONYMS: Record<string, string> = {
     "merge-pdf":        "join combine concat unite stitch",
     "split-pdf":        "separate divide cut slice break",
@@ -186,6 +192,14 @@ const SYNONYMS: Record<string, string> = {
     "markdown-html":    "md html convert preview rendering",
     "text-diff":        "compare text difference changes",
     "generate-barcode": "barcode ean upc code128 qr",
+    // Filling synonym gaps surfaced in the audit pass
+    "organize-pages":   "reorder rearrange shuffle drag drop thumbnails sort pages",
+    "resize-pdf":       "page size a4 letter legal dimensions scale physical",
+    "crop-pdf":         "trim margins box visible area edges cropper",
+    "pdf-to-tiff":      "tif scan archival fax multi-page convert",
+    "pdf-to-bmp":       "bitmap windows legacy convert",
+    "pdf-to-gif":       "convert pages animation gif",
+    "svg-to-png":       "vector to raster convert png image",
 };
 
 // Short label shown as a chip on the right of each result.
@@ -198,8 +212,56 @@ const _CAT_LABEL: Record<string, string> = {
     developer: "Dev", archive: "Archive", "document-office": "Docs",
 };
 
+// Quick actions — non-tool routes searchable from the palette. These
+// surface alongside tool results so users can jump to Pipeline / Batch /
+// etc. without leaving the keyboard. Marked `isAction: true` so the UI
+// can render them differently if needed.
+type QuickAction = {
+    slug: string;
+    name: string;
+    description: string;
+    icon: typeof Search;
+    href: string;
+    iconBg: string;
+    iconColor: string;
+    categoryLabel: string;
+    synonyms: string;
+    nameLower: string;
+    descLower: string;
+    synLower: string;
+    slugTokens: string[];
+    popularity: number;
+    isAction: true;
+};
+const QUICK_ACTIONS: QuickAction[] = [
+    { name: "Home",     description: "Browse every tool by suite",                   icon: Home,      href: "/",         slug: "go-home",       synonyms: "index landing main",        categoryLabel: "Go" },
+    { name: "Pipeline", description: "Chain tools — convert, optimize, redact",      icon: GitBranch, href: "/pipeline", slug: "go-pipeline",   synonyms: "chain workflow stages flow", categoryLabel: "Go" },
+    { name: "Batch",    description: "Apply one tool to many files at once",         icon: Layers,    href: "/batch",    slug: "go-batch",      synonyms: "bulk multiple many",        categoryLabel: "Go" },
+    { name: "Compare",  description: "PrivaTools vs. iLovePDF, Smallpdf, Adobe",     icon: Scale,     href: "/compare",  slug: "go-compare",    synonyms: "alternative competitor vs", categoryLabel: "Go" },
+    { name: "Blog",     description: "Privacy guides, recipes, release notes",       icon: BookOpen,  href: "/blog",     slug: "go-blog",       synonyms: "articles posts writing",    categoryLabel: "Go" },
+    { name: "About",    description: "The story behind PrivaTools",                  icon: Info,      href: "/about",    slug: "go-about",      synonyms: "story mission team",        categoryLabel: "Go" },
+].map(a => ({
+    ...a,
+    iconBg: "bg-accent/10",
+    iconColor: "text-accent",
+    nameLower: a.name.toLowerCase(),
+    descLower: a.description.toLowerCase(),
+    synLower: a.synonyms,
+    slugTokens: a.slug.split("-"),
+    popularity: 0,
+    isAction: true as const,
+}));
+
 // Build searchable index once. We pre-lowercase everything and bake
 // popularity into the tool itself so the scoring loop stays tight.
+//
+// Synonyms come from the tool's own `synonyms` field (preferred — kept
+// next to the tool definition) and fall back to the legacy SYNONYMS map
+// above. The two are merged so old palette overrides still work.
+function resolveSyn(slug: string, inline?: string): string {
+    const merged = [inline, SYNONYMS[slug]].filter(Boolean).join(" ");
+    return merged;
+}
 const allTools = [
     ...tools.map(t => ({
         slug: t.slug, name: t.name, description: t.description, icon: t.icon,
@@ -207,10 +269,10 @@ const allTools = [
         iconBg: categoryMeta[t.category as Category]?.iconBg ?? "bg-blue-500/10",
         iconColor: categoryMeta[t.category as Category]?.iconColor ?? "text-blue-400",
         categoryLabel: _CAT_LABEL[t.category] ?? "PDF",
-        synonyms: SYNONYMS[t.slug] ?? "",
+        synonyms: resolveSyn(t.slug, t.synonyms),
         nameLower: t.name.toLowerCase(),
         descLower: t.description.toLowerCase(),
-        synLower: (SYNONYMS[t.slug] ?? "").toLowerCase(),
+        synLower: resolveSyn(t.slug, t.synonyms).toLowerCase(),
         slugTokens: t.slug.split("-"),
         popularity: (t as { popularity?: number }).popularity ?? 999,
     })),
@@ -220,14 +282,19 @@ const allTools = [
         iconBg: nonPdfCategoryMeta[t.category as NonPdfCategory]?.iconBg ?? "bg-pink-500/10",
         iconColor: nonPdfCategoryMeta[t.category as NonPdfCategory]?.iconColor ?? "text-pink-400",
         categoryLabel: _CAT_LABEL[t.category] ?? "Tool",
-        synonyms: SYNONYMS[t.slug] ?? "",
+        synonyms: resolveSyn(t.slug, t.synonyms),
         nameLower: t.name.toLowerCase(),
         descLower: t.description.toLowerCase(),
-        synLower: (SYNONYMS[t.slug] ?? "").toLowerCase(),
+        synLower: resolveSyn(t.slug, t.synonyms).toLowerCase(),
         slugTokens: t.slug.split("-"),
         popularity: (t as { popularity?: number }).popularity ?? 999,
     })),
 ];
+
+// Type guard for quick actions in render. We can't compare against the
+// `isAction` property because spreading typescript intersections drops
+// undefined fields — `slug.startsWith("go-")` is the durable signal.
+const isQuickAction = (slug: string) => slug.startsWith("go-");
 
 export default function CommandPalette() {
     const [open, setOpen] = useState(false);
@@ -235,6 +302,9 @@ export default function CommandPalette() {
     const [selected, setSelected] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    // Remember the element that had focus when the palette opened so we
+    // can restore it on close — accessibility (WCAG 2.4.3 focus order).
+    const previouslyFocused = useRef<HTMLElement | null>(null);
     const navigate = useNavigate();
     const { history } = useHistory();
 
@@ -256,35 +326,60 @@ export default function CommandPalette() {
         return () => window.removeEventListener("keydown", handler);
     }, []);
 
-    // Focus input when opened
+    // Focus input when opened — and restore focus to the previous element
+    // on close so screen-reader / keyboard users don't lose context.
     useEffect(() => {
         if (open) {
+            previouslyFocused.current = document.activeElement as HTMLElement | null;
             setQuery("");
             setSelected(0);
             setTimeout(() => inputRef.current?.focus(), 50);
+        } else if (previouslyFocused.current) {
+            // Only restore if the element is still in the DOM.
+            if (document.contains(previouslyFocused.current)) {
+                previouslyFocused.current.focus();
+            }
+            previouslyFocused.current = null;
         }
     }, [open]);
 
     // Search results — multi-token fuzzy scoring with popularity tiebreaker.
-    const results = useMemo(() => {
+    // We type `Result` so both the recents branch and the popularity branch
+    // return the same shape (isRecent is optional) and downstream JSX can
+    // safely read `tool.isRecent`.
+    type Result = (typeof allTools)[number] & { isRecent?: boolean; isAction?: boolean };
+    // Searchable index = tools + quick actions. Built once per render so
+    // the score loop only iterates the merged list.
+    const searchable = useMemo(() => [...allTools, ...QUICK_ACTIONS], []);
+    const results = useMemo<Result[]>(() => {
         if (!query.trim()) {
-            // Show recent tools when no query — otherwise the most popular
-            // ones (since tools are already sorted by popularity).
+            // Empty state: recents (if any) then quick actions, then a
+            // handful of popular tools — gives users something to click
+            // without typing.
+            const initial: Result[] = [];
             if (history.length > 0) {
-                return history.slice(0, 8).map(h => {
+                const recents = history.slice(0, 5).map(h => {
                     const tool = allTools.find(t => t.slug === h.slug);
                     return tool ? { ...tool, isRecent: true } : null;
-                }).filter(Boolean) as (typeof allTools[0] & { isRecent?: boolean })[];
+                }).filter(Boolean) as Result[];
+                initial.push(...recents);
             }
-            return allTools.slice(0, 8);
+            // Always show the Go-* quick actions in the empty state.
+            initial.push(...QUICK_ACTIONS.map(a => ({ ...a, isAction: true })) as Result[]);
+            // Pad with popular tools.
+            const top = allTools.slice(0, 6) as Result[];
+            for (const t of top) {
+                if (!initial.find(r => r.slug === t.slug)) initial.push(t);
+            }
+            return initial.slice(0, 16);
         }
         const q = query.toLowerCase().trim();
         const qDash = q.replace(/\s+/g, "-");
         // Split query into tokens — "to pdf" → ["to", "pdf"]. Drops 1-letter
         // tokens so "a pdf" doesn't blow up scoring.
         const tokens = q.split(/[\s,]+/).filter(t => t.length >= 2);
-        const scored: { tool: typeof allTools[number]; score: number }[] = [];
-        for (const t of allTools) {
+        const scored: { tool: typeof searchable[number]; score: number }[] = [];
+        for (const t of searchable) {
             let score = 0;
             // 1. Exact / prefix / contains on the name.
             if (t.nameLower === q) score = 1000;
@@ -316,10 +411,15 @@ export default function CommandPalette() {
             }
         }
         scored.sort((a, b) => b.score - a.score);
-        return scored.slice(0, 16).map(s => s.tool);
-    }, [query, history]);
+        return scored.slice(0, 16).map(s => ({
+            ...s.tool,
+            isAction: isQuickAction(s.tool.slug),
+        })) as Result[];
+    }, [query, history, searchable]);
 
-    // Keyboard navigation
+    // Keyboard navigation — also includes a tiny focus trap. The palette has
+    // a single tab-stop (the input); Tab/Shift+Tab keep focus inside so users
+    // can't escape behind the backdrop with their keyboard.
     useEffect(() => {
         if (!open) return;
         const handler = (e: KeyboardEvent) => {
@@ -329,9 +429,21 @@ export default function CommandPalette() {
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 setSelected(prev => Math.max(prev - 1, 0));
+            } else if (e.key === "Home") {
+                e.preventDefault();
+                setSelected(0);
+            } else if (e.key === "End") {
+                e.preventDefault();
+                setSelected(Math.max(0, results.length - 1));
             } else if (e.key === "Enter" && results[selected]) {
                 e.preventDefault();
                 go(results[selected].href);
+            } else if (e.key === "Tab") {
+                // Focus trap: bounce focus back to the input. The palette has
+                // only the input as a real tab-stop — results are picked via
+                // ↑↓ + Enter.
+                e.preventDefault();
+                inputRef.current?.focus();
             }
         };
         window.addEventListener("keydown", handler);
@@ -352,7 +464,7 @@ export default function CommandPalette() {
             {/* Backdrop */}
             <div
                 aria-hidden="true"
-                className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md animate-in fade-in-0 duration-150"
+                className="fixed inset-0 z-[100] bg-foreground/35 backdrop-blur-md animate-in fade-in-0 duration-150"
                 onClick={() => setOpen(false)}
             />
 
@@ -361,81 +473,162 @@ export default function CommandPalette() {
                 role="dialog"
                 aria-modal="true"
                 aria-label="Search tools"
-                className="fixed inset-x-0 top-[12vh] z-[101] mx-auto w-full max-w-xl px-4 animate-in fade-in-0 slide-in-from-top-4 duration-200"
+                className="fixed inset-x-0 top-[12vh] z-[101] mx-auto w-full max-w-2xl px-4 animate-in fade-in-0 slide-in-from-top-4 duration-200"
             >
-                <div className="rounded-2xl border border-border/50 bg-card/95 backdrop-blur-2xl shadow-2xl shadow-black/60 overflow-hidden">
+                <div className="rounded-2xl border border-border-strong bg-paper shadow-[0_30px_60px_-20px_rgba(20,15,5,0.35)] dark:shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)] overflow-hidden">
 
-                    {/* Animated gradient line */}
-                    <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-60 animate-pulse" />
+                    {/* Header dateline */}
+                    <div className="px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">
+                        <span><span className="text-accent">§</span> Command palette</span>
+                        <span>{query.trim()
+                            ? `${results.length} match${results.length !== 1 ? "es" : ""}`
+                            : `${allTools.length} tools indexed`}
+                        </span>
+                    </div>
 
-                    {/* Search input */}
-                    <div className="flex items-center gap-3.5 px-5 py-4 border-b border-border/40">
-                        <Search size={20} strokeWidth={2} className="shrink-0 text-muted-foreground/80" />
+                    {/* Search input — combobox pattern (WAI-ARIA APG):
+                       role=combobox + aria-controls=results + aria-activedescendant
+                       so screen readers announce the highlighted option as ↑↓
+                       move through results without focus leaving the input. */}
+                    <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border">
+                        <Search size={17} strokeWidth={1.8} className="shrink-0 text-muted-foreground" aria-hidden="true" />
                         <input
                             ref={inputRef}
-                            className="flex-1 bg-transparent outline-none text-base text-foreground placeholder:text-muted-foreground/80"
-                            placeholder="Search tools…"
+                            role="combobox"
+                            aria-expanded="true"
+                            aria-controls="command-palette-results"
+                            aria-autocomplete="list"
+                            aria-activedescendant={results[selected] ? `cmdk-opt-${results[selected].slug}` : undefined}
+                            className="flex-1 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground/85"
+                            placeholder={`Search ${allTools.length} tools or jump to a page…`}
                             value={query}
                             onChange={e => { setQuery(e.target.value); setSelected(0); }}
+                            aria-label="Search tools"
                         />
-                        <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground/80 font-mono bg-secondary/40 rounded-md px-2 py-1">
+                        <kbd className="hidden sm:inline-flex items-center font-mono text-[10px] text-muted-foreground bg-secondary border border-border rounded px-1.5 py-0.5">
                             ESC
                         </kbd>
                     </div>
 
+                    {/* Live region — announce result count to assistive tech
+                       so a SR user knows how many tools matched their query. */}
+                    <div role="status" aria-live="polite" className="sr-only">
+                        {query.trim()
+                            ? `${results.length} ${results.length === 1 ? "result" : "results"} for ${query.trim()}`
+                            : ""}
+                    </div>
+
                     {/* Results */}
-                    <div ref={listRef} className="max-h-[55vh] overflow-y-auto py-2 px-2">
+                    <div
+                        ref={listRef}
+                        id="command-palette-results"
+                        role="listbox"
+                        aria-label="Search results"
+                        className="max-h-[55vh] overflow-y-auto py-2 px-2"
+                    >
                         {!query.trim() && history.length > 0 && (
-                            <div className="flex items-center gap-1.5 px-3 py-2">
-                                <Clock size={11} className="text-muted-foreground/80" />
-                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/80">Recent</span>
+                            <div className="flex items-center gap-1.5 px-3 pt-2 pb-1.5">
+                                <span className="text-accent font-mono text-[10px]">§</span>
+                                <Clock size={10} className="text-muted-foreground" />
+                                <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recent</span>
                             </div>
                         )}
 
                         {results.length > 0 ? (
                             results.map((tool, i) => {
                                 const Ic = tool.icon;
+                                // First non-recent and first quick-action and
+                                // first tool transitions get a section label
+                                // when no query is active.
+                                const prev = results[i - 1];
+                                const startActions = !query.trim() && tool.isAction && !prev?.isAction;
+                                const startTools = !query.trim() && !tool.isAction && !tool.isRecent && (prev?.isAction || prev?.isRecent);
                                 return (
-                                    <button
-                                        key={tool.slug}
-                                        onClick={() => go(tool.href)}
-                                        onMouseEnter={() => setSelected(i)}
-                                        className={cn(
-                                            "flex items-center gap-3.5 w-full px-3.5 py-3 rounded-xl text-left transition-colors",
-                                            i === selected ? "bg-primary/8" : "hover:bg-secondary/50"
+                                    <div key={tool.slug}>
+                                        {startActions && (
+                                            <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
+                                                <span className="text-accent font-mono text-[10px]">§</span>
+                                                <Zap size={10} className="text-muted-foreground" />
+                                                <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Go to</span>
+                                            </div>
                                         )}
-                                    >
-                                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", tool.iconBg)}>
-                                            <Ic size={15} strokeWidth={1.75} className={tool.iconColor} />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-heading font-semibold text-foreground truncate">{tool.name}</p>
-                                            <p className="text-[11px] text-muted-foreground/80 truncate">{tool.description}</p>
-                                        </div>
-                                        <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-bold tracking-wider uppercase text-muted-foreground/70 bg-secondary/40 border border-border/40 shrink-0">
-                                            {tool.categoryLabel}
-                                        </span>
-                                        {i === selected && <ArrowRight size={13} className="shrink-0 text-primary/60" />}
-                                    </button>
+                                        {startTools && (
+                                            <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
+                                                <span className="text-accent font-mono text-[10px]">§</span>
+                                                <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">All tools</span>
+                                            </div>
+                                        )}
+                                        <button
+                                            id={`cmdk-opt-${tool.slug}`}
+                                            role="option"
+                                            aria-selected={i === selected}
+                                            tabIndex={-1}
+                                            onClick={() => go(tool.href)}
+                                            onMouseEnter={() => setSelected(i)}
+                                            className={cn(
+                                                "group flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-left transition-colors",
+                                                i === selected
+                                                    ? "bg-accent/10 ring-1 ring-accent/30"
+                                                    : "hover:bg-secondary/60"
+                                            )}
+                                        >
+                                            <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", tool.iconBg)}>
+                                                <Ic size={14} strokeWidth={1.75} className={tool.iconColor} />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className={cn("text-[14px] font-semibold tracking-[-0.01em] truncate", i === selected ? "text-foreground" : "text-foreground/90")}>
+                                                    {tool.name}
+                                                </p>
+                                                <p className="text-[11.5px] text-muted-foreground truncate leading-snug">{tool.description}</p>
+                                            </div>
+                                            <span className={cn(
+                                                "hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold tracking-[0.10em] uppercase shrink-0",
+                                                tool.isAction
+                                                    ? "text-accent bg-accent/10 border border-accent/30"
+                                                    : "text-muted-foreground bg-secondary border border-border"
+                                            )}>
+                                                {tool.categoryLabel}
+                                            </span>
+                                            <ArrowRight
+                                                size={12}
+                                                className={cn(
+                                                    "shrink-0 transition-all",
+                                                    i === selected ? "text-accent opacity-100 translate-x-0" : "text-muted-foreground/40 opacity-0 -translate-x-1"
+                                                )}
+                                            />
+                                        </button>
+                                    </div>
                                 );
                             })
                         ) : (
-                            <div className="py-12 text-center">
-                                <p className="text-sm text-muted-foreground/80">No tools found</p>
+                            <div className="py-14 px-6 text-center">
+                                <p className="font-display text-[18px] font-medium text-foreground italic">No tools match “{query}”.</p>
+                                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-2">
+                                    Try “merge”, “compress”, “redact”, or “qr”
+                                </p>
+                                <button
+                                    onClick={() => { setQuery(""); inputRef.current?.focus(); }}
+                                    className="mt-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-secondary/60 hover:bg-secondary hover:border-border-strong font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    Clear search
+                                </button>
                             </div>
                         )}
                     </div>
 
                     {/* Footer hint */}
-                    <div className="px-5 py-2.5 border-t border-border/30 flex items-center gap-5">
-                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/35">
-                            <kbd className="font-mono bg-secondary/40 rounded-md px-1.5 py-0.5">↑↓</kbd> navigate
+                    <div className="px-5 py-2.5 border-t border-border bg-paper-2/40 flex items-center gap-4 font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                            <kbd className="font-mono bg-secondary border border-border rounded px-1.5 py-0.5">↑↓</kbd> navigate
                         </span>
-                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/35">
-                            <kbd className="font-mono bg-secondary/40 rounded-md px-1.5 py-0.5">↵</kbd> open
+                        <span className="flex items-center gap-1.5">
+                            <kbd className="font-mono bg-secondary border border-border rounded px-1.5 py-0.5">↵</kbd> open
                         </span>
-                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/35">
-                            <kbd className="font-mono bg-secondary/40 rounded-md px-1.5 py-0.5">esc</kbd> close
+                        <span className="flex items-center gap-1.5">
+                            <kbd className="font-mono bg-secondary border border-border rounded px-1.5 py-0.5">esc</kbd> close
+                        </span>
+                        <span className="ml-auto hidden sm:inline">
+                            <span className="text-accent">§</span> Private search — never leaves your browser
                         </span>
                     </div>
                 </div>

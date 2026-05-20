@@ -1,11 +1,11 @@
 import json
 import os
-import uuid
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 # Caps to keep one request from spinning up an unbounded ReportLab canvas.
 MAX_INPUT_BYTES = 5 * 1024 * 1024     # 5 MB JSON file
@@ -14,11 +14,13 @@ MAX_PRETTY_LINES = 50_000              # ~5,000 PDF pages worst-case
 
 
 def _validate_depth(obj, depth: int = 0) -> None:
-    """Raise ValueError if the JSON tree nests more than MAX_DEPTH levels —
+    """Raise :class:`ValidationError` if the JSON tree nests more than MAX_DEPTH levels —
     protects ReportLab from generating a comically long PDF.
     """
     if depth > MAX_DEPTH:
-        raise ValueError(f"JSON nests deeper than {MAX_DEPTH} levels — too deep to render.")
+        raise ValidationError(
+            f"JSON nests deeper than {MAX_DEPTH} levels — too deep to render."
+        )
     if isinstance(obj, dict):
         for v in obj.values():
             _validate_depth(v, depth + 1)
@@ -29,14 +31,18 @@ def _validate_depth(obj, depth: int = 0) -> None:
 
 def json_to_pdf(input_path: str) -> str:
     """Convert a JSON file to a formatted PDF."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"json_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("json", "pdf")
 
     if os.path.getsize(input_path) > MAX_INPUT_BYTES:
-        raise ValueError(f"JSON file too large (>{MAX_INPUT_BYTES // (1024 * 1024)} MB).")
+        raise ValidationError(
+            f"JSON file too large (>{MAX_INPUT_BYTES // (1024 * 1024)} MB)."
+        )
 
-    with open(input_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with open(input_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as exc:
+        raise ValidationError(f"Invalid JSON: {exc.msg}") from exc
 
     _validate_depth(data)
 
@@ -53,7 +59,7 @@ def json_to_pdf(input_path: str) -> str:
     formatted = json.dumps(data, indent=2, ensure_ascii=False)
     lines = formatted.split("\n")
     if len(lines) > MAX_PRETTY_LINES:
-        raise ValueError(
+        raise ValidationError(
             f"JSON would render {len(lines):,} lines (cap {MAX_PRETTY_LINES:,}) — "
             "consider trimming the input."
         )

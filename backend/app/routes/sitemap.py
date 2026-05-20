@@ -1,9 +1,18 @@
 """
 Sitemap endpoint — generates sitemap.xml dynamically for all tool pages.
+
+The sitemap body is a deterministic function of `date.today()` and the
+in-process slug catalogues — there is no per-request data, so it is
+safe to memoize the rendered XML for an entire day. We key the cache on
+the date so the lastmod field stays fresh; once the wall-clock rolls
+over to a new UTC day we render once and serve the bytes to every
+subsequent request until the next rollover.
 """
-from datetime import date
-from fastapi import APIRouter
-from fastapi.responses import Response
+from datetime import date, datetime, time, timezone
+from functools import lru_cache
+from fastapi import APIRouter, Request
+
+from ..utils.caching import cache_response
 
 router = APIRouter()
 
@@ -42,6 +51,8 @@ PDF_TOOLS = [
     "smart-redact",
     # Round-O additions
     "pdf-to-jpg", "pdf-to-png",
+    # v1.2.0 PDF additions
+    "web-optimize-pdf", "split-by-text", "pdf-to-html", "pdf-to-rtf",
 ]
 
 # Newly-added video tools (also non-PDF — listed here so the route map stays
@@ -88,6 +99,14 @@ NON_PDF_TOOLS = [
     "image-palette", "pixelate-image",
     # v1.5.1 — image rotate/flip
     "rotate-image", "flip-image",
+    # Video / audio / dev tools previously kept in _VIDEO_TOOLS_NEW —
+    # merged here so the canonical NON_PDF_TOOLS list matches the frontend
+    # data file exactly (used by the test_spa_fallback consistency check).
+    "video-to-pdf", "video-converter", "video-resizer", "video-thumbnail",
+    "gif-to-mp4", "add-subtitles",
+    "video-merge", "audio-merge", "subtitle-converter",
+    "password-generator", "uuid-generator", "lorem-ipsum",
+    "word-counter", "color-converter", "url-encoder",
 ]
 
 # v1.2.0 PDF additions (sitemap was missing these)
@@ -100,7 +119,9 @@ COMPARE_PAGES = [
     "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
 ]
 
-# Blog posts with their published dates
+# Blog posts with their published dates. Must stay in sync with
+# _BLOG_POSTS in app/seo_meta.py — otherwise crawlers see meta for a
+# post but the sitemap omits the URL (or vice versa).
 BLOG_POSTS: dict[str, str] = {
     "compress-pdf-without-losing-quality": "2026-03-22",
     "merge-pdf-files-online-free": "2026-03-22",
@@ -111,6 +132,15 @@ BLOG_POSTS: dict[str, str] = {
     "split-pdf-online-free": "2026-03-29",
     "redact-pdf-free-guide": "2026-03-29",
     "best-free-online-pdf-editors-2026": "2026-03-29",
+    # May 2026 batch — were present in seo_meta but missing from the
+    # sitemap, which meant Google never discovered them via the canonical
+    # entry point.
+    "ai-pdf-summarizer-browser-2026": "2026-05-15",
+    "ilovepdf-alternatives-2026": "2026-05-15",
+    "redact-pdf-permanently-guide": "2026-05-15",
+    "online-pdf-tools-tracking-you": "2026-05-15",
+    "heic-conversion-guide-2026": "2026-05-15",
+    "decode-jwt-tokens-safely-guide": "2026-05-15",
 }
 
 BASE_URL = "https://privatools.me"
@@ -124,6 +154,21 @@ _TOOLS_LAUNCH_DATE = "2026-03-15"
 _COMPARE_DATE = "2026-03-22"
 _FROZEN: set[str] = set()
 
+# Tools that get a priority bump in the sitemap. These are the highest-
+# search-volume PDF/utility verbs (merge, compress, split, etc.) — Google
+# uses sitemap priority as a soft crawl-budget hint, so giving the
+# headline tools 0.9 routes more attention to them than to the long tail.
+_HIGH_PRIORITY_TOOLS: set[str] = {
+    "merge-pdf", "split-pdf", "compress-pdf",
+    "pdf-to-word", "pdf-to-excel", "pdf-to-jpg",
+    "jpg-to-pdf", "word-to-pdf", "image-to-pdf",
+    "edit-pdf", "sign-pdf", "ocr-pdf",
+    "protect-pdf", "unlock-pdf", "rotate-pdf",
+    "redact-pdf", "watermark",
+    "image-compressor", "image-converter", "heic-to-jpg",
+    "remove-background", "video-to-gif",
+}
+
 
 def _entry(url: str, lastmod: str, priority: str, changefreq: str) -> str:
     return (
@@ -136,24 +181,35 @@ def _entry(url: str, lastmod: str, priority: str, changefreq: str) -> str:
     )
 
 
-@router.get("/sitemap.xml")
-async def sitemap():
-    today = date.today().isoformat()
+def _tool_priority(slug: str) -> str:
+    return "0.9" if slug in _HIGH_PRIORITY_TOOLS else "0.8"
 
+
+@lru_cache(maxsize=8)
+def _build_sitemap_xml(today_iso: str) -> bytes:
+    """Render the sitemap XML for the given ISO date.
+
+    Pure function of the date string and the module-level slug lists.
+    Cached in an LRU keyed on the date — most days we serve from the
+    first entry; older keys age out when the date rolls over. Size 8
+    is more than enough headroom (current + 7 retained days) while
+    keeping the cache small. At ~30-50 KB per entry, the cap is well
+    under 1 MB total.
+    """
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
 
     # Static pages — homepage updated daily. Other pages get today's date
     # too because we ship multiple improvements per day; sitemap.lastmod
     # is meant to signal "this content has been touched recently".
-    xml += _entry(BASE_URL, today, "1.0", "daily")
-    xml += _entry(f"{BASE_URL}/about", today, "0.6", "monthly")
+    xml += _entry(BASE_URL, today_iso, "1.0", "daily")
+    xml += _entry(f"{BASE_URL}/about", today_iso, "0.6", "monthly")
     xml += _entry(f"{BASE_URL}/privacy", "2026-03-29", "0.4", "yearly")
     xml += _entry(f"{BASE_URL}/terms", "2026-03-29", "0.4", "yearly")
-    xml += _entry(f"{BASE_URL}/batch", today, "0.7", "weekly")
-    xml += _entry(f"{BASE_URL}/pipeline", today, "0.7", "weekly")
-    xml += _entry(f"{BASE_URL}/compare", today, "0.7", "monthly")
-    xml += _entry(f"{BASE_URL}/blog", today, "0.8", "weekly")
+    xml += _entry(f"{BASE_URL}/batch", today_iso, "0.7", "weekly")
+    xml += _entry(f"{BASE_URL}/pipeline", today_iso, "0.7", "weekly")
+    xml += _entry(f"{BASE_URL}/compare", today_iso, "0.7", "monthly")
+    xml += _entry(f"{BASE_URL}/blog", today_iso, "0.8", "weekly")
 
     # Blog posts — use actual published date
     for slug, published in BLOG_POSTS.items():
@@ -161,18 +217,45 @@ async def sitemap():
 
     # Compare pages
     for slug in COMPARE_PAGES:
-        xml += _entry(f"{BASE_URL}/compare/{slug}", today, "0.8", "monthly")
+        xml += _entry(f"{BASE_URL}/compare/{slug}", today_iso, "0.8", "monthly")
 
-    # Tool pages — bump lastmod daily (we iterate constantly).
-    for slug in PDF_TOOLS:
-        xml += _entry(f"{BASE_URL}/tool/{slug}", today, "0.8", "weekly")
-    for slug in _PDF_V12:
-        xml += _entry(f"{BASE_URL}/tool/{slug}", today, "0.8", "weekly")
-    for slug in NON_PDF_TOOLS:
-        xml += _entry(f"{BASE_URL}/tools/{slug}", today, "0.8", "weekly")
-    for slug in _VIDEO_TOOLS_NEW:
-        xml += _entry(f"{BASE_URL}/tools/{slug}", today, "0.8", "weekly")
+    # Tool pages — bump lastmod daily (we iterate constantly). High-volume
+    # tools get priority 0.9 (vs 0.8 for long tail) so crawlers re-fetch
+    # them more often.
+    # Dedupe across the four source lists so each canonical URL appears
+    # exactly once in the sitemap — duplicate entries are technically valid
+    # XML but they waste crawl budget and split priority signals.
+    seen_pdf: set[str] = set()
+    for slug in (*PDF_TOOLS, *_PDF_V12):
+        if slug in seen_pdf:
+            continue
+        seen_pdf.add(slug)
+        xml += _entry(f"{BASE_URL}/tool/{slug}", today_iso, _tool_priority(slug), "weekly")
+    seen_nonpdf: set[str] = set()
+    for slug in (*NON_PDF_TOOLS, *_VIDEO_TOOLS_NEW):
+        if slug in seen_nonpdf:
+            continue
+        seen_nonpdf.add(slug)
+        xml += _entry(f"{BASE_URL}/tools/{slug}", today_iso, _tool_priority(slug), "weekly")
 
     xml += "</urlset>"
 
-    return Response(content=xml, media_type="application/xml")
+    return xml.encode("utf-8")
+
+
+@router.get("/sitemap.xml")
+async def sitemap(request: Request):
+    today = date.today()
+    body = _build_sitemap_xml(today.isoformat())
+    # Last-Modified = start of today UTC — a stable validator that only
+    # changes when the sitemap's content can have changed (the cache key
+    # rolls over at midnight, so the timestamp tracks it).
+    last_modified = datetime.combine(today, time.min, tzinfo=timezone.utc)
+    return cache_response(
+        body,
+        media_type="application/xml",
+        max_age=3600,             # 1 hour
+        stale_while_revalidate=3600,
+        request=request,
+        last_modified=last_modified,
+    )

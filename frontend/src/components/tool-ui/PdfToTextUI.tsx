@@ -1,50 +1,52 @@
-import { useState, useRef } from "react";
-import { Upload, Copy, Download, Loader2, X, FileText, AlertCircle, CheckCircle2, Hash, Type } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { uploadFileGetJson, formatFileSize } from "@/lib/api";
+/**
+ * PdfToTextUI — extract readable text + word/char/page stats.
+ * Workshop: stat tiles (Words / Chars / Pages) + mono output panel.
+ */
+import { useState, useEffect, useCallback } from "react";
+import { Copy, Download, Loader2, AlertCircle, CheckCircle2, Hash, Type, FileText, RotateCcw, ScanText, AlignLeft } from "lucide-react";
+import { cn, friendlyError } from "@/lib/utils";
+import { uploadFileGetJson } from "@/lib/api";
+import { FileUploadZone } from "./FileUploadZone";
 
-interface ExtractedResult {
-    text: string;
-    pages?: number;
-}
+interface ExtractedResult { text: string; pages?: number; }
 
 export function PdfToTextUI() {
-    const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
+    const [file, setFile] = useState<File | null>(null);
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<ExtractedResult | null>(null);
     const [copied, setCopied] = useState(false);
-    const [drag, setDrag] = useState(false);
-    const ref = useRef<HTMLInputElement>(null);
 
-    const pick = (fl: FileList) => {
-        const f = fl[0];
-        setFile({ name: f.name, size: formatFileSize(f.size), raw: f });
-        setState("idle");
-        setError(null);
-        setResult(null);
-    };
-
-    const process = async () => {
+    const process = useCallback(async () => {
         if (!file) return;
-        setState("processing");
-        setError(null);
+        setState("processing"); setError(null);
         try {
-            const data = await uploadFileGetJson<ExtractedResult>("/pdf-to-text", file.raw);
+            const data = await uploadFileGetJson<ExtractedResult>("/pdf-to-text", file);
             setResult(data);
             setState("done");
-        } catch (e: any) {
-            setError(e.message || "Text extraction failed");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Text extraction failed";
+            setError(friendlyError(msg, "Couldn't extract text from that PDF."));
             setState("idle");
         }
-    };
+    }, [file]);
+
+    // Cmd+Enter to submit
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && file && state === "idle") {
+                e.preventDefault(); process();
+            }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [file, state, process]);
 
     const handleCopy = async () => {
         if (!result) return;
         await navigator.clipboard.writeText(result.text);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setTimeout(() => setCopied(false), 1800);
     };
 
     const handleDownload = () => {
@@ -52,110 +54,120 @@ export function PdfToTextUI() {
         const blob = new Blob([result.text], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = url;
-        a.download = "extracted_text.txt";
-        document.body.appendChild(a);
-        a.click();
+        a.href = url; a.download = "extracted_text.txt";
+        document.body.appendChild(a); a.click();
         setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
     };
 
     const wordCount = result?.text ? result.text.split(/\s+/).filter(Boolean).length : 0;
     const charCount = result?.text ? result.text.length : 0;
+    const lineCount = result?.text ? result.text.split(/\r?\n/).filter(l => l.trim().length > 0).length : 0;
+
+    // Heuristic: empty/whitespace-only extraction → almost certainly an image-only PDF.
+    const isLikelyImageOnly = result !== null && wordCount < 5 && (result.pages ?? 0) > 0;
 
     if (state === "done" && result) return (
-        <div className="space-y-4">
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <CheckCircle2 size={22} className="text-emerald-400" strokeWidth={1.5} />
-                    <h2 className="text-lg font-bold text-foreground">Text Extracted!</h2>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                    <div className="rounded-xl border border-border bg-card p-3 text-center">
-                        <Type size={14} className="mx-auto mb-1 text-muted-foreground" />
-                        <p className="text-lg font-bold text-foreground">{wordCount.toLocaleString()}</p>
-                        <p className="text-[11px] text-muted-foreground">Words</p>
-                    </div>
-                    <div className="rounded-xl border border-border bg-card p-3 text-center">
-                        <Hash size={14} className="mx-auto mb-1 text-muted-foreground" />
-                        <p className="text-lg font-bold text-foreground">{charCount.toLocaleString()}</p>
-                        <p className="text-[11px] text-muted-foreground">Characters</p>
-                    </div>
-                    {result.pages && (
-                        <div className="rounded-xl border border-border bg-card p-3 text-center">
-                            <FileText size={14} className="mx-auto mb-1 text-muted-foreground" />
-                            <p className="text-lg font-bold text-foreground">{result.pages}</p>
-                            <p className="text-[11px] text-muted-foreground">Pages</p>
+        <div className="space-y-4 animate-fade-up">
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden">
+                <div className="relative px-5 py-4 border-b border-accent/20 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <ScanText size={18} className="text-accent" strokeWidth={1.75} />
                         </div>
-                    )}
-                </div>
-
-                {/* Text area */}
-                <div className="rounded-xl border border-border bg-background overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
-                        <span className="text-xs font-medium text-muted-foreground">Extracted Text</span>
-                        <button onClick={handleCopy}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                            {copied ? <><CheckCircle2 size={12} className="text-emerald-400" /> Copied!</> : <><Copy size={12} /> Copy all</>}
-                        </button>
+                        <div className="flex-1">
+                            <p className="section-mark">Text extracted</p>
+                            <h2 className="font-display text-[20px] font-bold text-foreground tracking-[-0.02em] leading-tight">
+                                <span className="italic text-accent">{wordCount.toLocaleString()}</span> words
+                            </h2>
+                        </div>
                     </div>
-                    <textarea
-                        readOnly
-                        value={result.text}
-                        className="w-full h-64 px-4 py-3 text-sm text-foreground bg-transparent resize-y font-mono leading-relaxed focus:outline-none"
-                    />
                 </div>
 
-                {/* Actions */}
-                <div className="flex justify-center gap-3 flex-wrap mt-4">
-                    <Button className="glow-primary" onClick={handleDownload}><Download size={15} />Download as .txt</Button>
-                    <Button variant="outline" onClick={handleCopy}><Copy size={15} />{copied ? "Copied!" : "Copy to Clipboard"}</Button>
-                    <Button variant="outline" className="border-border text-muted-foreground"
-                        onClick={() => { setFile(null); setState("idle"); setResult(null); }}>Extract another</Button>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-4">
+                    {[
+                        { label: "Words", value: wordCount, icon: Type },
+                        { label: "Chars", value: charCount, icon: Hash },
+                        { label: "Lines", value: lineCount, icon: AlignLeft },
+                        ...(result.pages ? [{ label: "Pages", value: result.pages, icon: FileText }] : []),
+                    ].map(s => (
+                        <div key={s.label} className="rounded-lg border border-border bg-card p-3 text-center">
+                            <s.icon size={13} className="mx-auto mb-1 text-muted-foreground" />
+                            <p className="font-display text-[19px] font-bold tracking-[-0.02em] text-foreground">{s.value.toLocaleString()}</p>
+                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">{s.label}</p>
+                        </div>
+                    ))}
                 </div>
+            </div>
+
+            {/* Image-only PDF hint — text extraction came back empty */}
+            {isLikelyImageOnly && (
+                <div className="rounded-xl border border-copper/30 bg-copper-soft/40 px-4 py-3 text-[13px] text-foreground animate-fade-in">
+                    <div className="flex items-start gap-2">
+                        <AlertCircle size={13} className="text-copper shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                            <p className="font-display font-semibold text-[13.5px]">Looks like an image-only PDF</p>
+                            <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                <span className="text-accent">§</span> Try the <a href="/tools/ocr-pdf" className="underline hover:text-accent">OCR PDF</a> tool to extract text from scanned pages.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                    <span><span className="text-accent">§</span> Extracted text</span>
+                    <button onClick={handleCopy} className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-accent hover:opacity-80 transition-opacity", copied && "animate-copy-flash")}>
+                        {copied ? <><CheckCircle2 size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
+                    </button>
+                </div>
+                <textarea
+                    readOnly
+                    value={result.text}
+                    className="w-full h-72 bg-paper-2/30 px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground resize-y outline-none"
+                />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+                <button onClick={handleDownload} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                    <Download size={13} /> Download .txt
+                </button>
+                <button onClick={() => { setFile(null); setState("idle"); setResult(null); }} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
+                    <RotateCcw size={12} /> Extract another
+                </button>
             </div>
         </div>
     );
 
     return (
         <div className="space-y-4">
-            {!file ? (
-                <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                    onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
-                    onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-                    className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-                        drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
-                    <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
-                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
-                        <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
-                    </div>
-                    <p className="text-sm font-semibold text-foreground">Select a PDF to extract text from</p>
-                    <p className="text-xs text-muted-foreground">All readable text will be extracted and displayed</p>
+            <FileUploadZone file={file} onFileSelect={f => { setFile(f); setResult(null); }} onClear={() => { setFile(null); setResult(null); }} accept=".pdf" label="Drop PDF to extract text" hint="All readable text · word & character stats" />
+            {error && (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
-            ) : (
-                <>
-                    <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary"><FileText size={14} className="text-muted-foreground" /></div>
-                        <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{file.name}</p><p className="text-xs text-muted-foreground">{file.size}</p></div>
-                        <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
-                    </div>
-
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                            <AlertCircle size={15} className="shrink-0" />{error}
-                        </div>
-                    )}
-
-                    <Button onClick={process} disabled={state === "processing"} className="glow-primary">
-                        {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Extracting…</> : "Extract Text"}
-                    </Button>
-                </>
+            )}
+            {file && (
+                <div className="flex items-center gap-3">
+                    <button onClick={process} disabled={state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                        {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Extracting…</> : <><ScanText size={13} /> Extract text</>}
+                    </button>
+                    {state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                </div>
             )}
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
     );
 }

@@ -1,8 +1,9 @@
 import logging
 import uuid
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
+from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..services import ocr_service
 
@@ -21,7 +22,9 @@ VALID_LANGS = {
 
 
 @router.post("/ocr")
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
 async def ocr_pdf(
+    request: Request,
     file: UploadFile = File(...),
     lang: str = Form("eng"),
     output: str = Form("json"),

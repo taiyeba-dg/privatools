@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect, useRef, Suspense, lazy, type ComponentType } from "react";
+import { useEffect, useRef, useState, Suspense, lazy, type ComponentType } from "react";
 import { toolBySlug, tools, categoryMeta, type Category } from "@/data/tools";
 import { postsForTool } from "@/data/blog";
 import { Button } from "@/components/ui/button";
@@ -8,16 +8,24 @@ import { Shield, ChevronRight, Github, ExternalLink, ArrowUpRight, ArrowRight, L
 import { useHistory } from "@/hooks/useHistory";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
-import { EditorialMasthead } from "@/components/EditorialMasthead";
-import { EditorialFooter } from "@/components/EditorialFooter";
 import { ToolIllustration } from "@/components/ToolIllustration";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ToolSkeleton } from "@/components/ToolSkeleton";
 
 type AnyModule = Record<string, unknown>;
 
-function lazyNamed<T extends AnyModule>(loader: () => Promise<T>, exportName: keyof T) {
+// Preserve the exported component's prop signature through React.lazy so
+// the call site can keep passing its actual props without TS treating it
+// as ComponentType<{}>.
+function lazyNamed<T extends AnyModule, K extends keyof T>(
+  loader: () => Promise<T>,
+  exportName: K,
+) {
   return lazy(async () => ({
-    default: (await loader())[exportName] as ComponentType,
-  }));
+    default: (await loader())[exportName] as T[K] extends ComponentType<infer P>
+      ? ComponentType<P>
+      : never,
+  })) as unknown as T[K] extends ComponentType<infer P> ? ComponentType<P> : never;
 }
 
 const LazyMergeUI = lazyNamed(() => import("@/components/tool-ui/MergeUI"), "MergeUI");
@@ -366,6 +374,9 @@ export default function ToolPage() {
   const { slug } = useParams<{ slug: string }>();
   const tool = slug ? toolBySlug[slug] : null;
   const { addEntry } = useHistory();
+  // Bumped by the per-tool ErrorBoundary's onReset to force a remount of
+  // the tool subtree (clears bad in-memory state without a full reload).
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     if (tool && slug) {
@@ -377,7 +388,7 @@ export default function ToolPage() {
 
   if (!tool) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <p className="font-serif-body text-muted-foreground mb-4">Tool not found.</p>
           <Link to="/" className="btn-editorial inline-block">← Back to all tools</Link>
@@ -390,56 +401,70 @@ export default function ToolPage() {
 
   const cc = `cat-${tool.category}`;
 
+  const ToolIcon = tool.icon;
   return (
-    <div className="min-h-screen bg-background">
-      <EditorialMasthead />
-
-      <main id="main-content">
-      {/* ─── Hero header (with subtle category-tinted backdrop) ────────── */}
-      <section aria-label="Tool description" className={cn("relative border-b border-border", cc)}>
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute inset-0 opacity-[0.04]" style={{ background: "radial-gradient(50% 70% at 50% 0%, hsl(var(--tile)), transparent 70%)" }} />
-        </div>
-        <div className="relative mx-auto max-w-5xl px-4 sm:px-6 pt-10 pb-12 sm:pt-14 sm:pb-16">
+    <div className={cn("h-full flex flex-col", cc)}>
+      {/* ─── Workspace header — slim, like Pipeline/Batch ───────────── */}
+      <header className="flex items-start justify-between gap-3 px-5 sm:px-7 py-5 border-b border-border bg-paper-2/30">
+        <div className="min-w-0 flex-1">
           {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="text-[12px] text-muted-foreground mb-6 flex items-center gap-1.5">
+          <nav aria-label="Breadcrumb" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground mb-3 flex items-center gap-2">
+            <span className="text-accent">§</span>
             <Link to="/" className="hover:text-foreground transition-colors">All tools</Link>
-            <span className="text-muted-foreground/80">/</span>
-            <Link to={`/?tab=${tool.category}`} className="hover:text-foreground transition-colors capitalize">{meta.label.toLowerCase()}</Link>
-            <span className="text-muted-foreground/80">/</span>
-            <span className="text-foreground font-medium">{tool.name}</span>
+            <span className="opacity-50">/</span>
+            <Link to={`/?tab=${tool.category}`} className="hover:text-foreground transition-colors">{meta.label}</Link>
+            <span className="opacity-50">/</span>
+            <span className="text-foreground">{tool.name}</span>
           </nav>
 
-          <div className="flex items-start gap-4 sm:gap-6 max-w-3xl">
-            <div className="shrink-0 hidden sm:inline-flex">
-              <ToolIllustration slug={slug!} fallback={tool.icon} catClass={cc} size="lg" />
-            </div>
+          <div className="flex items-start gap-4">
+            {/* Tool icon */}
+            <span className="hidden sm:inline-flex icon-tile icon-tile-lg shrink-0">
+              <ToolIcon size={22} strokeWidth={1.75} />
+            </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="section-flag">{meta.label}</span>
                 {tool.clientOnly && (
-                  <span className="section-flag !text-emerald-700 dark:!text-emerald-400 !border-emerald-500/30">
+                  <span className="section-flag" style={{ color: "hsl(var(--accent))", borderColor: "hsl(var(--accent) / 0.4)", background: "hsl(var(--accent) / 0.08)" }}>
                     100% Browser
                   </span>
                 )}
               </div>
-              <h1 className="text-[36px] sm:text-[52px] font-bold text-foreground tracking-[-0.04em] leading-[1.05]">
+              <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
                 {tool.name}
               </h1>
-              <p className="mt-4 text-[15px] sm:text-[17px] text-muted-foreground leading-relaxed">
+              <p className="mt-1.5 text-[14px] text-muted-foreground leading-relaxed max-w-2xl">
                 {tool.longDescription || tool.description}
               </p>
             </div>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* ─── THE TOOL — full bleed, no chrome ────────────────────────── */}
-      <section aria-label="Tool" className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
+      {/* ─── Tool workspace ────────────────────────────────────────── */}
+      <section aria-label="Tool" className="flex-1 overflow-y-auto">
+       <div className="mx-auto max-w-5xl px-4 sm:px-6 py-7 sm:py-10">
         <div className="mb-8">
-          <Suspense fallback={<ToolLoadingCard />}>
-            <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
-          </Suspense>
+          {/*
+            Per-tool ErrorBoundary so a single tool throwing during render
+            doesn't take down the AppShell, sidebar, or other tools.
+            - key={slug} resets the boundary when the user navigates to a
+              different tool (otherwise the fallback would stick around).
+            - onReset bumps a key on the Suspense subtree to force a clean
+              remount of the lazy component without a full page reload.
+          */}
+          <ErrorBoundary
+            key={slug}
+            scope="tool"
+            onReset={() => setResetKey((k) => k + 1)}
+          >
+            <Suspense fallback={<ToolSkeleton />}>
+              <div key={resetKey}>
+                <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
+              </div>
+            </Suspense>
+          </ErrorBoundary>
         </div>
 
         {/* Trust strip + pipeline cross-sell */}
@@ -461,28 +486,34 @@ export default function ToolPage() {
         {/* Related tools — horizontal scroll category nav */}
         <CategoryToolNav currentSlug={slug!} category={tool.category} />
 
-        {/* How it works + sidebar — secondary content below the fold */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-8 lg:gap-10 mt-10">
+        {/* How it works + sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 lg:gap-12 mt-12">
           <div>
-            <h2 className="text-base font-semibold text-foreground tracking-tight mb-4">How it works</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex items-baseline gap-3 mb-5">
+              <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
+              <h2 className="font-display text-[22px] font-semibold text-foreground tracking-[-0.02em]">How it works</h2>
+              <span className="flex-1 h-px bg-border ml-2" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { step: 1, title: "Upload",  desc: tool.clientOnly ? "Drag & drop or click. Processing happens in your browser." : "Drag & drop or click. Files go to your self-hosted server, not third-party clouds." },
-                { step: 2, title: "Configure", desc: tool.clientOnly ? "Adjust settings; nothing is uploaded." : "Adjust any settings, then process instantly." },
-                { step: 3, title: "Download", desc: "Result ready immediately — no waiting, no email." },
+                { step: "01", title: "Upload",    desc: tool.clientOnly ? "Drag & drop or click. Processing happens in your browser." : "Drag & drop or click. Files go to your self-hosted server, not third-party clouds." },
+                { step: "02", title: "Configure", desc: tool.clientOnly ? "Adjust settings; nothing is uploaded." : "Adjust any settings, then process instantly." },
+                { step: "03", title: "Download",  desc: "Result ready immediately — no waiting, no email." },
               ].map(s => (
-                <div key={s.step} className="rounded-lg border border-border bg-card p-4">
-                  <div className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-accent/15 text-accent text-[11px] font-semibold mb-2">{s.step}</div>
-                  <p className="text-[13px] font-semibold text-foreground mb-1">{s.title}</p>
-                  <p className="text-[12px] text-muted-foreground leading-snug">{s.desc}</p>
+                <div key={s.step} className="rounded-xl border border-border bg-card p-5">
+                  <div className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent mb-3">{s.step}</div>
+                  <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.015em] mb-1.5">{s.title}</p>
+                  <p className="text-[13px] text-muted-foreground leading-relaxed">{s.desc}</p>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Related</h3>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h3 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
+                <span className="text-accent">§</span> Related
+              </h3>
               <div className="space-y-0.5">
                 {relatedTools.map(t => {
                   const TIcon = t.icon;
@@ -497,13 +528,13 @@ export default function ToolPage() {
             </div>
 
             <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
-              className="block rounded-lg border border-border bg-card p-4 hover:border-accent/40 transition-colors group">
-              <div className="flex items-center gap-2 mb-1">
-                <Github size={13} className="text-foreground" />
-                <span className="text-[13px] font-semibold text-foreground">Open source</span>
+              className="block rounded-xl border border-border bg-card p-5 hover:border-accent/40 transition-colors group">
+              <div className="flex items-center gap-2 mb-2">
+                <Github size={14} className="text-foreground" />
+                <span className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">Open source</span>
               </div>
-              <p className="text-[12px] text-muted-foreground leading-snug mb-2">Free forever, MIT licensed. Audit, fork, or self-host.</p>
-              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-accent">
+              <p className="text-[12.5px] text-muted-foreground leading-relaxed mb-3">Free forever, MIT licensed. Audit, fork, or self-host.</p>
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] tracking-[0.06em] uppercase font-medium text-accent">
                 View on GitHub <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </span>
             </a>
@@ -519,13 +550,15 @@ export default function ToolPage() {
                 : fallback;
               if (posts.length === 0) return null;
               return (
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Related articles</h3>
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <h3 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
+                    <span className="text-accent">§</span> Related articles
+                  </h3>
                   <div className="space-y-0.5">
                     {posts.map(post => (
                       <Link key={post.slug} to={`/blog/${post.slug}`} className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-secondary/60 transition-colors group">
                         <BookOpen size={13} strokeWidth={1.75} className="text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
-                        <span className="text-[12px] text-foreground/80 group-hover:text-foreground transition-colors flex-1 leading-snug">{post.title}</span>
+                        <span className="text-[12.5px] text-foreground/80 group-hover:text-foreground transition-colors flex-1 leading-snug">{post.title}</span>
                       </Link>
                     ))}
                   </div>
@@ -534,9 +567,8 @@ export default function ToolPage() {
             })()}
           </div>
         </div>
+       </div>
       </section>
-      </main>
-      <EditorialFooter />
     </div>
   );
 }

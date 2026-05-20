@@ -1,6 +1,7 @@
 import pikepdf
-import uuid
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 
 def make_booklet(input_path: str) -> str:
@@ -10,10 +11,9 @@ def make_booklet(input_path: str) -> str:
     double-sided and folded in half, they form a booklet.
     Page count is padded to a multiple of 4 with blank pages.
     """
-    ensure_temp_dir()
-    output_path = get_temp_path(f"booklet_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("booklet", "pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         n = len(pdf.pages)
         # Pad to multiple of 4
         while n % 4 != 0:
@@ -35,10 +35,9 @@ def make_booklet(input_path: str) -> str:
                 order.append(i)
                 order.append(n - 1 - i)
 
-        new_pdf = pikepdf.Pdf.new()
-        for idx in order:
-            new_pdf.pages.append(pdf.pages[idx])
-
-        new_pdf.save(str(output_path))
+        with pikepdf.Pdf.new() as new_pdf:
+            for idx in order:
+                new_pdf.pages.append(pdf.pages[idx])
+            new_pdf.save(str(output_path))
 
     return str(output_path)

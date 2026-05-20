@@ -2,6 +2,7 @@ import { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Category } from "@/data/tools";
+import { prefetchRoute, loadToolPage } from "@/lib/prefetch";
 
 interface ToolCardProps {
   slug: string;
@@ -23,12 +24,21 @@ const categoryConfig: Record<Category, { icon: string; bg: string; glow: string 
 
 export function ToolCard({ slug, icon: Icon, name, description, category }: ToolCardProps) {
   const cfg = categoryConfig[category];
+  // Warm the ToolPage shell on hover so click-to-render is near-instant.
+  // Per-tool UI chunks (CompressUI, MergeUI, etc.) still load on demand
+  // inside ToolPage — this only fetches the route shell once.
+  const prefetch = () => prefetchRoute(loadToolPage);
   return (
     <Link
       to={`/tool/${slug}`}
+      onMouseEnter={prefetch}
+      onFocus={prefetch}
+      onTouchStart={prefetch}
       className={cn(
         "group flex flex-col items-start gap-3.5 rounded-xl border border-border bg-card p-4 text-left",
-        "transition-all duration-200 hover:-translate-y-0.5 w-full",
+        // Workshop-paper feel: subtle lift + soft drop shadow on hover, never iOS-glossy.
+        "transition-all duration-200 ease-[cubic-bezier(0.16,0.84,0.44,1)]",
+        "hover:-translate-y-0.5 hover:shadow-[0_4px_18px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_4px_18px_rgba(0,0,0,0.4)] w-full",
         cfg.glow
       )}
     >

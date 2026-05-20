@@ -1,10 +1,14 @@
 import uuid
 import zipfile
 import logging
+from io import BytesIO
 from typing import List, Optional
+
+import pikepdf
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
+
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..utils.route_helpers import safe_filename, read_upload, unique_arcname
 from ..services import protect_service
@@ -13,6 +17,22 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 MAX_FILES = 100
+
+
+def _is_already_encrypted(content: bytes) -> bool:
+    """Detect whether a PDF blob is already password-protected without raising.
+
+    Returns True if pikepdf reports the PDF as encrypted, or if it refuses to
+    open without a password. Falls back to False on any other error so the
+    standard PDF-validation path can produce the friendlier message.
+    """
+    try:
+        with pikepdf.open(BytesIO(content)) as pdf:
+            return bool(pdf.is_encrypted)
+    except pikepdf.PasswordError:
+        return True
+    except Exception:
+        return False
 
 
 @router.post("/protect")
@@ -46,6 +66,11 @@ async def protect_pdf(
                 raise HTTPException(status_code=400, detail=f"File {file.filename} is not a PDF")
             content = await read_upload(file, label=file.filename or "unknown")
             validate_pdf_content(content)
+            if _is_already_encrypted(content):
+                raise HTTPException(
+                    status_code=400,
+                    detail="This PDF is already password-protected — unlock it first",
+                )
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
             temp_path.write_bytes(content)
             input_paths.append(str(temp_path))
