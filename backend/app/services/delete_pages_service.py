@@ -1,42 +1,26 @@
-import pikepdf
-import uuid
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+from ..utils.cleanup import safe_open_pdf
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
+from ..utils.page_range import parse_page_range
 
 
 def parse_page_ranges(pages_str: str, total_pages: int) -> list[int]:
-    """Parse a page range string like '2,4,6' into a list of 0-based page indices."""
-    indices = set()
-    for part in pages_str.split(","):
-        part = part.strip()
-        if not part:
-            continue
-        if "-" in part:
-            start_s, end_s = part.split("-", 1)
-            start = int(start_s.strip())
-            end = int(end_s.strip())
-            for p in range(start, end + 1):
-                if 1 <= p <= total_pages:
-                    indices.add(p - 1)
-        else:
-            p = int(part)
-            if 1 <= p <= total_pages:
-                indices.add(p - 1)
-    return sorted(indices)
+    """Compatibility shim — delegates to utils.page_range.parse_page_range."""
+    return parse_page_range(pages_str, total_pages, allow_empty=True)
 
 
 def delete_pages(input_path: str, pages_str: str) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"deleted_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("deleted", "pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         total = len(pdf.pages)
-        to_delete = set(parse_page_ranges(pages_str, total))
+        to_delete = set(parse_page_range(pages_str, total, allow_empty=True))
         if not to_delete:
-            raise ValueError("No valid pages specified")
+            raise ValidationError("No valid pages specified")
         if len(to_delete) >= total:
-            raise ValueError("Cannot delete all pages from a PDF")
+            raise ValidationError("Cannot delete all pages from a PDF")
 
-        # Delete in reverse order to keep indices stable
+        # Delete in reverse order to keep indices stable.
         for idx in sorted(to_delete, reverse=True):
             del pdf.pages[idx]
 

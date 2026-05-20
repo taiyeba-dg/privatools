@@ -14,3 +14,16 @@ PyMuPDF==1.24.0
 python-docx
 openpyxl
 python-pptx
+# Prod-only deps — these mirror the root /requirements.txt and cover the
+# tools that the slim dev image doesn't need (background removal, HEIC
+# decode, barcode/QR generators, markdown rendering, defused XML parsing).
+# The backend imports each of these directly somewhere under app/services.
+pillow-heif
+onnxruntime
+rembg
+cairosvg
+python-barcode
+qrcode
+pyzbar
+defusedxml
+mistune

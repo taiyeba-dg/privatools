@@ -1,23 +1,24 @@
 import secrets
+
 import pikepdf
-import uuid
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 
 def protect_pdf(
     input_path: str,
     password: str,
-    owner_pw: str = None,
+    owner_pw: str | None = None,
     allow_print: bool = True,
     allow_extract: bool = False,
     allow_modify: bool = False,
 ) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"protected_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("protected", "pdf")
 
     owner_password = owner_pw if owner_pw else secrets.token_hex(16)
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         permissions = pikepdf.Permissions(
             extract=allow_extract,
             modify_annotation=allow_modify,

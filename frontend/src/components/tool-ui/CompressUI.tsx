@@ -1,321 +1,534 @@
+/**
+ * CompressUI — shrink one or many PDFs.
+ * Workshop: dropzone, intensity meter, level cards with live estimated savings,
+ * Cmd+Enter, corner-marked success state with before/after bars.
+ */
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize, processFilesAndDownload, MAX_FILE_SIZE_LABEL, buildOutputFilename } from "@/lib/api";
+import { toast } from "sonner";
+import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, Minimize2, RotateCcw, Undo2, Copy, Sparkles, Info } from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn, friendlyError } from "@/lib/utils";
+import { uploadFile, downloadBlob, formatFileSize, processFilesAndDownload, MAX_FILE_SIZE_LABEL, buildOutputFilename, formatErrorForClipboard } from "@/lib/api";
+import { useFormPersist } from "@/hooks/useFormPersist";
+import { loadSamplePdf } from "@/lib/sample-files";
+import { PREFILL_KEY } from "@/components/FirstRunWelcome";
+import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 
 type Level = "light" | "recommended" | "extreme" | "custom";
 type CompressFile = { id: string; name: string; size: string; bytes: number; raw: File };
 let fileId = 0;
 
 const levels: { id: Level; label: string; desc: string; saving: string; intensity: number }[] = [
-  { id: "light", label: "Light", desc: "Minimal quality loss", saving: "~20% smaller", intensity: 25 },
-  { id: "recommended", label: "Recommended", desc: "Balanced quality & size", saving: "~50% smaller", intensity: 55 },
-  { id: "extreme", label: "Extreme", desc: "Maximum compression", saving: "~75% smaller", intensity: 85 },
-  { id: "custom", label: "Custom", desc: "Set JPEG quality + max image dimension yourself", saving: "Tunable", intensity: 65 },
+    { id: "light",       label: "Light",       desc: "Minimal quality loss",                              saving: "~20% smaller", intensity: 25 },
+    { id: "recommended", label: "Recommended", desc: "Balanced quality & size",                           saving: "~50% smaller", intensity: 55 },
+    { id: "extreme",     label: "Extreme",     desc: "Maximum compression",                               saving: "~75% smaller", intensity: 85 },
+    { id: "custom",      label: "Custom",      desc: "Set JPEG quality + max image dimension yourself", saving: "Tunable",      intensity: 65 },
 ];
 
+// Map level → expected fraction saved (rough; tuned to match server behavior)
+const SAVINGS_BY_LEVEL: Record<Exclude<Level, "custom">, number> = {
+    light: 0.20,
+    recommended: 0.50,
+    extreme: 0.75,
+};
+
+const COMPRESS_DEFAULTS = {
+    level: "recommended" as Level,
+    customQuality: 75,
+    customMaxDim: 1800,
+};
+
 export function CompressUI() {
-  const [files, setFiles] = useState<CompressFile[]>([]);
-  const [level, setLevel] = useState<Level>("recommended");
-  const [customQuality, setCustomQuality] = useState<number>(75);
-  const [customMaxDim, setCustomMaxDim] = useState<number>(1800);
-  const [state, setState] = useState<"idle" | "processing" | "done">("idle");
-  const [drag, setDrag] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-  const [compressedSize, setCompressedSize] = useState<number>(0);
-  const ref = useRef<HTMLInputElement>(null);
+    const [files, setFiles] = useState<CompressFile[]>([]);
+    // Form config persists across refreshes (file picks intentionally don't).
+    const [config, setConfig, { restored, reset: resetConfig }] = useFormPersist("compress", COMPRESS_DEFAULTS);
+    const { level, customQuality, customMaxDim } = config;
+    const setLevel = (v: Level) => setConfig(c => ({ ...c, level: v }));
+    const setCustomQuality = (v: number) => setConfig(c => ({ ...c, customQuality: v }));
+    const setCustomMaxDim = (v: number) => setConfig(c => ({ ...c, customMaxDim: v }));
+    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
+    const [drag, setDrag] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [errorObj, setErrorObj] = useState<unknown>(null);
+    const [retryNote, setRetryNote] = useState<string | null>(null);
+    const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+    const [compressedSize, setCompressedSize] = useState<number>(0);
+    const ref = useRef<HTMLInputElement>(null);
 
-  const addFiles = (fl: FileList) => {
-    const newFiles: CompressFile[] = Array.from(fl)
-      .filter(f => f.name.toLowerCase().endsWith(".pdf"))
-      .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), bytes: f.size, raw: f }));
-    if (newFiles.length) {
-      setFiles(prev => [...prev, ...newFiles]);
-      setState("idle");
-      setError(null);
-    }
-  };
+    // Show "Restored previous settings" toast once on mount if we loaded non-default values.
+    useEffect(() => {
+        if (restored) {
+            toast.message("Restored previous settings", {
+                description: "Picked up where you left off.",
+                duration: 3000,
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-  const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
-  const totalBytes = files.reduce((s, f) => s + f.bytes, 0);
-  const canProcess = files.length > 0 && state !== "processing";
-
-  const process = useCallback(async () => {
-    if (!files.length) return;
-    setState("processing");
-    setError(null);
-    try {
-      const params: Record<string, string | number> = { level };
-      if (level === "custom") {
-        params.jpeg_quality = customQuality;
-        params.max_image_dim = customMaxDim;
-      }
-      if (files.length === 1) {
-        const res = await uploadFile("/compress", files[0].raw, params);
-        const blob = await res.blob();
-        const cSize = parseInt(res.headers.get("X-Compressed-Size") || "0") || blob.size;
-        setCompressedSize(cSize);
-        setResultBlob(blob);
-        setState("done");
-        const base = files[0].name.replace(/\.pdf$/i, "");
-        downloadBlob(blob, `${base}_compressed.pdf`);
-      } else {
-        await processFilesAndDownload("/compress", files.map(f => f.raw), buildOutputFilename(files[0]?.name, "compressed", "zip"), params);
-        setCompressedSize(0);
-        setResultBlob(null);
-        setState("done");
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Compression failed";
-      setError(msg);
-      setState("idle");
-    }
-  }, [files, level, customQuality, customMaxDim]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+    const addFiles = (fl: FileList | File[]) => {
+        const arr = Array.from(fl);
+        const newFiles: CompressFile[] = arr
+            .filter(f => f.name.toLowerCase().endsWith(".pdf"))
+            .map(f => ({ id: String(++fileId), name: f.name, size: formatFileSize(f.size), bytes: f.size, raw: f }));
+        if (newFiles.length) {
+            setFiles(prev => [...prev, ...newFiles]);
+            setState("idle");
+            setError(null);
+        }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [canProcess, process]);
 
-  if (state === "done") {
-    const savings = files.length === 1 && compressedSize > 0 ? Math.round((1 - compressedSize / totalBytes) * 100) : 0;
-    const originalBarWidth = 100;
-    const compressedBarWidth = compressedSize > 0 ? Math.max(5, Math.round((compressedSize / totalBytes) * 100)) : 0;
+    /** Load the bundled sample PDF and pre-fill the dropzone. Used by the
+     *  "Try with a sample file" button and by the FirstRunWelcome handoff. */
+    const [loadingSample, setLoadingSample] = useState(false);
+    const trySample = useCallback(async () => {
+        if (loadingSample) return;
+        setLoadingSample(true);
+        try {
+            const file = await loadSamplePdf();
+            addFiles([file]);
+            toast.message("Sample PDF loaded", { description: "1-page demo — process it like any of your own files.", duration: 2400 });
+        } catch (e) {
+            console.error(e);
+            toast.error("Couldn't load the sample PDF.");
+        } finally {
+            setLoadingSample(false);
+        }
+    }, [loadingSample]);
+
+    // First-run handoff — if FirstRunWelcome stashed a sample in sessionStorage
+    // we hydrate the files list once on mount and clear the entry so it doesn't
+    // re-fire on subsequent visits.
+    useEffect(() => {
+        let cancelled = false;
+        try {
+            const raw = sessionStorage.getItem(PREFILL_KEY);
+            if (!raw) return;
+            sessionStorage.removeItem(PREFILL_KEY);
+            const parsed = JSON.parse(raw) as { name: string; type: string; data: string };
+            if (!parsed?.data) return;
+            // data URL → Blob → File. We use fetch() because it handles the
+            // base64 decode + handles all data URL flavors uniformly.
+            fetch(parsed.data).then(r => r.blob()).then(blob => {
+                if (cancelled) return;
+                const f = new File([blob], parsed.name, { type: parsed.type, lastModified: Date.now() });
+                addFiles([f]);
+            }).catch(() => { /* silent — user can still drop a file manually */ });
+        } catch { /* ignored */ }
+        return () => { cancelled = true; };
+    }, []);
+
+    const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
+    const totalBytes = files.reduce((s, f) => s + f.bytes, 0);
+    const canProcess = files.length > 0 && state !== "processing";
+
+    // Live estimated output size (front-end heuristic, server may differ)
+    const estimatedSavingFraction = level === "custom"
+        // Linear: q=15→0.85 saved, q=95→0.10 saved
+        ? Math.max(0.1, Math.min(0.85, 1 - (customQuality / 100) * 0.95))
+        : SAVINGS_BY_LEVEL[level];
+    const estimatedOutputBytes = Math.max(1024, Math.round(totalBytes * (1 - estimatedSavingFraction)));
+
+    const process = useCallback(async () => {
+        if (!files.length) return;
+        setState("processing");
+        setError(null);
+        setErrorObj(null);
+        setRetryNote(null);
+        const onRetry = (attempt: number, total: number) => {
+            setRetryNote(`Retrying… (attempt ${attempt} of ${total})`);
+        };
+        try {
+            const params: Record<string, string | number> = { level };
+            if (level === "custom") {
+                params.jpeg_quality = customQuality;
+                params.max_image_dim = customMaxDim;
+            }
+            if (files.length === 1) {
+                const res = await uploadFile("/compress", files[0].raw, params, {
+                    onRetry,
+                    timeoutMs: 120_000,  // compress on large PDFs can be slow; allow 2min
+                });
+                const blob = await res.blob();
+                const cSize = parseInt(res.headers.get("X-Compressed-Size") || "0") || blob.size;
+                setCompressedSize(cSize);
+                setResultBlob(blob);
+                setState("done");
+                emitToolSuccess("Compress PDF");
+                const base = files[0].name.replace(/\.pdf$/i, "");
+                downloadBlob(blob, `${base}_compressed.pdf`);
+            } else {
+                await processFilesAndDownload(
+                    "/compress",
+                    files.map(f => f.raw),
+                    buildOutputFilename(files[0]?.name, "compressed", "zip"),
+                    params,
+                    undefined,
+                    undefined,
+                    { onRetry, timeoutMs: 180_000 },
+                );
+                setCompressedSize(0);
+                setResultBlob(null);
+                setState("done");
+                emitToolSuccess("Compress PDF");
+            }
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Compression failed";
+            setError(friendlyError(msg, "Compression failed."));
+            setErrorObj(e);
+            setState("idle");
+        } finally {
+            setRetryNote(null);
+        }
+    }, [files, level, customQuality, customMaxDim]);
+
+    const copyErrorToClipboard = useCallback(() => {
+        const blob = formatErrorForClipboard(errorObj ?? error, "Compress PDF");
+        navigator.clipboard?.writeText(blob).then(() => {
+            toast.success("Error details copied", { duration: 2000 });
+        }).catch(() => {
+            toast.error("Couldn't access clipboard");
+        });
+    }, [errorObj, error]);
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
+                e.preventDefault();
+                process();
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [canProcess, process]);
+
+    if (state === "done") {
+        const savings = files.length === 1 && compressedSize > 0 ? Math.round((1 - compressedSize / totalBytes) * 100) : 0;
+        const compressedBarWidth = compressedSize > 0 ? Math.max(5, Math.round((compressedSize / totalBytes) * 100)) : 0;
+
+        return (
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Compressed</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {files.length === 1 && compressedSize > 0 ? (
+                                    <>Smaller by <span className="italic text-accent">{savings}%</span></>
+                                ) : (
+                                    <><span className="italic text-accent">{files.length}</span> PDFs compressed</>
+                                )}
+                            </h2>
+
+                            {files.length === 1 && compressedSize > 0 && (
+                                <div className="mt-4 space-y-2.5 max-w-md">
+                                    <div>
+                                        <div className="flex items-center justify-between font-mono text-[10.5px] tracking-[0.06em] uppercase mb-1">
+                                            <span className="text-muted-foreground">Original</span>
+                                            <span className="text-muted-foreground tabular-nums">{files[0].size}</span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-paper-2 overflow-hidden">
+                                            <div className="h-full rounded-full bg-muted-foreground/60" style={{ width: "100%" }} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center justify-between font-mono text-[10.5px] tracking-[0.06em] uppercase mb-1">
+                                            <span className="text-accent">Compressed</span>
+                                            <span className="text-accent tabular-nums font-semibold">{formatFileSize(compressedSize)}</span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-paper-2 overflow-hidden">
+                                            <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${compressedBarWidth}%` }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {resultBlob && (
+                                    <button
+                                        onClick={() => { const base = files[0].name.replace(/\.pdf$/i, ""); downloadBlob(resultBlob, `${base}_compressed.pdf`); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90 transition-opacity"
+                                    >
+                                        <Download size={13} /> Download again
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}
+                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                                >
+                                    <RotateCcw size={12} /> Compress more
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
-      <div className="animate-confetti rounded-2xl border border-accent/20 bg-accent/5 p-10 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--accent)/0.10),transparent_70%)]" />
-        <div className="relative">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 ring-4 ring-accent/5">
-            <CheckCircle2 size={32} className="text-accent" strokeWidth={1.5} />
-          </div>
-          <h2 className="font-heading text-xl font-bold text-foreground mb-2">Compressed & Downloaded!</h2>
-
-          {files.length === 1 && compressedSize > 0 ? (
-            <div className="max-w-xs mx-auto mb-8 space-y-4">
-              {/* Visual bar chart comparison */}
-              <div className="space-y-3 text-left">
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-muted-foreground">Original</span>
-                    <span className="text-muted-foreground font-medium">{files[0].size}</span>
-                  </div>
-                  <div className="h-3 rounded-full bg-muted-foreground/15 overflow-hidden">
-                    <div className="h-full rounded-full bg-muted-foreground/85" style={{ width: `${originalBarWidth}%` }} />
-                  </div>
+        <div className="space-y-4">
+            {/* Upload zone */}
+            <div
+                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
+                onClick={() => ref.current?.click()}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload files"
+                className={cn(
+                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    drag
+                        ? "border-accent bg-accent/[0.06]"
+                        : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
+                )}
+            >
+                <CornerMarks />
+                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+                <div className={cn(
+                    "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
+                    drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
+                )}>
+                    <Upload size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-accent font-medium">Compressed</span>
-                    <span className="text-accent font-bold">{formatFileSize(compressedSize)}</span>
-                  </div>
-                  <div className="h-3 rounded-full bg-muted-foreground/15 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent)/0.35)] transition-all duration-1000"
-                      style={{ width: `${compressedBarWidth}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-bold">
-                -{savings}% smaller
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground mb-8">{files.length} PDFs compressed and downloaded as ZIP.</p>
-          )}
-
-          <div className="flex justify-center gap-3 flex-wrap">
-            {resultBlob && (
-              <Button className="glow-primary" onClick={() => { const base = files[0].name.replace(/\.pdf$/i, ""); downloadBlob(resultBlob, `${base}_compressed.pdf`); }}>
-                <Download size={15} />Download again
-              </Button>
-            )}
-            <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground" onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}>
-              Compress more
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Upload zone */}
-      <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-        onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
-        onClick={() => ref.current?.click()}
-        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-        role="button" tabIndex={0} aria-label="Upload files"
-        className={cn(
-          "relative flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-16 px-8 text-center overflow-hidden",
-          drag
-            ? "border-accent bg-accent/5 shadow-[0_0_30px_-5px_hsl(var(--accent)/0.18)]"
-            : "border-border hover:border-accent/40 hover:bg-secondary/30 bg-secondary/10"
-        )}>
-        {/* Subtle grid background */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40' fill='none' stroke='white' stroke-width='0.5'/%3E%3C/svg%3E\")", backgroundSize: "40px 40px" }}
-        />
-        <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
-        <div className={cn(
-          "flex h-14 w-14 items-center justify-center rounded-2xl transition-all",
-          drag ? "bg-accent/20 scale-110" : "bg-secondary/80"
-        )}>
-          <Upload size={24} className={cn("transition-colors", drag ? "text-accent" : "text-muted-foreground")} strokeWidth={1.5} />
-        </div>
-        <div className="relative">
-          <p className="font-heading text-base font-semibold text-foreground">
-            {files.length ? "Add more PDFs" : "Select PDFs to compress"}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Drag & drop or click · Multiple files supported · Max {MAX_FILE_SIZE_LABEL} each
-          </p>
-        </div>
-      </div>
-
-      {files.length > 0 && (
-        <>
-          {/* File list */}
-          <div className="space-y-2">
-            {files.map(f => (
-              <div key={f.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm px-4 py-3.5 shadow-sm">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10">
-                  <FileText size={16} className="text-accent" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
-                  <p className="text-xs text-muted-foreground">{f.size}</p>
-                </div>
-                <button
-                  onClick={() => removeFile(f.id)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-destructive/10 transition-all"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Compression level selector */}
-          <div className="rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm p-5 space-y-4 shadow-sm">
-            <p className="font-heading text-sm font-semibold text-foreground">Compression level</p>
-
-            {/* Gradient progress bar showing intensity */}
-            <div className="h-2 rounded-full bg-secondary/60 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500 ease-out"
-                style={{
-                  width: `${levels.find(l => l.id === level)?.intensity || 50}%`,
-                  background: "linear-gradient(90deg, hsl(var(--accent)/0.45), hsl(var(--accent)))",
-                }}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              {levels.map(l => (
-                <button key={l.id} onClick={() => setLevel(l.id)}
-                  className={cn(
-                    "w-full flex items-center gap-4 rounded-xl border p-4 text-left transition-all",
-                    level === l.id
-                      ? "border-accent/40 bg-accent/5 shadow-[0_0_15px_-3px_hsl(var(--accent)/0.18)]"
-                      : "border-border/40 hover:border-border/70 hover:bg-secondary/30"
-                  )}>
-                  {/* Visual intensity bar */}
-                  <div className="flex flex-col items-center gap-1 shrink-0">
-                    <div className="w-1.5 h-8 rounded-full bg-secondary/60 overflow-hidden flex flex-col justify-end">
-                      <div
-                        className={cn("w-full rounded-full transition-all duration-300", level === l.id ? "bg-accent" : "bg-muted-foreground/85")}
-                        style={{ height: `${l.intensity}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className={cn("text-sm font-medium", level === l.id ? "text-foreground" : "text-foreground/80")}>{l.label}</p>
-                      <span className={cn("text-xs font-semibold", level === l.id ? "text-accent" : "text-muted-foreground")}>{l.saving}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{l.desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Custom-level sliders */}
-            {level === "custom" && (
-              <div className="rounded-xl border border-border/60 bg-secondary/30 p-4 space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="jpeg-q" className="text-[13px] font-medium text-foreground">JPEG quality</label>
-                    <span className="text-xs font-mono text-accent">{customQuality}</span>
-                  </div>
-                  <input
-                    id="jpeg-q"
-                    type="range" min={15} max={95} step={1}
-                    value={customQuality}
-                    onChange={e => setCustomQuality(parseInt(e.target.value, 10))}
-                    className="w-full accent-foreground"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                    <span>15 — tiny, lossy</span>
-                    <span>95 — pristine</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="max-dim" className="text-[13px] font-medium text-foreground">Max image dimension (px)</label>
-                    <span className="text-xs font-mono text-accent">{customMaxDim}</span>
-                  </div>
-                  <input
-                    id="max-dim"
-                    type="range" min={300} max={4000} step={100}
-                    value={customMaxDim}
-                    onChange={e => setCustomMaxDim(parseInt(e.target.value, 10))}
-                    className="w-full accent-foreground"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                    <span>300 — heavily downsampled</span>
-                    <span>4000 — preserve detail</span>
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-muted-foreground/80">
-                  Tip: typical photos look fine at quality 75 + dim 1800.
-                  Drop below 50 only for low-importance scans.
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
+                    {files.length ? "Add more PDFs" : "Select PDFs to compress"}
                 </p>
-              </div>
-            )}
-          </div>
-
-          {/* Error state */}
-          {error && (
-            <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-5 py-4 text-sm text-destructive backdrop-blur-sm">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
-                <AlertCircle size={16} className="shrink-0" />
-              </div>
-              <div>
-                <p className="font-medium">Compression failed</p>
-                <p className="text-xs opacity-80 mt-0.5">{error}</p>
-              </div>
+                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-1">
+                    Drag &amp; drop or click · Multi-file OK · Max {MAX_FILE_SIZE_LABEL} each
+                </p>
             </div>
-          )}
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-3">
-            <Button onClick={process} disabled={!canProcess} className="glow-primary">
-              {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Compressing…</> : `Compress ${files.length > 1 ? `${files.length} PDFs` : "PDF"}`}
-            </Button>
-            {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
-          </div>
+            {/* Try with sample affordance — only shows before any file has been picked
+                so the dropzone still leads. Loads /samples/sample.pdf and pre-fills. */}
+            {files.length === 0 && (
+                <div className="flex items-center justify-center">
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); trySample(); }}
+                        disabled={loadingSample}
+                        className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
+                    >
+                        {loadingSample ? (
+                            <><Loader2 size={11} className="animate-spin" /> Loading sample…</>
+                        ) : (
+                            <><Sparkles size={11} className="text-accent" /> Try with a sample PDF</>
+                        )}
+                    </button>
+                </div>
+            )}
+
+            {files.length > 0 && (
+                <>
+                    {/* File list */}
+                    <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
+                        {files.map(f => (
+                            <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/25">
+                                    <FileText size={14} className="text-accent" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[13px] font-medium text-foreground truncate">{f.name}</p>
+                                    <p className="font-mono text-[10.5px] tracking-wide text-muted-foreground">{f.size}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => removeFile(f.id)}
+                                    className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-destructive/10 transition-colors"
+                                    aria-label="Remove file"
+                                >
+                                    <X size={13} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Level picker */}
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span className="inline-flex items-center gap-1.5">
+                                <span className="text-accent">§</span> Compression level
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            type="button"
+                                            aria-label="What do these levels do?"
+                                            className="inline-flex items-center justify-center h-4 w-4 rounded-full text-muted-foreground/70 hover:text-foreground transition-colors"
+                                        >
+                                            <Info size={11} aria-hidden="true" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-[280px] text-[12px] leading-relaxed font-sans normal-case tracking-normal">
+                                        <p><span className="font-semibold">Light</span> downsamples big images modestly — quality is nearly indistinguishable.</p>
+                                        <p className="mt-1"><span className="font-semibold">Recommended</span> drops JPEG quality to ~75 and caps dimensions at 1800px — the everyday default.</p>
+                                        <p className="mt-1"><span className="font-semibold">Extreme</span> goes aggressive: ~q60 and 1200px max — text stays crisp, large photos get noticeably softer.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </span>
+                            <span className="text-accent tabular-nums">
+                                {formatFileSize(totalBytes)} → ~{formatFileSize(estimatedOutputBytes)}
+                            </span>
+                        </div>
+                        <div className="p-3 space-y-1.5">
+                            {/* Intensity bar */}
+                            <div className="h-1.5 rounded-full bg-paper-2 overflow-hidden mb-2">
+                                <div
+                                    className="h-full rounded-full transition-all duration-500 ease-out bg-accent"
+                                    style={{ width: `${Math.round(estimatedSavingFraction * 100)}%` }}
+                                />
+                            </div>
+                            {levels.map((l, idx) => {
+                                const active = level === l.id;
+                                const estBytes = l.id === "custom"
+                                    ? estimatedOutputBytes
+                                    : Math.round(totalBytes * (1 - SAVINGS_BY_LEVEL[l.id as Exclude<Level, "custom">]));
+                                return (
+                                    <button
+                                        key={l.id}
+                                        type="button"
+                                        onClick={() => setLevel(l.id)}
+                                        className={cn(
+                                            "w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-colors",
+                                            active
+                                                ? "border-accent bg-accent/[0.06]"
+                                                : "border-border hover:border-border-strong hover:bg-secondary/40"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "h-4 w-4 rounded-full border flex items-center justify-center shrink-0",
+                                            active ? "border-accent bg-accent" : "border-border-strong"
+                                        )}>
+                                            {active && <div className="h-1.5 w-1.5 rounded-full bg-accent-foreground" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-baseline justify-between gap-2">
+                                                <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">
+                                                    <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent mr-1.5">{String(idx + 1).padStart(2, "0")}</span>
+                                                    {l.label}
+                                                </p>
+                                                <span className={cn("font-mono text-[11px] tracking-wide tabular-nums", active ? "text-accent font-semibold" : "text-muted-foreground")}>
+                                                    {l.id === "custom" ? l.saving : `≈ ${formatFileSize(estBytes)}`}
+                                                </span>
+                                            </div>
+                                            <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">{l.desc}</p>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Custom sliders */}
+                        {level === "custom" && (
+                            <div className="border-t border-border bg-paper-2/30 p-4 space-y-4 animate-fade-in">
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label htmlFor="jpeg-q" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">JPEG quality</label>
+                                        <span className="font-mono text-[11px] text-accent">{customQuality}</span>
+                                    </div>
+                                    <input
+                                        id="jpeg-q"
+                                        type="range" min={15} max={95} step={1}
+                                        value={customQuality}
+                                        onChange={e => setCustomQuality(parseInt(e.target.value, 10))}
+                                        className="w-full accent-accent"
+                                    />
+                                    <div className="flex justify-between font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">
+                                        <span>15 — tiny, lossy</span>
+                                        <span>95 — pristine</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label htmlFor="max-dim" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground">Max image dimension (px)</label>
+                                        <span className="font-mono text-[11px] text-accent">{customMaxDim}</span>
+                                    </div>
+                                    <input
+                                        id="max-dim"
+                                        type="range" min={300} max={4000} step={100}
+                                        value={customMaxDim}
+                                        onChange={e => setCustomMaxDim(parseInt(e.target.value, 10))}
+                                        className="w-full accent-accent"
+                                    />
+                                    <div className="flex justify-between font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">
+                                        <span>300 — heavily downsampled</span>
+                                        <span>4000 — preserve detail</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Retry note — shown only while a retry is scheduled */}
+                    {retryNote && state === "processing" && (
+                        <div className="flex items-center gap-2 rounded-lg border border-copper/30 bg-copper-soft/30 px-3 py-2 text-[12.5px] text-foreground">
+                            <Loader2 size={12} className="animate-spin text-copper" />
+                            <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-copper">{retryNote}</span>
+                        </div>
+                    )}
+
+                    {/* Error */}
+                    {error && (
+                        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                            <AlertCircle size={13} className="shrink-0 mt-0.5" />
+                            <span className="flex-1">{error}</span>
+                            <button
+                                type="button"
+                                onClick={copyErrorToClipboard}
+                                className="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-destructive/80 hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
+                                aria-label="Copy error details to clipboard"
+                                title="Copy error details for a bug report"
+                            >
+                                <Copy size={10} /> Copy error
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Action */}
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <button
+                            type="button"
+                            onClick={process}
+                            disabled={!canProcess}
+                            className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {state === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Compressing…</>
+                                : <><Minimize2 size={13} /> Compress {files.length > 1 ? `${files.length} PDFs` : "PDF"}</>}
+                        </button>
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>}
+                        <button
+                            type="button"
+                            onClick={resetConfig}
+                            className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            title="Restore default settings"
+                        >
+                            <Undo2 size={10} /> Reset to defaults
+                        </button>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
         </>
-      )}
-    </div>
-  );
+    );
 }

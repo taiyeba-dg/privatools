@@ -1,10 +1,14 @@
+import logging
 import math
 import os
-import uuid
 
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.colors import hex_to_rgb_int
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
+
+logger = logging.getLogger(__name__)
 
 # Caps to keep the collage from gobbling RAM on the server.
 MAX_IMAGES = 100
@@ -23,35 +27,44 @@ def make_collage(image_paths: list, columns: int = 3,
         spacing: Pixels between images
         bg_color: Background color hex
     """
-    ensure_temp_dir()
-    output_path = get_temp_path(f"collage_{uuid.uuid4().hex}.jpg")
+    output_path = temp_output("collage", "jpg")
 
     if not image_paths:
-        raise ValueError("No images provided")
+        raise ValidationError("No images provided")
     if len(image_paths) > MAX_IMAGES:
-        raise ValueError(f"Too many images for one collage (cap {MAX_IMAGES}).")
+        raise ValidationError(f"Too many images for one collage (cap {MAX_IMAGES}).")
 
     # Validate file sizes upfront so we don't OOM mid-render.
     total_bytes = 0
     for p in image_paths:
         sz = os.path.getsize(p)
         if sz > MAX_FILE_BYTES:
-            raise ValueError(
+            raise ValidationError(
                 f"One image is larger than {MAX_FILE_BYTES // (1024 * 1024)} MB — "
                 "downscale before adding it to a collage."
             )
         total_bytes += sz
     if total_bytes > MAX_TOTAL_BYTES:
-        raise ValueError(
+        raise ValidationError(
             f"Total image size exceeds {MAX_TOTAL_BYTES // (1024 * 1024)} MB combined."
         )
 
-    images = []
+    images: list[Image.Image] = []
     for p in image_paths:
         try:
-            images.append(Image.open(p).convert("RGB"))
-        except Exception as exc:  # corrupt or unsupported file
-            raise ValueError(f"Could not open image {os.path.basename(p)}: {exc}") from exc
+            # Eager-convert and let the source handle close to keep file
+            # descriptor count bounded — a 100-image collage previously
+            # held 100 open file handles for the duration of the render.
+            with Image.open(p) as src:
+                images.append(src.convert("RGB"))
+        except UnidentifiedImageError as exc:
+            raise ValidationError(
+                f"Could not open image {os.path.basename(p)}: not a supported format"
+            ) from exc
+        except (OSError, ValueError) as exc:
+            raise ValidationError(
+                f"Could not open image {os.path.basename(p)}: {exc}"
+            ) from exc
 
     # Calculate cell size (use the average dimensions)
     avg_w = sum(img.width for img in images) // len(images)
@@ -66,13 +79,14 @@ def make_collage(image_paths: list, columns: int = 3,
     canvas_w = columns * cell_w + (columns + 1) * spacing
     canvas_h = rows * cell_h + (rows + 1) * spacing
     if canvas_w * canvas_h > MAX_CANVAS_PIXELS:
-        raise ValueError(
+        raise ValidationError(
             f"Resulting canvas would be {canvas_w}×{canvas_h} px, larger than the "
             f"{MAX_CANVAS_PIXELS:,}-pixel cap. Use fewer columns or smaller images."
         )
 
-    # Parse background color
-    bg = tuple(int(bg_color.lstrip("#")[i:i+2], 16) for i in (0, 2, 4))
+    # Parse background color via the shared helper so malformed hex falls
+    # back to white instead of throwing a confusing ValueError.
+    bg = hex_to_rgb_int(bg_color, default=(255, 255, 255))
     canvas = Image.new("RGB", (canvas_w, canvas_h), bg)
 
     for idx, img in enumerate(images):
@@ -99,5 +113,6 @@ def make_collage(image_paths: list, columns: int = 3,
         canvas.paste(resized, (x, y))
 
     canvas.save(str(output_path), "JPEG", quality=90)
+    logger.info("collage: %d images → %dx%d", len(images), canvas_w, canvas_h)
 
     return str(output_path)

@@ -1,10 +1,10 @@
-import uuid
-import io
-from PIL import Image
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+import logging
+
+from PIL import Image, ImageDraw
+
+from ..utils.filenames import temp_output
+
+logger = logging.getLogger(__name__)
 
 
 # barcode types supported
@@ -19,21 +19,26 @@ BARCODE_TYPES = {
 }
 
 
-def generate_barcode(data: str, barcode_type: str = "code128",
-                     output_format: str = "png") -> str:
+def generate_barcode(
+    data: str,
+    barcode_type: str = "code128",
+    output_format: str = "png",
+) -> str:
     """Generate a barcode image from data.
-    
-    Uses python-barcode for linear barcodes, qrcode for QR codes.
-    """
-    ensure_temp_dir()
 
+    Uses python-barcode for linear barcodes, qrcode for QR codes.
+    On error we still produce a placeholder PNG so the caller doesn't
+    get a 500 — but we log the underlying exception at WARNING so
+    operators see the real failure in the logs.
+    """
     if barcode_type == "qr":
         import qrcode
+
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(data)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
-        out = get_temp_path(f"barcode_{uuid.uuid4().hex}.png")
+        out = temp_output("barcode", "png")
         img.save(str(out))
         return str(out)
 
@@ -43,15 +48,22 @@ def generate_barcode(data: str, barcode_type: str = "code128",
 
         bc_class = barcode.get_barcode_class(barcode_type)
         bc = bc_class(data, writer=ImageWriter())
-        out = get_temp_path(f"barcode_{uuid.uuid4().hex}")
-        filename = bc.save(str(out))  # Returns path with extension
-        return filename
-    except Exception as e:
-        # Fallback: generate a simple text-based barcode using PIL
+        # `bc.save()` returns the path with the extension appended, so
+        # we pass an extensionless stem here.
+        out = temp_output("barcode", None)
+        return bc.save(str(out))
+    except (KeyError, ValueError, IndexError) as exc:
+        # KeyError → unknown barcode type via get_barcode_class.
+        # ValueError/IndexError → invalid data for the chosen type
+        # (e.g. EAN-13 needs 12 digits + check).
+        logger.warning(
+            "Falling back to placeholder barcode for type=%s: %s",
+            barcode_type, exc,
+        )
         img = Image.new("RGB", (400, 150), "white")
-        from PIL import ImageDraw, ImageFont
-        d = ImageDraw.Draw(img)
-        d.text((20, 60), f"[{barcode_type.upper()}] {data}", fill="black")
-        out = get_temp_path(f"barcode_{uuid.uuid4().hex}.png")
+        ImageDraw.Draw(img).text(
+            (20, 60), f"[{barcode_type.upper()}] {data}", fill="black"
+        )
+        out = temp_output("barcode", "png")
         img.save(str(out))
         return str(out)

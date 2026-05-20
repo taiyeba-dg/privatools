@@ -2,10 +2,10 @@
  * PDF Page Counter — uploads N PDFs, displays per-file count + total.
  * Backend returns JSON; nothing is downloaded.
  */
-import { useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { FileText, Upload, Loader2, AlertCircle, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, friendlyError } from "@/lib/utils";
 import { uploadFiles, formatFileSize } from "@/lib/api";
 
 interface FileItem { id: string; name: string; size: string; file: File }
@@ -37,7 +37,9 @@ export function PdfPageCounterUI() {
 
     const remove = (id: string) => setItems(p => p.filter(f => f.id !== id));
 
-    const process = async () => {
+    const canProcess = items.length > 0 && state !== "processing";
+
+    const process = useCallback(async () => {
         if (!items.length) return;
         setState("processing");
         setError(null);
@@ -47,11 +49,20 @@ export function PdfPageCounterUI() {
             setResults(data.files || []);
             setTotal(data.total_pages ?? 0);
             setState("done");
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Failed to read PDFs");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Failed to read PDFs";
+            setError(friendlyError(msg, "Couldn't count pages in those PDFs."));
             setState("idle");
         }
-    };
+    }, [items]);
+
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [canProcess, process]);
 
     const reset = () => { setItems([]); setResults(null); setTotal(0); setState("idle"); setError(null); };
 
@@ -65,7 +76,7 @@ export function PdfPageCounterUI() {
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
                 className={cn(
                     "w-full rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-colors",
-                    drag ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/40 bg-card/40"
+                    drag ? "border-accent bg-accent/[0.06]" : "border-border/60 hover:border-accent/55 bg-card/40"
                 )}
             >
                 <Upload className="mx-auto mb-3 text-muted-foreground" size={28} strokeWidth={1.6} />
@@ -106,7 +117,7 @@ export function PdfPageCounterUI() {
             )}
 
             {error && (
-                <div className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-[13px] text-rose-700 dark:text-rose-300">
+                <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-[13px] text-destructive dark:text-destructive">
                     <AlertCircle size={14} className="mt-0.5 shrink-0" />
                     <span>{error}</span>
                 </div>
@@ -131,7 +142,7 @@ export function PdfPageCounterUI() {
                                     <tr key={i} className="border-t border-accent/10">
                                         <td className="px-5 py-2.5 truncate max-w-[1px] text-foreground/80">{r.filename}</td>
                                         <td className="px-5 py-2.5 text-right tabular-nums font-medium text-foreground">
-                                            {r.pages < 0 ? <span className="text-rose-500">invalid</span> : r.pages.toLocaleString()}
+                                            {r.pages < 0 ? <span className="text-destructive">invalid</span> : r.pages.toLocaleString()}
                                         </td>
                                     </tr>
                                 ))}
@@ -147,13 +158,18 @@ export function PdfPageCounterUI() {
                         <RotateCcw size={14} /> Start over
                     </Button>
                 ) : <span />}
-                <Button
-                    onClick={process}
-                    disabled={!items.length || state === "processing"}
-                    className="gap-1.5"
-                >
-                    {state === "processing" ? <><Loader2 size={14} className="animate-spin" /> Counting…</> : "Count pages"}
-                </Button>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <Button
+                        onClick={process}
+                        disabled={!items.length || state === "processing"}
+                        className="gap-1.5"
+                    >
+                        {state === "processing" ? <><Loader2 size={14} className="animate-spin" /> Counting…</> : "Count pages"}
+                    </Button>
+                    {canProcess && (
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    )}
+                </div>
             </div>
         </div>
     );

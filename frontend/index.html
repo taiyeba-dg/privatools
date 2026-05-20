@@ -8,6 +8,15 @@
     <!-- Privacy-friendly font CDN (Bunny Fonts mirror; no IP logging, no cookies) -->
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
     <link rel="dns-prefetch" href="https://fonts.bunny.net" />
+    <!-- Preload the two Fraunces weights actually painted above the fold
+         (400 regular + 700 bold). Skips FOIT — paint kicks off before
+         index.css parses the @import. crossorigin matches the woff2 fetch. -->
+    <link rel="preload" as="font" type="font/woff2"
+          href="https://fonts.bunny.net/fraunces/files/fraunces-latin-400-normal.woff2"
+          crossorigin />
+    <link rel="preload" as="font" type="font/woff2"
+          href="https://fonts.bunny.net/fraunces/files/fraunces-latin-700-normal.woff2"
+          crossorigin />
     <title>PrivaTools — Free, Open-Source Privacy-First File Tools</title>
     <meta name="description" content="Free, open-source file tools — PDF, image, video, and developer utilities. All processing happens on your device. Zero uploads, zero tracking, zero accounts.">
     <meta name="author" content="PrivaTools" />
@@ -54,16 +63,16 @@
     </script>
   </head>
   <body>
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm" tabindex="0">Skip to main content</a>
+    <!-- Pre-hydration skip link — points at the AppShell's `<main id="main-content">`.
+         Once React mounts, AppShell provides its own (duplicate but harmless) skip
+         link with identical target, so the keyboard shortcut still works after
+         hydration. -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-      }
-    </script>
+    <!-- Service worker registration lives in src/lib/sw-register.ts so it
+         runs in production only and handles updates correctly (skipWaiting +
+         controllerchange reload). Don't re-add an inline registration here. -->
     <!-- Google Analytics (GA4) — deferred to after first paint to protect LCP/INP -->
     <script>
       (function(){

@@ -1,24 +1,36 @@
 /**
- * Image Upscaler — choose 2x or 4x; backend uses Lanczos resampling.
+ * ImageUpscalerUI — Lanczos upscale at 2× or 4×.
+ * Workshop: scale pickers, source preview, signal-green dropzone, estimated
+ * processing time based on source megapixels × scale.
  */
-import { useState, useRef } from "react";
-import { Upload, Download, Loader2, AlertCircle, X, Image as ImageIcon, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { Loader2, AlertCircle, CheckCircle2, RotateCcw, Scaling, Clock } from "lucide-react";
+import { cn, friendlyError } from "@/lib/utils";
+import { uploadFile, downloadBlob } from "@/lib/api";
+import { FileUploadZone } from "./FileUploadZone";
 
 export function ImageUpscalerUI() {
     const [file, setFile] = useState<File | null>(null);
     const [scale, setScale] = useState<2 | 4>(2);
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
-    const [drag, setDrag] = useState(false);
-    const ref = useRef<HTMLInputElement>(null);
+    const [srcDims, setSrcDims] = useState<{ w: number; h: number } | null>(null);
 
-    const process = async () => {
+    // Read natural dims so we can hint at the output resolution + ETA.
+    useEffect(() => {
+        if (!file) { setSrcDims(null); return; }
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { setSrcDims({ w: img.naturalWidth, h: img.naturalHeight }); URL.revokeObjectURL(url); };
+        img.onerror = () => URL.revokeObjectURL(url);
+        img.src = url;
+    }, [file]);
+
+    const canProcess = !!file && state !== "processing";
+
+    const process = useCallback(async () => {
         if (!file) return;
-        setState("processing");
-        setError(null);
+        setState("processing"); setError(null);
         try {
             const res = await uploadFile("/image-upscaler", file, { scale });
             const blob = await res.blob();
@@ -27,88 +39,132 @@ export function ImageUpscalerUI() {
             const outExt = ["jpg", "jpeg", "png", "webp"].includes(ext) ? ext : "png";
             downloadBlob(blob, `${stem}_${scale}x.${outExt}`);
             setState("done");
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Upscale failed");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Upscale failed";
+            setError(friendlyError(msg, "Couldn't upscale that image."));
             setState("idle");
         }
+    }, [file, scale]);
+
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [canProcess, process]);
+
+    // Very rough ETA: ~0.7s per output megapixel on the Oracle VM Lanczos path.
+    const etaFor = (s: 2 | 4) => {
+        if (!srcDims) return null;
+        const outMp = (srcDims.w * srcDims.h * s * s) / 1_000_000;
+        const seconds = Math.max(1, Math.round(outMp * 0.7));
+        return seconds < 60 ? `~${seconds}s` : `~${Math.round(seconds / 60)}m`;
     };
+    const outDimsFor = (s: 2 | 4) => srcDims ? `${srcDims.w * s}×${srcDims.h * s}` : null;
+
+    if (state === "done") return (
+        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="relative p-7 sm:p-9 animate-corner-extend">
+                <CornerMarks />
+                <div className="flex items-start gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="section-mark mb-2">Upscaled</p>
+                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                            <span className="italic text-accent">{scale}×</span> resolution applied
+                        </h2>
+                        <button
+                            onClick={() => { setFile(null); setState("idle"); }}
+                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                        >
+                            <RotateCcw size={12} /> Upscale another
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="space-y-4">
-            {!file ? (
-                <button
-                    type="button"
-                    onClick={() => ref.current?.click()}
-                    onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                    onDragLeave={() => setDrag(false)}
-                    onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) setFile(f); }}
-                    className={cn(
-                        "w-full rounded-2xl border-2 border-dashed p-10 sm:p-14 text-center transition-colors",
-                        drag ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/40 bg-card/40"
-                    )}
-                >
-                    <Upload className="mx-auto mb-3 text-muted-foreground" size={28} strokeWidth={1.6} />
-                    <p className="text-sm font-semibold text-foreground">Choose an image</p>
-                    <p className="mt-1 text-xs text-muted-foreground">JPG, PNG, WEBP — max ~25MP after upscale</p>
-                    <input
-                        ref={ref}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/jpg"
-                        className="hidden"
-                        onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); e.target.value = ""; }}
-                    />
-                </button>
-            ) : (
-                <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
-                    <ImageIcon size={18} className="text-muted-foreground shrink-0" />
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+            <FileUploadZone
+                file={file}
+                onFileSelect={setFile}
+                onClear={() => setFile(null)}
+                accept=".jpg,.jpeg,.png,.webp"
+                label="Drop image to upscale"
+                hint="Lanczos resampling · max ~25 MP after upscale"
+            />
+
+            {file && (
+                <>
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span><span className="text-accent">§</span> Scale factor</span>
+                            {srcDims && <span className="tabular-nums">{srcDims.w}×{srcDims.h} px source</span>}
+                        </div>
+                        <div className="p-3 grid grid-cols-2 gap-2">
+                            {([2, 4] as const).map(s => {
+                                const active = scale === s;
+                                const out = outDimsFor(s);
+                                const eta = etaFor(s);
+                                return (
+                                    <button
+                                        key={s}
+                                        onClick={() => setScale(s)}
+                                        aria-pressed={active}
+                                        aria-label={`Upscale ${s} times${out ? ` to ${out} pixels` : ""}${eta ? `, estimated ${eta}` : ""}`}
+                                        className={cn(
+                                            "min-h-[88px] rounded-lg border p-4 text-left transition-colors",
+                                            active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40"
+                                        )}
+                                    >
+                                        <p className={cn("font-display text-[28px] font-bold tracking-[-0.02em]", active ? "text-accent" : "text-foreground")}>{s}×</p>
+                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">
+                                            {out ?? (s === 2 ? "Larger image · safe default" : "Maximum detail · may need memory")}
+                                        </p>
+                                        {eta && (
+                                            <p className="mt-1.5 inline-flex items-center gap-1 font-mono text-[9.5px] tracking-[0.06em] uppercase text-accent/80">
+                                                <Clock size={9} /> {eta}
+                                            </p>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                    <button type="button" onClick={() => setFile(null)} aria-label="Remove" className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground">
-                        <X size={14} />
-                    </button>
-                </div>
-            )}
 
-            <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Scale factor</label>
-                <div className="grid grid-cols-2 gap-2">
-                    {([2, 4] as const).map(s => (
-                        <button
-                            key={s}
-                            type="button"
-                            onClick={() => setScale(s)}
-                            className={cn(
-                                "rounded-xl border px-4 py-4 text-left transition-colors",
-                                scale === s
-                                    ? "border-accent bg-accent/10"
-                                    : "border-border bg-card hover:border-accent/40"
-                            )}
-                        >
-                            <p className="text-2xl font-bold tracking-tight text-foreground">{s}×</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">
-                                {s === 2 ? "Larger image, faster, safe for most photos" : "Maximum detail, may exceed memory caps"}
-                            </p>
+                    {error && (
+                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                            <AlertCircle size={13} className="shrink-0" />{error}
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Upscaling…</> : <><Scaling size={13} /> Upscale {scale}×</>}
                         </button>
-                    ))}
-                </div>
-            </div>
-
-            {error && (
-                <div className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-[13px] text-rose-700 dark:text-rose-300">
-                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                    <span>{error}</span>
-                </div>
+                        {canProcess && (
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        )}
+                    </div>
+                </>
             )}
-
-            <div className="flex items-center justify-end">
-                <Button onClick={process} disabled={!file || state === "processing"} className="gap-1.5">
-                    {state === "processing" ? <><Loader2 size={14} className="animate-spin" /> Upscaling…</> :
-                     state === "done" ? <><CheckCircle2 size={14} /> Re-upscale</> :
-                     <><Download size={14} /> Upscale {scale}×</>}
-                </Button>
-            </div>
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
     );
 }

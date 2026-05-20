@@ -1,12 +1,17 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { X, ArrowRight, Shield, Layers, Search, Sparkles, GitBranch } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { X, ArrowRight, Shield, Layers, Sparkles, GitBranch, Star, MousePointerSquareDashed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 
 const STORAGE_KEY = "privatools_onboarding_done";
 const TOOL_TOTAL = tools.length + nonPdfTools.length;
+
+/** Event name the Dashboard welcome card dispatches to force-open the tour
+ *  ("Take the tour" button). The tour listens for it regardless of whether
+ *  it has been dismissed before — that's the explicit user intent. */
+export const START_TOUR_EVENT = "privatools:start-tour";
 
 interface Step {
     icon: typeof Shield;
@@ -16,29 +21,34 @@ interface Step {
 
 const steps: Step[] = [
     {
-        icon: Shield,
-        title: "Self-hosted by default",
-        description: "Open-source under MIT — run it on your own infrastructure with one Docker command. Files stay on hardware you control.",
+        icon: Sparkles,
+        title: "Welcome to PrivaTools",
+        description: `${TOOL_TOTAL} file tools — PDF, image, video, audio, developer — all running in your browser. No accounts, no uploads to a third party, no watermarks. Free and open-source under MIT.`,
+    },
+    {
+        icon: MousePointerSquareDashed,
+        title: "Drop a file anywhere",
+        description: "Drag any file onto this page and we'll match it to every tool that handles it. Prefer the keyboard? Press ⌘K (or Ctrl+K) to search by name.",
     },
     {
         icon: Layers,
-        title: `${TOOL_TOTAL}+ tools, one place`,
-        description: "PDF, image, video, audio, and developer utilities. All free. No accounts, no upsells, no watermarks.",
+        title: "Organized by suite",
+        description: "PDF, Image, Video, Developer, Archive and Office. Browse a suite from the left sidebar — each tool keeps its inputs, options and output in one panel.",
     },
     {
-        icon: Sparkles,
-        title: "Local AI, no third-party",
-        description: "Summarize PDFs and detect PII without sending anything to OpenAI. The model runs in your browser via WebAssembly.",
+        icon: Shield,
+        title: "Your file never leaves the container",
+        description: "Open DevTools → Network and watch: jobs go to this server, not a third party. Self-hosted? One Docker command and the whole stack runs on your hardware.",
     },
     {
         icon: GitBranch,
-        title: "Pipeline — industry first",
-        description: "Chain merge → compress → watermark in one click. No competitor offers this.",
+        title: "Pipelines & local AI",
+        description: "Chain merge → compress → watermark in one click. Summarize and redact with models that run entirely in your browser — no OpenAI, no cloud GPU.",
     },
     {
-        icon: Search,
-        title: "⌘K to search anything",
-        description: "Press ⌘K (or Ctrl+K) anytime to jump straight to a tool, or press ? to see all keyboard shortcuts.",
+        icon: Star,
+        title: "Star a tool to pin it",
+        description: "The star next to any tool's title pins it to the sidebar for one-click access. Press ? anytime to see every keyboard shortcut.",
     },
 ];
 
@@ -46,22 +56,83 @@ export function OnboardingTour() {
     const [show, setShow] = useState(false);
     const [step, setStep] = useState(0);
     const location = useLocation();
+    const previouslyFocused = useRef<HTMLElement | null>(null);
+    const dialogRef = useRef<HTMLDivElement | null>(null);
+    const nextBtnRef = useRef<HTMLButtonElement | null>(null);
+
+    // Listen for an explicit "start the tour" event dispatched by the Dashboard
+    // welcome card. We honor this even if the tour has been dismissed before —
+    // re-opening the tour on demand is the user's intent.
+    useEffect(() => {
+        const handler = () => {
+            setStep(0);
+            setShow(true);
+        };
+        window.addEventListener(START_TOUR_EVENT, handler);
+        return () => window.removeEventListener(START_TOUR_EVENT, handler);
+    }, []);
 
     useEffect(() => {
-        // Only show the homepage onboarding tour when the visitor is actually
-        // on the homepage. Visitors landing on a deep tool URL (e.g. from
-        // Google) already have an obvious task in front of them — opening a
-        // modal would force them to dismiss it before they can engage.
+        // The auto-show behavior only fires on the homepage. Visitors landing
+        // on a deep tool URL (e.g. from Google) already have an obvious task
+        // in front of them — opening a modal would force them to dismiss it
+        // before they can engage.
+        //
+        // The Dashboard's first-run welcome card now invites the tour
+        // explicitly, so we no longer auto-pop the modal on first visit. The
+        // STORAGE_KEY is still respected (manual `?tour=1` queries, etc.)
+        // and kept in localStorage for back-compat with older sessions.
         if (location.pathname !== "/") return;
-        try {
-            if (!localStorage.getItem(STORAGE_KEY)) {
-                // Show after a longer delay so the page renders + the user
-                // has a moment to orient before a modal pops up.
-                const t = setTimeout(() => setShow(true), 4000);
-                return () => clearTimeout(t);
-            }
-        } catch { }
+
+        // Allow ?tour=1 (or #tour) to force-open. Useful for QA + links from
+        // marketing pages that say "show me how it works".
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("tour") === "1" || url.hash === "#tour") {
+            setStep(0);
+            const t = setTimeout(() => setShow(true), 250);
+            return () => clearTimeout(t);
+        }
     }, [location.pathname]);
+
+    // Focus management — when the tour opens, remember the previously focused
+    // element and move focus to the primary CTA. On close, restore focus.
+    // Escape closes the dialog so the user can always escape without a mouse.
+    useEffect(() => {
+        if (show) {
+            previouslyFocused.current = document.activeElement as HTMLElement | null;
+            requestAnimationFrame(() => nextBtnRef.current?.focus());
+            const onKey = (e: KeyboardEvent) => {
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    setShow(false);
+                    try { localStorage.setItem(STORAGE_KEY, "1"); } catch { }
+                }
+                // Focus trap
+                if (e.key === "Tab" && dialogRef.current) {
+                    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+                        'a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
+                    );
+                    if (focusable.length === 0) return;
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    if (e.shiftKey && document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    } else if (!e.shiftKey && document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
+            };
+            document.addEventListener("keydown", onKey);
+            return () => document.removeEventListener("keydown", onKey);
+        } else if (previouslyFocused.current) {
+            if (document.contains(previouslyFocused.current)) {
+                previouslyFocused.current.focus();
+            }
+            previouslyFocused.current = null;
+        }
+    }, [show]);
 
     const dismiss = () => {
         setShow(false);
@@ -83,55 +154,103 @@ export function OnboardingTour() {
 
     return (
         <>
-            {/* Backdrop */}
+            {/* Backdrop — non-focusable */}
             <button
                 type="button"
                 aria-label="Close tutorial"
-                className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-200 cursor-default"
+                tabIndex={-1}
+                className="fixed inset-0 z-[200] bg-foreground/35 backdrop-blur-md animate-in fade-in-0 duration-200 cursor-default"
                 onClick={dismiss}
             />
 
             {/* Modal */}
-            <div role="dialog" aria-modal="true" aria-labelledby="onboarding-title" className="fixed inset-x-0 top-[20vh] z-[201] mx-auto w-full max-w-sm px-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
-                <div className="rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/50 overflow-hidden">
-                    {/* Header */}
-                    <div className="relative px-6 pt-8 pb-4 text-center">
-                        <button onClick={dismiss} aria-label="Close tutorial" className="absolute top-3 right-3 text-muted-foreground/85 hover:text-muted-foreground">
-                            <X size={16} aria-hidden="true" />
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="onboarding-title"
+                aria-describedby="onboarding-desc"
+                className="fixed inset-x-0 top-[18vh] z-[201] mx-auto w-full max-w-md px-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300"
+            >
+                <div
+                    className="rounded-2xl border border-border-strong overflow-hidden shadow-[0_30px_60px_-20px_rgba(20,15,5,0.35)] dark:shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)]"
+                    style={{ background: "hsl(var(--background))" }}
+                >
+                    {/* Dateline header */}
+                    <div className="px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">
+                        <span><span className="text-accent">§</span> Welcome · {String(step + 1).padStart(2, "0")} / {String(steps.length).padStart(2, "0")}</span>
+                        <button
+                            onClick={dismiss}
+                            aria-label="Close tutorial"
+                            className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                        >
+                            <X size={11} />
                         </button>
-
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mx-auto mb-4">
-                            <Icon size={24} className="text-primary" />
-                        </div>
-
-                        <h3 id="onboarding-title" className="text-lg font-bold text-foreground mb-1">{current.title}</h3>
-                        <p className="text-[13px] text-muted-foreground leading-relaxed">{current.description}</p>
                     </div>
 
-                    {/* Dots + action */}
-                    <div className="px-6 pb-6 flex items-center justify-between">
-                        <div className="flex gap-1.5">
+                    {/* Content */}
+                    <div className="px-7 pt-8 pb-4">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/12 border border-accent/35 mb-5 flex items-center justify-center">
+                            <Icon size={22} className="text-accent" strokeWidth={1.75} />
+                        </div>
+
+                        <h3
+                            id="onboarding-title"
+                            className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-[1.05] mb-3"
+                            style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}
+                        >
+                            {current.title}
+                        </h3>
+                        <p id="onboarding-desc" className="font-display text-[15.5px] text-muted-foreground leading-[1.55]" style={{ fontVariationSettings: '"opsz" 14' }}>
+                            {current.description}
+                        </p>
+                    </div>
+
+                    {/* Footer — dots + actions */}
+                    <div className="px-7 py-4 border-t border-border bg-paper-2/30 flex items-center justify-between">
+                        <div
+                            className="flex gap-1.5"
+                            role="progressbar"
+                            aria-valuenow={step + 1}
+                            aria-valuemin={1}
+                            aria-valuemax={steps.length}
+                            aria-label={`Step ${step + 1} of ${steps.length}`}
+                        >
                             {steps.map((_, i) => (
                                 <div
                                     key={i}
+                                    aria-hidden="true"
                                     className={cn(
                                         "h-1.5 rounded-full transition-all duration-300",
-                                        i === step ? "w-5 bg-primary" : "w-1.5 bg-secondary"
+                                        i === step
+                                            ? "w-6 bg-accent"
+                                            : i < step
+                                                ? "w-1.5 bg-accent/40"
+                                                : "w-1.5 bg-border"
                                     )}
                                 />
                             ))}
                         </div>
 
-                        <button
-                            onClick={next}
-                            className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:bg-primary/90 transition-all"
-                        >
-                            {step < steps.length - 1 ? (
-                                <>Next <ArrowRight size={13} /></>
-                            ) : (
-                                "Get Started"
-                            )}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={dismiss}
+                                className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors px-2"
+                            >
+                                Skip
+                            </button>
+                            <button
+                                ref={nextBtnRef}
+                                onClick={next}
+                                className="btn-accent"
+                            >
+                                {step < steps.length - 1 ? (
+                                    <>Next <ArrowRight size={13} aria-hidden="true" /></>
+                                ) : (
+                                    "Get started"
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

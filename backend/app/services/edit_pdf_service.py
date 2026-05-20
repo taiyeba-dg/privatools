@@ -1,27 +1,21 @@
 import base64
 import io
-import uuid
+import logging
+
 import pikepdf
-from reportlab.pdfgen import canvas
-from reportlab.lib.colors import HexColor, Color
+from reportlab.lib.colors import Color
 from reportlab.lib.utils import ImageReader
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+from reportlab.pdfgen import canvas
 
+from ..utils.cleanup import safe_open_pdf
+from ..utils.colors import hex_to_rgb_float as _hex_to_rgb
+from ..utils.filenames import temp_output
 
-def _hex_to_rgb(hex_color: str):
-    """Return (r, g, b) floats in 0-1 range from a hex color string."""
-    hex_color = hex_color.lstrip("#")
-    if len(hex_color) == 3:
-        hex_color = "".join(c * 2 for c in hex_color)
-    r = int(hex_color[0:2], 16) / 255
-    g = int(hex_color[2:4], 16) / 255
-    b = int(hex_color[4:6], 16) / 255
-    return r, g, b
+logger = logging.getLogger(__name__)
 
 
 def edit_pdf(input_path: str, edits: list) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"edited_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("edited", "pdf")
 
     # Group edits by page number
     by_page: dict[int, list] = {}
@@ -29,7 +23,7 @@ def edit_pdf(input_path: str, edits: list) -> str:
         pg = int(edit.get("page", 1))
         by_page.setdefault(pg, []).append(edit)
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         page_count = len(pdf.pages)
 
         for pg_num, page_edits in by_page.items():
@@ -140,7 +134,10 @@ def edit_pdf(input_path: str, edits: list) -> str:
                                 width=img_w, height=img_h,
                                 mask="auto",
                             )
-                        except Exception:
+                        except (ValueError, OSError, base64.binascii.Error) as exc:
+                            # Bad base64 / unsupported image / malformed
+                            # data URI — skip this edit, keep the rest.
+                            logger.debug("edit_pdf: skipping image edit (%s)", exc)
                             continue
 
             c.save()

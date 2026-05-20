@@ -18,7 +18,6 @@
  */
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 
@@ -35,14 +34,14 @@ interface Detection {
 }
 
 const TYPE_META: Record<EntityType, { label: string; color: string }> = {
-    PER:   { label: "People",        color: "bg-rose-500/10 text-rose-300 border-rose-500/30" },
+    PER:   { label: "People",        color: "bg-destructive/10 text-destructive border-destructive/30" },
     ORG:   { label: "Organizations", color: "bg-violet-500/10 text-violet-300 border-violet-500/30" },
-    LOC:   { label: "Locations",     color: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30" },
+    LOC:   { label: "Locations",     color: "bg-accent/10 text-accent border-accent/30" },
     MISC:  { label: "Other entities",color: "bg-slate-500/10 text-slate-300 border-slate-500/30" },
     EMAIL: { label: "Emails",        color: "bg-blue-500/10 text-blue-300 border-blue-500/30" },
     PHONE: { label: "Phone numbers", color: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30" },
     SSN:   { label: "SSNs",          color: "bg-orange-500/10 text-orange-300 border-orange-500/30" },
-    CARD:  { label: "Credit cards",  color: "bg-amber-500/10 text-amber-300 border-amber-500/30" },
+    CARD:  { label: "Credit cards",  color: "bg-copper-soft text-copper border-copper/30" },
     DATE:  { label: "Dates",         color: "bg-pink-500/10 text-pink-300 border-pink-500/30" },
 };
 
@@ -284,30 +283,48 @@ export function SmartRedactUI() {
 
     if (stage === "done") {
         return (
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
-                <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
-                <h2 className="text-lg font-bold text-foreground mb-1">Redacted!</h2>
-                <p className="text-sm text-muted-foreground mb-6">
-                    {hits !== null ? <>Permanently removed <span className="font-bold text-foreground">{hits}</span> matches across {selected.size} selected items.</> : "Redacted PDF downloaded."}
-                </p>
-                <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFile(null); setDetections([]); setSelected(new Set()); setStage("idle"); }}>
-                    Redact another PDF
-                </Button>
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks accent />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Redacted</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {hits !== null ? <><span className="italic text-accent">{hits}</span> match{hits === 1 ? "" : "es"} removed.</> : <><span className="italic text-accent">Redacted</span> PDF downloaded.</>}
+                            </h2>
+                            <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                                {selected.size} item{selected.size === 1 ? "" : "s"} permanently redacted
+                            </p>
+                            <button
+                                onClick={() => { setFile(null); setDetections([]); setSelected(new Set()); setStage("idle"); }}
+                                className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                            >
+                                Redact another PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="space-y-4">
-            {/* Privacy banner */}
-            <div className="rounded-xl border border-accent/20 bg-accent/[0.04] px-4 py-3 flex items-start gap-3">
-                <ShieldAlert size={16} className="text-primary mt-0.5 shrink-0" />
-                <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">PII detection runs in your browser</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                        The NER model + regex passes execute locally via WebAssembly — no document content is sent
-                        anywhere during scanning. Only after you've reviewed and confirmed do the chosen strings
-                        get sent to your own server (or the demo) to apply real PyMuPDF redactions.
+            {/* Browser-AI banner */}
+            <div className="rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
+                    <ShieldAlert size={15} className="text-accent" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium">§ Browser NER</span>
+                        <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">BERT-base · runs locally</span>
+                    </div>
+                    <p className="text-[12.5px] text-foreground leading-relaxed">
+                        <span className="font-medium">Scanning happens in your browser.</span> The model + regex passes execute via WebAssembly — only after you confirm do selected strings travel to the server for real PyMuPDF redactions.
                     </p>
                 </div>
             </div>
@@ -323,27 +340,37 @@ export function SmartRedactUI() {
                     tabIndex={0}
                     aria-label="Upload PDF for smart redaction"
                     className={cn(
-                        "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-                        drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20"
+                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
+                    <CornerMarks />
                     <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={e => { onPick(e.target.files); e.target.value = ""; }} />
-                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
-                        <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
+                    <div className={cn(
+                        "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
+                        drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
+                    )}>
+                        <Upload size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
-                    <p className="text-sm font-semibold text-foreground">Pick a PDF to auto-redact</p>
-                    <p className="text-xs text-muted-foreground">PDF · text-based (run OCR first if it's a scan)</p>
+                    <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Pick a PDF to auto-redact</p>
+                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Text-based PDF · OCR first if it's a scan</p>
                 </div>
             ) : (
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 px-4 py-3">
-                    <FileText size={18} className="text-primary shrink-0" />
+                <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
+                    <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
+                        <FileText size={16} className="text-accent" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                        <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
+                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     {(stage === "idle" || stage === "review" || stage === "error") && (
-                        <button onClick={() => { setFile(null); setDetections([]); setSelected(new Set()); }} className="text-muted-foreground hover:text-foreground" aria-label="Remove file">
-                            <X size={16} />
+                        <button
+                            onClick={() => { setFile(null); setDetections([]); setSelected(new Set()); }}
+                            className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                            aria-label="Remove file"
+                        >
+                            <X size={13} />
                         </button>
                     )}
                 </div>
@@ -351,17 +378,35 @@ export function SmartRedactUI() {
 
             {/* Progress */}
             {(stage === "extracting" || stage === "loading-model" || stage === "scanning" || stage === "redacting") && (
-                <div className="rounded-xl border border-accent/15 bg-accent/[0.03] px-5 py-4 space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <Loader2 size={14} className="animate-spin text-primary" />
-                        {stage === "extracting"   && <>Extracting text… page {progress.pages}{progress.totalPages ? ` / ${progress.totalPages}` : ""}</>}
-                        {stage === "loading-model" && <>Loading PII detection model… {progress.modelPercent}% (one-time, cached for next time)</>}
-                        {stage === "scanning"      && <>Scanning for personal information…</>}
-                        {stage === "redacting"     && <>Applying redactions on the server…</>}
+                <div className="rounded-xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
+                    <div className="px-4 py-3 flex items-center gap-3">
+                        <Loader2 size={14} className="animate-spin text-accent shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="font-display text-[14px] font-medium text-foreground">
+                                {stage === "extracting"   && <>Extracting text from PDF</>}
+                                {stage === "loading-model" && <>Loading NER model</>}
+                                {stage === "scanning"      && <>Scanning for personal information</>}
+                                {stage === "redacting"     && <>Applying redactions on the server</>}
+                            </p>
+                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                                {stage === "extracting"   && <>Page {progress.pages}{progress.totalPages ? ` of ${progress.totalPages}` : ""}</>}
+                                {stage === "loading-model" && <>{progress.modelPercent}% · one-time, cached</>}
+                                {stage === "scanning"      && <>Combining NER + regex patterns</>}
+                                {stage === "redacting"     && <>PyMuPDF · permanent removal</>}
+                            </p>
+                        </div>
+                        {(stage === "extracting" || stage === "loading-model" || stage === "scanning") && (
+                            <button
+                                onClick={() => { cancelledRef.current = true; setStage("idle"); }}
+                                className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        )}
                     </div>
-                    <div className="h-1.5 w-full bg-secondary/60 rounded-full overflow-hidden">
+                    <div className="h-1 bg-paper-2 relative">
                         <div
-                            className="h-full bg-accent/60 transition-all"
+                            className="h-full bg-accent transition-all"
                             style={{
                                 width: stage === "extracting"
                                     ? progress.totalPages ? `${(progress.pages / progress.totalPages) * 100}%` : "10%"
@@ -371,41 +416,50 @@ export function SmartRedactUI() {
                             }}
                         />
                     </div>
-                    {(stage === "extracting" || stage === "loading-model" || stage === "scanning") && (
-                        <button onClick={() => { cancelledRef.current = true; setStage("idle"); }} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-                    )}
                 </div>
             )}
 
             {error && (
-                <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                    <AlertCircle size={15} className="shrink-0" />{error}
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
             )}
 
             {file && stage === "idle" && (
-                <Button onClick={scan} className="glow-primary">
-                    <Sparkles size={15} className="mr-1.5" />Scan for PII
-                </Button>
+                <button onClick={scan} className="btn-accent">
+                    <Sparkles size={13} /> Scan for PII
+                </button>
             )}
 
             {/* Review UI */}
             {stage === "review" && (
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            Found <span className="font-bold text-foreground">{detections.length}</span> distinct items across {grouped.size} categor{grouped.size === 1 ? "y" : "ies"}.
-                            <span className="text-muted-foreground/80"> Uncheck anything you want to keep.</span>
-                        </p>
-                        <div className="flex items-center gap-2 text-xs">
-                            <span className="text-muted-foreground">Color:</span>
-                            <input type="color" value={color} onChange={e => setColor(e.target.value)} className="h-6 w-8 rounded border border-border bg-transparent" />
+                    {/* Review header */}
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span><span className="text-accent">§</span> Detections — {detections.length} items, {grouped.size} categor{grouped.size === 1 ? "y" : "ies"}</span>
+                            <span>{selected.size} selected for redaction</span>
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-between gap-3">
+                            <p className="text-[13px] text-muted-foreground">
+                                Uncheck anything you want to keep — the rest will be permanently redacted.
+                            </p>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Color</span>
+                                <input
+                                    type="color"
+                                    value={color}
+                                    onChange={e => setColor(e.target.value)}
+                                    className="h-7 w-9 rounded border border-border bg-transparent cursor-pointer"
+                                />
+                            </div>
                         </div>
                     </div>
 
                     {detections.length === 0 ? (
-                        <div className="rounded-xl border border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
-                            No personal information detected. You can still use the regular Redact tool to draw rectangles.
+                        <div className="rounded-xl border border-border bg-card p-6 text-center">
+                            <p className="font-display text-[16px] text-foreground italic">No personal information detected.</p>
+                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-2">Use the regular Redact tool to draw rectangles manually.</p>
                         </div>
                     ) : (
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
@@ -416,36 +470,43 @@ export function SmartRedactUI() {
                                 const allOn = items.every(isSelected);
                                 const someOn = items.some(isSelected);
                                 return (
-                                    <div key={type} className="rounded-xl border border-border bg-card/40 p-4">
-                                        <div className="flex items-center justify-between mb-2">
+                                    <div key={type} className="rounded-xl border border-border bg-card overflow-hidden">
+                                        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-paper-2/40">
                                             <div className="flex items-center gap-2">
-                                                <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border", meta.color)}>
+                                                <span className={cn("inline-flex items-center px-1.5 h-5 rounded font-mono text-[9.5px] font-medium tracking-[0.10em] uppercase border", meta.color)}>
                                                     {meta.label}
                                                 </span>
-                                                <span className="text-xs text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
+                                                <span className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => toggleType(type, !allOn)}
-                                                className="text-xs text-primary hover:underline"
+                                                className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
                                             >
-                                                {allOn ? "Deselect all" : someOn ? "Select all" : "Select all"}
+                                                {allOn ? "Deselect all" : "Select all"}
                                             </button>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                                        <div className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-1">
                                             {items.map(d => {
                                                 const checked = isSelected(d);
                                                 return (
-                                                    <label key={keyFor(d)} className={cn("flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition-colors", checked ? "bg-accent/[0.05]" : "hover:bg-secondary/40")}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={checked}
-                                                            onChange={() => toggle(d)}
-                                                            className="rounded border-border"
-                                                        />
-                                                        <span className="text-sm text-foreground truncate">{d.text}</span>
+                                                    <label
+                                                        key={keyFor(d)}
+                                                        className={cn(
+                                                            "flex items-center gap-2.5 px-2.5 py-1.5 rounded cursor-pointer transition-colors",
+                                                            checked ? "bg-accent/[0.06]" : "hover:bg-paper-2/30"
+                                                        )}
+                                                    >
+                                                        <span className={cn(
+                                                            "h-4 w-4 rounded border flex items-center justify-center shrink-0",
+                                                            checked ? "border-accent bg-accent" : "border-border-strong bg-card"
+                                                        )}>
+                                                            {checked && <CheckCircle2 size={10} className="text-accent-foreground" strokeWidth={3} />}
+                                                        </span>
+                                                        <input type="checkbox" checked={checked} onChange={() => toggle(d)} className="sr-only" />
+                                                        <span className="text-[13px] text-foreground truncate">{d.text}</span>
                                                         {d.occurrences > 1 && (
-                                                            <span className="text-[10px] text-muted-foreground/85 ml-auto shrink-0">×{d.occurrences}</span>
+                                                            <span className="font-mono text-[10px] text-muted-foreground ml-auto shrink-0">×{d.occurrences}</span>
                                                         )}
                                                     </label>
                                                 );
@@ -458,15 +519,43 @@ export function SmartRedactUI() {
                     )}
 
                     <div className="flex items-center gap-3 pt-1">
-                        <Button onClick={apply} disabled={selected.size === 0} className="glow-primary">
-                            <ShieldAlert size={15} className="mr-1.5" />Redact {selected.size} selected
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { setStage("idle"); setDetections([]); setSelected(new Set()); }}>
+                        <button onClick={apply} disabled={selected.size === 0} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            <ShieldAlert size={13} /> Redact {selected.size} selected
+                        </button>
+                        <button
+                            onClick={() => { setStage("idle"); setDetections([]); setSelected(new Set()); }}
+                            className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                        >
                             Re-scan
-                        </Button>
+                        </button>
                     </div>
                 </div>
             )}
         </div>
+    );
+}
+
+function CornerMarks({ accent }: { accent?: boolean }) {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    const color = accent ? "bg-accent" : "bg-accent/70";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}>
+                <span className={`absolute top-0 left-0 h-px w-3 ${color}`} />
+                <span className={`absolute top-0 left-0 w-px h-3 ${color}`} />
+            </span>
+            <span className={`${cls} -top-1 -right-1`}>
+                <span className={`absolute top-0 right-0 h-px w-3 ${color}`} />
+                <span className={`absolute top-0 right-0 w-px h-3 ${color}`} />
+            </span>
+            <span className={`${cls} -bottom-1 -left-1`}>
+                <span className={`absolute bottom-0 left-0 h-px w-3 ${color}`} />
+                <span className={`absolute bottom-0 left-0 w-px h-3 ${color}`} />
+            </span>
+            <span className={`${cls} -bottom-1 -right-1`}>
+                <span className={`absolute bottom-0 right-0 h-px w-3 ${color}`} />
+                <span className={`absolute bottom-0 right-0 w-px h-3 ${color}`} />
+            </span>
+        </>
     );
 }

@@ -1,115 +1,196 @@
-import { useState } from "react";
-import { ArrowLeftRight, Copy, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+/**
+ * CsvJsonUI — convert CSV ↔ JSON in-browser.
+ * Workshop: mode toggle + code-editor styled input/output panels.
+ */
+import { useMemo, useState } from "react";
+import { ArrowLeftRight, Copy, Download, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { downloadBlob } from "@/lib/api";
 
 type Mode = "csv-to-json" | "json-to-csv";
 
-function csvToJson(csv: string): string {
-  const lines = csv.trim().split("\n");
-  if (lines.length < 2) return "[]";
-  const headers = lines[0].split(",").map(h => h.trim());
-  const rows = lines.slice(1).map(line => {
-    const vals = line.split(",").map(v => v.trim());
-    return Object.fromEntries(headers.map((h, i) => [h, vals[i] ?? ""]));
-  });
-  return JSON.stringify(rows, null, 2);
+/** Sniff a likely delimiter by counting candidate characters in the first non-empty line. */
+function detectDelimiter(csv: string): "," | ";" | "\t" | "|" {
+    const firstLine = csv.split(/\r?\n/).find(l => l.trim()) || "";
+    const counts: Record<string, number> = {
+        ",": (firstLine.match(/,/g) || []).length,
+        ";": (firstLine.match(/;/g) || []).length,
+        "\t": (firstLine.match(/\t/g) || []).length,
+        "|": (firstLine.match(/\|/g) || []).length,
+    };
+    const winner = Object.entries(counts).reduce((a, b) => (b[1] > a[1] ? b : a), [",", 0])[0];
+    return (winner as "," | ";" | "\t" | "|") || ",";
 }
 
-function jsonToCsv(json: string): string {
-  const data = JSON.parse(json);
-  if (!Array.isArray(data) || data.length === 0) return "";
-  const headers = Object.keys(data[0]);
-  const rows = data.map((row: Record<string, unknown>) => headers.map(h => String(row[h] ?? "")).join(","));
-  return [headers.join(","), ...rows].join("\n");
+function csvToJson(csv: string, delim: string): string {
+    const lines = csv.trim().split(/\r?\n/);
+    if (lines.length < 2) return "[]";
+    const split = (l: string) => l.split(delim).map(v => v.trim());
+    const headers = split(lines[0]);
+    const rows = lines.slice(1).map(line => {
+        const vals = split(line);
+        return Object.fromEntries(headers.map((h, i) => [h, vals[i] ?? ""]));
+    });
+    return JSON.stringify(rows, null, 2);
 }
+
+function jsonToCsv(json: string, delim: string): string {
+    const data = JSON.parse(json);
+    if (!Array.isArray(data) || data.length === 0) return "";
+    const headers = Object.keys(data[0]);
+    const rows = data.map((row: Record<string, unknown>) => headers.map(h => String(row[h] ?? "")).join(delim));
+    return [headers.join(delim), ...rows].join("\n");
+}
+
+const DELIM_LABEL: Record<string, string> = { ",": "Comma (,)", ";": "Semicolon (;)", "\t": "Tab", "|": "Pipe (|)" };
+const SAMPLE_CSV = "name,age,city\nAlice,30,Boston\nBob,28,Berlin\nCarol,42,Chennai";
+const SAMPLE_JSON = '[\n  {"name":"Alice","age":30,"city":"Boston"},\n  {"name":"Bob","age":28,"city":"Berlin"}\n]';
 
 export function CsvJsonUI() {
-  const [mode, setMode] = useState<Mode>("csv-to-json");
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+    const [mode, setMode] = useState<Mode>("csv-to-json");
+    const [input, setInput] = useState("");
+    const [output, setOutput] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
+    const [delimOverride, setDelimOverride] = useState<string | null>(null);
 
-  const run = () => {
-    setError(null);
-    try {
-      setOutput(mode === "csv-to-json" ? csvToJson(input) : jsonToCsv(input));
-    } catch (e: unknown) {
-      setError((e as Error).message);
-    }
-  };
+    // Detect delimiter on the fly; user can override.
+    const detected = useMemo(() => (mode === "csv-to-json" && input ? detectDelimiter(input) : ","), [input, mode]);
+    const delim = delimOverride ?? detected;
 
-  const copy = () => {
-    navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+    const run = () => {
+        setError(null);
+        try { setOutput(mode === "csv-to-json" ? csvToJson(input, delim) : jsonToCsv(input, delim)); }
+        catch (e: unknown) { setError((e as Error).message); }
+    };
 
-  const download = () => {
-    const ext = mode === "csv-to-json" ? "json" : "csv";
-    const blob = new Blob([output], { type: "text/plain" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `converted.${ext}`;
-    a.click();
-  };
+    const loadSample = () => {
+        setInput(mode === "csv-to-json" ? SAMPLE_CSV : SAMPLE_JSON);
+        setOutput("");
+        setError(null);
+        setDelimOverride(null);
+    };
 
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-2">
-        {(["csv-to-json", "json-to-csv"] as Mode[]).map(m => (
-          <button key={m} onClick={() => { setMode(m); setOutput(""); setError(null); }}
-            className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-colors",
-              mode === m ? "border-accent bg-accent/10 text-primary" : "border-border bg-secondary/40 text-muted-foreground")}>
-            {m === "csv-to-json" ? "CSV → JSON" : "JSON → CSV"}
-          </button>
-        ))}
-      </div>
+    // Cmd+Enter shortcut to run the conversion.
+    const onKey = (e: React.KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); if (input.trim()) run(); }
+    };
 
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-muted-foreground">
-          {mode === "csv-to-json" ? "CSV input" : "JSON input"}
-        </label>
-        <Textarea
-          placeholder={mode === "csv-to-json"
-            ? "name,age,email\nAlice,30,alice@example.com"
-            : '[{"name":"Alice","age":30}]'}
-          value={input}
-          onChange={e => { setInput(e.target.value); setOutput(""); setError(null); }}
-          className="font-mono text-xs h-40 resize-none bg-secondary/40"
-        />
-      </div>
+    const copy = () => {
+        navigator.clipboard.writeText(output);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
 
-      <Button className="w-full gap-2" onClick={run} disabled={!input.trim()}>
-        <ArrowLeftRight size={14} /> Convert
-      </Button>
+    const download = () => {
+        // downloadBlob revokes the URL after the click, so we don't leak.
+        const ext = mode === "csv-to-json" ? "json" : "csv";
+        const blob = new Blob([output], { type: "text/plain" });
+        downloadBlob(blob, `converted.${ext}`);
+    };
 
-      {error && (
-        <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3">
-          <p className="text-xs text-rose-400">{error}</p>
-        </div>
-      )}
-
-      {output && !error && (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-muted-foreground">
-              {mode === "csv-to-json" ? "JSON output" : "CSV output"}
-            </label>
-            <div className="flex gap-2">
-              <button onClick={copy} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                <Copy size={11} />{copied ? "Copied!" : "Copy"}
-              </button>
-              <button onClick={download} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                <Download size={11} /> Download
-              </button>
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-1 p-1 rounded-md border border-border bg-paper-2/40">
+                {(["csv-to-json", "json-to-csv"] as Mode[]).map(m => {
+                    const active = mode === m;
+                    return (
+                        <button key={m}
+                            onClick={() => { setMode(m); setOutput(""); setError(null); }}
+                            className={cn(
+                                "rounded h-9 text-[12.5px] font-medium transition-colors inline-flex items-center justify-center gap-1.5",
+                                active ? "bg-card border border-accent text-accent" : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                            )}
+                        >
+                            {m === "csv-to-json" ? "CSV → JSON" : "JSON → CSV"}
+                        </button>
+                    );
+                })}
             </div>
-          </div>
-          <Textarea value={output} readOnly className="font-mono text-xs h-40 resize-none bg-secondary/40" />
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                    <span><span className="text-accent">§</span> {mode === "csv-to-json" ? "CSV input" : "JSON input"}</span>
+                    <div className="flex items-center gap-2 normal-case tracking-normal">
+                        {!input && (
+                            <button
+                                type="button"
+                                onClick={loadSample}
+                                className="inline-flex items-center gap-1 px-2 h-6 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-mono text-[10px] tracking-[0.06em] uppercase transition-colors"
+                            >
+                                <Sparkles size={10} /> Try sample
+                            </button>
+                        )}
+                        {mode === "csv-to-json" && input && (
+                            <span className="text-accent">
+                                Delimiter: {DELIM_LABEL[delim] || delim}
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <textarea
+                    value={input}
+                    onChange={e => { setInput(e.target.value); setOutput(""); setError(null); }}
+                    onKeyDown={onKey}
+                    placeholder={mode === "csv-to-json"
+                        ? "name,age,email\nAlice,30,alice@example.com"
+                        : '[{"name":"Alice","age":30}]'}
+                    spellCheck={false}
+                    className="w-full h-44 bg-paper-2/30 px-4 py-3 font-mono text-[12.5px] leading-relaxed text-foreground placeholder:text-muted-foreground/50 resize-y outline-none"
+                />
+                {mode === "csv-to-json" && input && (
+                    <div className="px-3 py-2 border-t border-border bg-paper-2/30 flex items-center gap-1.5 flex-wrap">
+                        <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground mr-1">Delimiter</span>
+                        {([",", ";", "\t", "|"] as const).map(d => {
+                            const active = delim === d;
+                            return (
+                                <button
+                                    key={d}
+                                    type="button"
+                                    onClick={() => setDelimOverride(d)}
+                                    className={cn(
+                                        "inline-flex items-center h-6 px-2 font-mono text-[10.5px] tracking-[0.06em] uppercase border rounded transition-colors",
+                                        active ? "border-accent bg-accent/[0.08] text-accent" : "border-border text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    {DELIM_LABEL[d]}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            <button onClick={run} disabled={!input.trim()} title="Convert (Cmd/Ctrl + Enter)" className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                <ArrowLeftRight size={13} /> Convert
+            </button>
+
+            {error && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    {error}
+                </div>
+            )}
+
+            {output && !error && (
+                <div className="rounded-xl border border-accent/30 bg-card overflow-hidden animate-fade-in">
+                    <div className="px-4 py-2 border-b border-accent/20 bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <span><span className="text-accent">§</span> {mode === "csv-to-json" ? "JSON output" : "CSV output"}</span>
+                        <div className="flex items-center gap-1">
+                            <button onClick={copy} className={cn("h-6 px-2 rounded inline-flex items-center gap-1 transition-colors text-muted-foreground hover:text-accent hover:bg-accent/[0.06]", copied && "animate-copy-flash")}>
+                                {copied ? <><Check size={10} className="text-accent" /> Copied</> : <><Copy size={10} /> Copy</>}
+                            </button>
+                            <button onClick={download} className="h-6 px-2 rounded inline-flex items-center gap-1 transition-colors text-muted-foreground hover:text-accent hover:bg-accent/[0.06]">
+                                <Download size={10} /> .{mode === "csv-to-json" ? "json" : "csv"}
+                            </button>
+                        </div>
+                    </div>
+                    <textarea
+                        value={output}
+                        readOnly
+                        className="w-full h-44 bg-paper-2/30 px-4 py-3 font-mono text-[12.5px] leading-relaxed text-foreground resize-y outline-none"
+                    />
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

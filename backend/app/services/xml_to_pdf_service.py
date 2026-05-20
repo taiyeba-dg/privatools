@@ -1,30 +1,52 @@
-import uuid
-import re
+"""Convert an XML file to a Courier-typeset PDF.
+
+Security: defusedxml is the **only** parser path. We never fall back to
+`xml.dom.minidom` directly — that parser resolves external entities and
+DOCTYPE references, which is the textbook XXE attack vector.
+
+If defusedxml isn't installed the request fails fast with a 500 instead
+of silently parsing with an unsafe library.
+"""
+
+from __future__ import annotations
+
+import os
+
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.exceptions import DependencyError, ValidationError
+from ..utils.filenames import temp_output
+
+# Cap input size so a multi-GB XML file can't pin the worker.
+MAX_INPUT_BYTES = 5 * 1024 * 1024
 
 
 def _safe_pretty_xml(content: str) -> str:
-    """Parse and pretty-print XML safely, blocking XXE attacks."""
+    """Parse and pretty-print XML *safely* — defusedxml only."""
     try:
         from defusedxml.minidom import parseString
+    except ImportError as exc:
+        raise DependencyError(
+            "defusedxml is required for XML processing. Install with: pip install defusedxml"
+        ) from exc
+
+    try:
         dom = parseString(content)
-        return dom.toprettyxml(indent="  ")
-    except ImportError:
-        # Fallback: strip DOCTYPE to prevent entity injection
-        sanitized = re.sub(r'<!DOCTYPE[^>]*>', '', content, flags=re.IGNORECASE | re.DOTALL)
-        import xml.dom.minidom
-        dom = xml.dom.minidom.parseString(sanitized)
-        return dom.toprettyxml(indent="  ")
-    except Exception:
-        return content
+    except Exception as exc:
+        raise ValidationError(f"XML is malformed or unsafe to parse: {exc}") from exc
+
+    return dom.toprettyxml(indent="  ")
 
 
 def xml_to_pdf(input_path: str) -> str:
     """Convert an XML file to a formatted PDF."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"xml_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("xml", "pdf")
+
+    if os.path.getsize(input_path) > MAX_INPUT_BYTES:
+        raise ValidationError(
+            f"XML file too large (> {MAX_INPUT_BYTES // (1024 * 1024)} MB)."
+        )
 
     with open(input_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -60,7 +82,7 @@ def xml_to_pdf(input_path: str) -> str:
         else:
             c.setFillColorRGB(0, 0, 0)
 
-        # Truncate long lines
+        # Truncate long lines so they don't run off the page.
         max_w = width - 2 * margin
         display = stripped.lstrip()
         while c.stringWidth(display, "Courier", font_size) > max_w and len(display) > 10:

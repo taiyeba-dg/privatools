@@ -9,14 +9,19 @@ base image.
 from __future__ import annotations
 
 import asyncio
-import uuid
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.exceptions import (
+    ExternalToolError,
+    ProcessingError,
+    ToolTimeoutError,
+)
+from ..utils.filenames import temp_output
+
+QPDF_TIMEOUT = 60  # seconds
 
 
 async def web_optimize(input_path: str) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"weboptim_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("weboptim", "pdf")
 
     proc = await asyncio.create_subprocess_exec(
         "qpdf",
@@ -27,16 +32,23 @@ async def web_optimize(input_path: str) -> str:
         stderr=asyncio.subprocess.PIPE,
     )
     try:
-        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
-    except asyncio.TimeoutError:
+        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=QPDF_TIMEOUT)
+    except asyncio.TimeoutError as exc:
         proc.kill()
-        raise Exception("qpdf linearize timed out")
+        try:
+            await proc.communicate()
+        except (OSError, ValueError):
+            pass
+        raise ToolTimeoutError("qpdf linearize timed out") from exc
 
     # qpdf exit codes: 0 = ok, 3 = warnings (file still produced)
     if proc.returncode not in (0, 3):
-        raise Exception(f"qpdf linearize failed: {stderr.decode()[:200]}")
+        err = (stderr or b"").decode("utf-8", errors="replace").strip()
+        # Keep the first 200 chars of stderr — qpdf's messages are usually
+        # already a single line ("operation succeeded with warnings: ...").
+        raise ExternalToolError(f"qpdf linearize failed: {err[:200]}")
 
     if not output_path.exists():
-        raise Exception("qpdf produced no output")
+        raise ProcessingError("qpdf produced no output")
 
     return str(output_path)

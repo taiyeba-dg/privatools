@@ -1,10 +1,25 @@
-import pikepdf
+"""Split a PDF into one or more output PDFs.
+
+`parse_page_selection` is kept identical to its original signature and
+behaviour — `tests/test_split_service.py` pins those semantics, including
+the supported tokens (`end`, open ranges like `-3` / `8-`, dedup-preserving
+order, rejection of `0`, `4-2`, `abc`).
+"""
+from __future__ import annotations
+
+import logging
+import os
+import time
 import uuid
 import zipfile
 from pathlib import Path
 from typing import List
 
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+import pikepdf
+
+from ..utils.cleanup import ensure_temp_dir, get_temp_path, safe_open_pdf
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_page_number(token: str, total_pages: int, context: str) -> int:
@@ -61,54 +76,90 @@ def parse_page_selection(pages: str, total_pages: int) -> List[int]:
 
 def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2) -> str:
     ensure_temp_dir()
+    started = time.monotonic()
+    try:
+        input_size = os.path.getsize(input_path)
+    except OSError:
+        input_size = 0
+    logger.info(
+        "split: start mode=%s n=%d input_bytes=%d", mode, n, input_size,
+    )
 
-    with pikepdf.open(input_path) as pdf:
-        total_pages = len(pdf.pages)
-        if total_pages <= 0:
-            raise ValueError("Cannot split an empty PDF with no pages.")
+    output_files: List[str] = []
+    try:
+        with safe_open_pdf(input_path) as pdf:
+            total_pages = len(pdf.pages)
+            if total_pages <= 0:
+                raise ValueError("Cannot split an empty PDF with no pages.")
 
-        if mode == "individual":
-            output_files = []
-            for i in range(total_pages):
-                out_path = get_temp_path(f"page_{i+1}_{uuid.uuid4().hex}.pdf")
+            if mode == "individual":
+                for i in range(total_pages):
+                    out_path = get_temp_path(f"page_{i+1}_{uuid.uuid4().hex}.pdf")
+                    with pikepdf.Pdf.new() as out:
+                        out.pages.append(pdf.pages[i])
+                        out.save(str(out_path))
+                    output_files.append(str(out_path))
+
+            elif mode == "every_n":
+                if n <= 0:
+                    raise ValueError("Chunk size 'n' must be greater than 0.")
+                for start in range(0, total_pages, n):
+                    end = min(start + n, total_pages)
+                    out_path = get_temp_path(f"pages_{start+1}_{end}_{uuid.uuid4().hex}.pdf")
+                    with pikepdf.Pdf.new() as out:
+                        for i in range(start, end):
+                            out.pages.append(pdf.pages[i])
+                        out.save(str(out_path))
+                    output_files.append(str(out_path))
+
+            else:  # specific pages
+                page_nums = parse_page_selection(pages, total_pages)
+                out_path = get_temp_path(f"extracted_{uuid.uuid4().hex}.pdf")
                 with pikepdf.Pdf.new() as out:
-                    out.pages.append(pdf.pages[i])
-                    out.save(str(out_path))
-                output_files.append(str(out_path))
-
-        elif mode == "every_n":
-            if n <= 0:
-                raise ValueError("Chunk size 'n' must be greater than 0.")
-            output_files = []
-            for start in range(0, total_pages, n):
-                end = min(start + n, total_pages)
-                out_path = get_temp_path(f"pages_{start+1}_{end}_{uuid.uuid4().hex}.pdf")
-                with pikepdf.Pdf.new() as out:
-                    for i in range(start, end):
+                    for i in page_nums:
                         out.pages.append(pdf.pages[i])
                     out.save(str(out_path))
-                output_files.append(str(out_path))
+                output_files = [str(out_path)]
 
-        else:  # specific pages
-            page_nums = parse_page_selection(pages, total_pages)
-            out_path = get_temp_path(f"extracted_{uuid.uuid4().hex}.pdf")
-            with pikepdf.Pdf.new() as out:
-                for i in page_nums:
-                    out.pages.append(pdf.pages[i])
-                out.save(str(out_path))
-            output_files = [str(out_path)]
+        if len(output_files) == 1:
+            duration_ms = int((time.monotonic() - started) * 1000)
+            try:
+                out_size = os.path.getsize(output_files[0])
+            except OSError:
+                out_size = 0
+            logger.info(
+                "split: done mode=%s parts=1 duration_ms=%d output_bytes=%d",
+                mode, duration_ms, out_size,
+            )
+            return output_files[0]
 
-    if len(output_files) == 1:
-        return output_files[0]
-
-    zip_path = get_temp_path(f"split_{uuid.uuid4().hex}.zip")
-    with zipfile.ZipFile(str(zip_path), "w") as zf:
+        zip_path = get_temp_path(f"split_{uuid.uuid4().hex}.zip")
+        with zipfile.ZipFile(str(zip_path), "w") as zf:
+            for f in output_files:
+                zf.write(f, Path(f).name)
+        # Clean up individual page files after zipping
         for f in output_files:
-            zf.write(f, Path(f).name)
-    # Clean up individual page files after zipping
-    for f in output_files:
+            try:
+                Path(f).unlink(missing_ok=True)
+            except OSError:
+                pass
+
+        duration_ms = int((time.monotonic() - started) * 1000)
         try:
-            Path(f).unlink(missing_ok=True)
+            zip_size = os.path.getsize(zip_path)
         except OSError:
-            pass
-    return str(zip_path)
+            zip_size = 0
+        logger.info(
+            "split: done mode=%s parts=%d duration_ms=%d output_bytes=%d",
+            mode, len(output_files), duration_ms, zip_size,
+        )
+        return str(zip_path)
+    except Exception:
+        # On failure, sweep any partial output files we created so they
+        # don't linger in TEMP_DIR until the janitor sweeps them.
+        for f in output_files:
+            try:
+                Path(f).unlink(missing_ok=True)
+            except OSError:
+                pass
+        raise

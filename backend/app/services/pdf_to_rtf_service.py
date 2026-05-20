@@ -7,11 +7,9 @@ encoded as \\uN escapes per the RTF spec.
 
 from __future__ import annotations
 
-import uuid
-
 import fitz  # PyMuPDF
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.filenames import temp_output
 
 
 def _escape_rtf(text: str) -> str:
@@ -46,8 +44,7 @@ def _escape_rtf(text: str) -> str:
 
 
 def pdf_to_rtf(input_path: str) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"pdf_rtf_{uuid.uuid4().hex}.rtf")
+    output_path = temp_output("pdf_rtf", "rtf")
 
     doc = fitz.open(input_path)
     try:

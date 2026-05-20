@@ -1,150 +1,309 @@
-import { useState, useRef } from "react";
-import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+/**
+ * SignUI — basic draw-or-upload signature with position controls.
+ * Workshop: drafting-paper canvas + position panel + page preview.
+ */
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, CheckCircle2, AlertCircle, PenTool, Upload, RotateCcw } from "lucide-react";
+import { cn, friendlyError } from "@/lib/utils";
+import { downloadBlob } from "@/lib/api";
+import { FileUploadZone } from "./FileUploadZone";
+
+const PAGE_W = 612;
+const PAGE_H = 792;
+const MAX_SIG_FILE_BYTES = 4 * 1024 * 1024; // 4 MB ceiling for sig image upload
 
 export function SignUI() {
-  const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
-  const [sigData, setSigData] = useState("");
-  const [page, setPage] = useState(1);
-  const [x, setX] = useState(50);
-  const [y, setY] = useState(50);
-  const [width, setWidth] = useState(200);
-  const [height, setHeight] = useState(80);
-  const [state, setState] = useState<"idle" | "processing" | "done">("idle");
-  const [error, setError] = useState<string | null>(null);
-  const [drag, setDrag] = useState(false);
-  const [sigFile, setSigFile] = useState<File | null>(null);
-  const ref = useRef<HTMLInputElement>(null);
-  const sigRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [drawing, setDrawing] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const [sigData, setSigData] = useState("");
+    const [sigFile, setSigFile] = useState<File | null>(null);
+    const [page, setPage] = useState(1);
+    const [x, setX] = useState(50);
+    const [y, setY] = useState(650);
+    const [width, setWidth] = useState(200);
+    const [height, setHeight] = useState(80);
+    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
+    const [error, setError] = useState<string | null>(null);
+    const sigRef = useRef<HTMLInputElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const drawingRef = useRef(false);
 
-  const pick = (fl: FileList) => { const f = fl[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); setState("idle"); setError(null); };
+    // Retina-aware canvas init: match CSS px size at devicePixelRatio for crisp strokes.
+    const initCanvas = useCallback(() => {
+        const c = canvasRef.current;
+        if (!c) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const cssW = c.clientWidth || 600;
+        const cssH = 140;
+        c.width = Math.round(cssW * dpr);
+        c.height = Math.round(cssH * dpr);
+        c.style.height = `${cssH}px`;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+    }, []);
 
-  const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-    setDrawing(true);
-    const rect = canvasRef.current!.getBoundingClientRect();
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-  };
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!drawing) return;
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-    const rect = canvasRef.current!.getBoundingClientRect();
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  };
-  const endDraw = () => {
-    setDrawing(false);
-    if (canvasRef.current) setSigData(canvasRef.current.toDataURL("image/png"));
-  };
-  const clearCanvas = () => {
-    const ctx = canvasRef.current?.getContext("2d");
-    if (ctx && canvasRef.current) { ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height); setSigData(""); }
-  };
+    useEffect(() => {
+        if (file) initCanvas();
+    }, [file, initCanvas]);
 
-  const process = async () => {
-    if (!file) return;
-    setState("processing"); setError(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", file.raw);
-      fd.append("page", String(page));
-      fd.append("x", String(x));
-      fd.append("y", String(y));
-      fd.append("width", String(width));
-      fd.append("height", String(height));
-      if (sigFile) { fd.append("signature", sigFile); }
-      else if (sigData) { fd.append("signature_data", sigData); }
-      else { setError("Please draw or upload a signature"); setState("idle"); return; }
-      const res = await fetch("/api/sign-pdf", { method: "POST", body: fd });
-      if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Failed" })); throw new Error(b.detail); }
-      const blob = await res.blob();
-      downloadBlob(blob, file ? `${file.name.replace(/\.pdf$/i, "")}_signed.pdf` : "signed.pdf");
-      setState("done");
-    } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
-  };
+    const getPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        const rect = canvasRef.current!.getBoundingClientRect();
+        const point = "touches" in e ? e.touches[0] : e;
+        return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+    };
 
-  if (state === "done") return (
-    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
-      <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
-      <h2 className="text-lg font-bold text-foreground mb-1">Signed!</h2>
-      <p className="text-sm text-muted-foreground mb-6">Your signed PDF has been downloaded.</p>
-      <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFile(null); setState("idle"); setSigData(""); setSigFile(null); }}>Sign another</Button>
-    </div>
-  );
+    const startDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        const ctx = canvasRef.current?.getContext("2d");
+        if (!ctx) return;
+        drawingRef.current = true;
+        const { x, y } = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    };
+    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        if (!drawingRef.current) return;
+        const ctx = canvasRef.current?.getContext("2d");
+        if (!ctx) return;
+        const { x, y } = getPos(e);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = "hsl(var(--foreground))";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+    };
+    const endDraw = () => {
+        drawingRef.current = false;
+        if (canvasRef.current) setSigData(canvasRef.current.toDataURL("image/png"));
+    };
+    const clearCanvas = () => {
+        const c = canvasRef.current;
+        if (!c) return;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.restore();
+        setSigData("");
+    };
 
-  return (
-    <div className="space-y-4">
-      {!file ? (
-        <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-          onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
-          onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-          className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-            drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
-          <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
-          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
-            <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
-          </div>
-          <p className="text-sm font-semibold text-foreground">Select a PDF to sign</p>
-          <p className="text-xs text-muted-foreground">Drag & drop or click to browse</p>
+    const process = useCallback(async () => {
+        if (!file) return;
+        setState("processing"); setError(null);
+        try {
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("page", String(page));
+            fd.append("x", String(x));
+            fd.append("y", String(y));
+            fd.append("width", String(width));
+            fd.append("height", String(height));
+            if (sigFile) fd.append("signature", sigFile);
+            else if (sigData) fd.append("signature_data", sigData);
+            else { setError("Draw a signature or upload an image first"); setState("idle"); return; }
+
+            const res = await fetch("/api/sign-pdf", { method: "POST", body: fd });
+            if (!res.ok) { const b = await res.json().catch(() => ({ detail: "Could not sign PDF" })); throw new Error(b.detail); }
+            const blob = await res.blob();
+            downloadBlob(blob, `${file.name.replace(/\.pdf$/i, "")}_signed.pdf`);
+            setState("done");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Could not sign PDF";
+            setError(friendlyError(msg, "Couldn't sign that PDF."));
+            setState("idle");
+        }
+    }, [file, page, x, y, width, height, sigFile, sigData]);
+
+    useEffect(() => {
+        const canProcess = !!file && state !== "processing" && (!!sigData || !!sigFile);
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [file, state, sigData, sigFile, process]);
+
+    if (state === "done") return (
+        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="relative p-7 sm:p-9 animate-corner-extend">
+                <CornerMarks />
+                <div className="flex items-start gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="section-mark mb-2">Signed</p>
+                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                            <span className="italic text-accent">Signature</span> applied
+                        </h2>
+                        <button
+                            onClick={() => { setFile(null); setState("idle"); setSigData(""); setSigFile(null); clearCanvas(); }}
+                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                        >
+                            <RotateCcw size={12} /> Sign another
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      ) : (
+    );
+
+    return (
+        <div className="space-y-4">
+            <FileUploadZone
+                file={file}
+                onFileSelect={setFile}
+                onClear={() => setFile(null)}
+                accept=".pdf"
+                label="Drop PDF to sign"
+                hint="Draw or upload a signature"
+            />
+
+            {file && (
+                <>
+                    {/* Signature panel */}
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span><span className="text-accent">§</span> Signature</span>
+                            <div className="flex items-center gap-1">
+                                <button onClick={clearCanvas} className="h-6 px-2 rounded text-muted-foreground hover:bg-secondary/40">Clear</button>
+                                <button
+                                    onClick={() => sigRef.current?.click()}
+                                    className="h-6 px-2 rounded inline-flex items-center gap-1 text-accent hover:opacity-80"
+                                >
+                                    <Upload size={10} /> Image
+                                </button>
+                                <input
+                                    ref={sigRef}
+                                    type="file"
+                                    accept=".png,.jpg,.jpeg"
+                                    className="hidden"
+                                    onChange={e => {
+                                        const f = e.target.files?.[0];
+                                        e.target.value = "";
+                                        if (!f) return;
+                                        if (f.size > MAX_SIG_FILE_BYTES) {
+                                            setError("Signature image is too large (max 4 MB) — please choose a smaller file");
+                                            return;
+                                        }
+                                        setSigFile(f);
+                                        setError(null);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className="p-3">
+                            <div className="relative rounded-md border border-dashed border-border-strong bg-paper-2/40 overflow-hidden">
+                                <canvas
+                                    ref={canvasRef}
+                                    onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
+                                    onTouchStart={e => { e.preventDefault(); startDraw(e); }}
+                                    onTouchMove={e => { e.preventDefault(); draw(e); }}
+                                    onTouchEnd={endDraw}
+                                    aria-label="Draw your signature"
+                                    className="w-full cursor-crosshair touch-none"
+                                />
+                                {!sigData && !sigFile && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <p className="font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground/60">Draw signature here</p>
+                                    </div>
+                                )}
+                            </div>
+                            {sigFile && (
+                                <div className="mt-2 flex items-center gap-3 rounded-md border border-border bg-paper-2/40 px-3 py-2">
+                                    <img
+                                        src={URL.createObjectURL(sigFile)}
+                                        alt="Signature preview"
+                                        className="max-h-12 max-w-[120px] object-contain"
+                                        onLoad={(e) => URL.revokeObjectURL((e.currentTarget as HTMLImageElement).src)}
+                                    />
+                                    <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-accent truncate">
+                                        <span>§</span> <span className="text-foreground truncate">{sigFile.name}</span>
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSigFile(null)}
+                                        className="ml-auto h-7 px-2 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-mono text-[10px] uppercase tracking-wider"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Placement panel */}
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span className="text-accent">§</span> Placement (points)
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_180px] gap-5 p-4 items-center">
+                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                                {([
+                                    { f: "page", label: "Page", val: page, set: setPage, min: 1 },
+                                    { f: "x", label: "X", val: x, set: setX, min: 0 },
+                                    { f: "y", label: "Y", val: y, set: setY, min: 0 },
+                                    { f: "width", label: "W", val: width, set: setWidth, min: 10 },
+                                    { f: "height", label: "H", val: height, set: setHeight, min: 10 },
+                                ] as const).map(c => (
+                                    <div key={c.f}>
+                                        <label className="font-mono text-[9.5px] tracking-[0.10em] uppercase text-muted-foreground">{c.label}</label>
+                                        <input
+                                            type="number" inputMode="numeric" min={c.min} value={c.val}
+                                            onChange={e => c.set(parseInt(e.target.value) || c.min)}
+                                            className="mt-0.5 w-full rounded-md border border-border bg-paper-2/40 px-2 py-1.5 font-mono text-[13px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 text-center"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            {/* Mini page preview */}
+                            <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[180px] overflow-hidden">
+                                <div
+                                    className="absolute border-2 border-accent bg-accent/15"
+                                    style={{
+                                        left: `${(x / PAGE_W) * 100}%`,
+                                        top: `${(y / PAGE_H) * 100}%`,
+                                        width: `${(width / PAGE_W) * 100}%`,
+                                        height: `${(height / PAGE_H) * 100}%`,
+                                        minWidth: 4, minHeight: 4,
+                                    }}
+                                >
+                                    <span className="absolute inset-0 flex items-center justify-center font-display italic text-accent text-[7px]">sign</span>
+                                </div>
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page {page}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                            <AlertCircle size={13} className="shrink-0" />{error}
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                        <button onClick={process} disabled={state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Signing…</> : <><PenTool size={13} /> Sign PDF</>}
+                        </button>
+                        {state !== "processing" && (
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        )}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
         <>
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary"><FileText size={14} className="text-muted-foreground" /></div>
-            <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{file.name}</p><p className="text-xs text-muted-foreground">{file.size}</p></div>
-            <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-            <p className="text-sm font-semibold text-foreground">Draw your signature</p>
-            <div className="relative rounded-lg border border-border bg-secondary/20 overflow-hidden">
-              <canvas ref={canvasRef} width={400} height={120} className="w-full cursor-crosshair"
-                onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw} />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={clearCanvas}>Clear</Button>
-              <span className="text-xs text-muted-foreground/80 self-center">or</span>
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => sigRef.current?.click()}>Upload image</Button>
-              <input ref={sigRef} type="file" accept=".png,.jpg,.jpeg" className="hidden" onChange={e => { if (e.target.files?.[0]) { setSigFile(e.target.files[0]); setSigData("uploaded"); } e.target.value = ""; }} />
-            </div>
-            {sigFile && <p className="text-xs text-emerald-400">✓ Signature image: {sigFile.name}</p>}
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div><label className="text-xs font-medium text-muted-foreground">Page</label>
-                <input type="number" inputMode="numeric" value={page} onChange={e => setPage(Math.max(1, parseInt(e.target.value) || 1))} min={1}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
-              <div><label className="text-xs font-medium text-muted-foreground">Width</label>
-                <input type="number" inputMode="numeric" value={width} onChange={e => setWidth(parseInt(e.target.value) || 200)} min={10}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
-              <div><label className="text-xs font-medium text-muted-foreground">X position</label>
-                <input type="number" inputMode="numeric" value={x} onChange={e => setX(parseInt(e.target.value) || 0)} min={0}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
-              <div><label className="text-xs font-medium text-muted-foreground">Y position</label>
-                <input type="number" inputMode="numeric" value={y} onChange={e => setY(parseInt(e.target.value) || 0)} min={0}
-                  className="mt-1 w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground outline-none focus:border-accent/50" /></div>
-            </div>
-          </div>
-
-          {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}
-
-          <Button onClick={process} disabled={state === "processing"} className="glow-primary">
-            {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Signing…</> : "Sign PDF"}
-          </Button>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
         </>
-      )}
-    </div>
-  );
+    );
 }

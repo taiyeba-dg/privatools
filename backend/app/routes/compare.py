@@ -1,3 +1,4 @@
+import re
 import uuid
 import logging
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
@@ -9,6 +10,8 @@ from ..services import compare_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+_HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
 
 @router.post("/compare")
 async def compare(
@@ -18,10 +21,17 @@ async def compare(
     highlight_color: str = Form("#ff0000"),
 ):
     for f in (file1, file2):
-        if not f.filename.lower().endswith(".pdf"):
+        if not (f.filename or "").lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail=f"File {f.filename} is not a PDF")
     if mode not in {"visual", "text"}:
         raise HTTPException(status_code=400, detail="mode must be one of: visual, text")
+    # Validate highlight color explicitly — service has a fallback but we
+    # surface a clearer error to the client when someone sends garbage.
+    if not _HEX_COLOR_RE.match((highlight_color or "").strip()):
+        raise HTTPException(
+            status_code=400,
+            detail="highlight_color must be a hex color like #ff0000 or #f00 (invalid format)",
+        )
     ensure_temp_dir()
     path1 = None
     path2 = None

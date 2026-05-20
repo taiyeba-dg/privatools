@@ -1,9 +1,27 @@
-"""PDF compression using pikepdf with improved quality settings."""
+"""PDF compression using pikepdf with improved quality settings.
+
+Uses pikepdf object-stream compression + per-image JPEG re-encoding. We
+deliberately do NOT shell out to Ghostscript: the deploy VM does not
+guarantee a `gs` binary, and pikepdf's pure-Python path is predictable
+and fast enough for the upload sizes the frontend permits (≤500 MB).
+
+Presets (`light` / `recommended` / `extreme`) map to user-facing labels
+in the React UI. `custom` lets the slider override quality + max dim
+without touching the preset table.
+"""
 import io
-import pikepdf
+import logging
+import os
+import time
 import uuid
+from typing import Any
+
+import pikepdf
 from PIL import Image
+
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, safe_open_pdf
+
+logger = logging.getLogger(__name__)
 
 _PRESETS = {
     "light": {"max_image_dim": 2200, "jpeg_quality": 85},
@@ -40,6 +58,24 @@ def _recompress_image(
         return None
 
 
+def _open_pdf_mmap(input_path: str) -> Any:
+    """Open `input_path` with pikepdf, preferring mmap when the build supports it.
+
+    Older pikepdf wheels don't expose `AccessMode.mmap`; fall back to the
+    default open in that case. Either way we still get the friendly
+    password / corrupt translations from `safe_open_pdf`.
+    """
+    access_mode = getattr(getattr(pikepdf, "AccessMode", None), "mmap", None)
+    if access_mode is not None:
+        try:
+            return safe_open_pdf(input_path, access_mode=access_mode)
+        except TypeError:
+            # Older pikepdf builds accept access_mode= as keyword but on a
+            # different parameter — degrade silently.
+            pass
+    return safe_open_pdf(input_path)
+
+
 def compress_pdf(
     input_path: str,
     level: str = "recommended",
@@ -53,6 +89,12 @@ def compress_pdf(
     override the preset values for one specific job (e.g. user sliders).
     """
     ensure_temp_dir()
+    started = time.monotonic()
+    input_size = 0
+    try:
+        input_size = os.path.getsize(input_path)
+    except OSError:
+        pass
     output_path = get_temp_path(f"compressed_{uuid.uuid4().hex}.pdf")
     preset = _PRESETS.get(level, _PRESETS["recommended"])
     max_image_dim = int(max_image_dim_override) if max_image_dim_override is not None else int(preset["max_image_dim"])
@@ -60,7 +102,12 @@ def compress_pdf(
     jpeg_quality = max(15, min(95, jpeg_quality))
     max_image_dim = max(300, min(4000, max_image_dim))
 
-    with safe_open_pdf(input_path) as pdf:
+    logger.info(
+        "compress: start level=%s jpeg_q=%d max_dim=%d input_bytes=%d",
+        level, jpeg_quality, max_image_dim, input_size,
+    )
+
+    with _open_pdf_mmap(input_path) as pdf:
         for page in pdf.pages:
             resources = page.get("/Resources")
             if resources is None:
@@ -97,8 +144,7 @@ def compress_pdf(
                         xobj["/ColorSpace"] = pikepdf.Name("/DeviceRGB")
                         xobj["/BitsPerComponent"] = 8
                 except Exception as exc:
-                    import logging
-                    logging.getLogger(__name__).debug("Skipping image %s: %s", key, exc)
+                    logger.debug("Skipping image %s: %s", key, exc)
                     continue
 
         # Stream compression + garbage collection
@@ -108,4 +154,15 @@ def compress_pdf(
             recompress_flate=True,
             object_stream_mode=pikepdf.ObjectStreamMode.generate,
         )
+
+    duration_ms = int((time.monotonic() - started) * 1000)
+    try:
+        out_size = os.path.getsize(output_path)
+    except OSError:
+        out_size = 0
+    logger.info(
+        "compress: done level=%s duration_ms=%d input_bytes=%d output_bytes=%d ratio=%.2f",
+        level, duration_ms, input_size, out_size,
+        (out_size / input_size) if input_size else 1.0,
+    )
     return str(output_path)

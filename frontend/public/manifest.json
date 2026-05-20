@@ -1,11 +1,11 @@
 {
     "name": "PrivaTools — Privacy-First File Tools",
     "short_name": "PrivaTools",
-    "description": "175+ free, open-source file tools — PDF, image, video, audio, and developer utilities. All processing happens on your device. Zero uploads, zero tracking.",
+    "description": "179 free, open-source file tools — PDF, image, video, audio, and developer utilities. All processing happens on your device. Zero uploads, zero tracking.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0a0b0c",
-    "theme_color": "#0a0b0c",
+    "theme_color": "#0E8A56",
     "orientation": "any",
     "categories": [
         "productivity",
@@ -21,13 +21,25 @@
             "src": "/icons/icon-192.png",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
         },
         {
             "src": "/icons/icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ],
     "screenshots": [
@@ -36,7 +48,7 @@
             "sizes": "1200x630",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "PrivaTools — 175+ Free File Tools"
+            "label": "PrivaTools — 179 Free File Tools"
         }
     ],
     "shortcuts": [

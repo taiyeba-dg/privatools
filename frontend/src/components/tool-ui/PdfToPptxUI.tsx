@@ -1,58 +1,161 @@
-import { useState, useRef } from "react";
-import { Upload, Loader2, AlertCircle, Presentation } from "lucide-react";
-import { Button } from "@/components/ui/button";
+/**
+ * PdfToPptxUI — convert each PDF page to a PowerPoint slide (one or many PDFs).
+ * Multi-file via useMultiFileProcessor.
+ */
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Loader2, RotateCcw, Presentation, Download, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize } from "@/lib/api";
+import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
+import { MultiFileQueue } from "./MultiFileQueue";
 
 export function PdfToPptxUI() {
-    const [file, setFile] = useState<File | null>(null);
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
+    const proc = useMultiFileProcessor();
+    const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
-    const ref = useRef<HTMLInputElement>(null);
+    const fileRef = useRef<HTMLInputElement>(null);
+    const isPdfOnly = (f: File) => f.name.toLowerCase().endsWith(".pdf");
+    const canProcess = proc.entries.length > 0 && phase !== "processing";
 
-    const process = async () => {
-        if (!file) return;
-        setStatus("processing"); setError(null);
-        try { await processAndDownload("/pdf-to-pptx", file, file.name.replace(/\.pdf$/i, ".pptx")); setStatus("done"); }
-        catch (e: any) { setError(e.message || "Failed"); setStatus("idle"); }
-    };
+    const process = useCallback(async (retry = false) => {
+        setPhase("processing");
+        await proc.run({
+            endpoint: "/pdf-to-pptx",
+            outputSuffix: null,
+            outputExt: "pptx",
+        }, retry);
+        setPhase("done");
+    }, [proc]);
 
-    if (status === "done") return (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-8 text-center">
-            <Presentation size={28} className="mx-auto mb-3 text-emerald-400" />
-            <h2 className="text-lg font-bold text-foreground mb-1">Converted!</h2>
-            <p className="text-sm text-muted-foreground mb-4">Your PowerPoint file has been downloaded</p>
-            <Button variant="outline" onClick={() => { setFile(null); setStatus("idle"); }}>Convert another</Button>
-        </div>
-    );
+    const downloadedRef = useRef(false);
+    useEffect(() => {
+        if (phase === "done" && !downloadedRef.current && proc.doneCount > 0) {
+            downloadedRef.current = true;
+            proc.downloadAll("archive_pptx");
+        }
+    }, [phase, proc]);
+
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
+                e.preventDefault();
+                void process(false);
+            }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [canProcess, process]);
+
+    if (phase === "done") {
+        const isMulti = proc.entries.length > 1;
+        return (
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <Presentation size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Converted</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                {isMulti
+                                    ? <><span className="italic text-accent">{proc.doneCount}</span> file{proc.doneCount === 1 ? "" : "s"} → <span className="italic text-accent">.pptx</span>{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
+                                    : <>PDF → <span className="italic text-accent">.pptx slides</span></>}
+                            </h2>
+                            {isMulti && proc.doneCount > 0 && (
+                                <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1">
+                                    <span className="text-accent">§</span> {proc.doneCount > 1 ? "ZIP downloaded" : "PPTX downloaded"}
+                                </p>
+                            )}
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                {proc.doneCount > 0 && (
+                                    <button onClick={() => proc.downloadAll("archive_pptx")} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                        <Download size={13} /> Download {proc.doneCount > 1 ? "ZIP" : "again"}
+                                    </button>
+                                )}
+                                {proc.failedCount > 0 && (
+                                    <button
+                                        onClick={() => { downloadedRef.current = false; void process(true); }}
+                                        className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-copper bg-copper-soft/40 text-[13px] font-medium text-foreground hover:bg-copper-soft/60 transition-colors"
+                                    >
+                                        Retry {proc.failedCount} failed
+                                    </button>
+                                )}
+                                <button onClick={() => { proc.reset(); setPhase("idle"); downloadedRef.current = false; }} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
+                                    <RotateCcw size={12} /> Convert more
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
-            <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); }}
-                onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-                className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-12 px-6 text-center",
-                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
-                <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
-                <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
-                <p className="text-sm font-semibold text-foreground">{file ? file.name : "Drop PDF here"}</p>
-                {file && <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>}
-                <p className="text-[11px] text-muted-foreground/80">Each PDF page becomes a PowerPoint slide</p>
-            </div>
-            {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}
-            {file && (
-                <div className="flex items-center gap-3">
-                    <Button onClick={process} disabled={status === "processing"} className="glow-primary">
-                        {status === "processing" ? <><Loader2 size={15} className="animate-spin" /> Converting…</> : "Convert to PowerPoint"}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setFile(null)}>Clear</Button>
+            <div
+                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) proc.addFiles(e.dataTransfer.files, isPdfOnly); }}
+                onClick={() => fileRef.current?.click()}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileRef.current?.click(); } }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload PDFs"
+                className={cn(
+                    "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
+                )}
+            >
+                <CornerMarks />
+                <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" onChange={e => { if (e.target.files) proc.addFiles(e.target.files, isPdfOnly); e.target.value = ""; }} />
+                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
+                    {proc.entries.length ? <Upload size={20} className="text-accent" strokeWidth={1.75} /> : <Presentation size={20} className="text-accent" strokeWidth={1.75} />}
                 </div>
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
+                    {proc.entries.length ? "Add more PDFs" : "Drop PDFs to convert"}
+                </p>
+                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                    Each page → one slide · multi-file OK · max {MAX_FILE_SIZE_LABEL} each
+                </p>
+            </div>
+
+            {proc.entries.length > 0 && (
+                <>
+                    <MultiFileQueue
+                        entries={proc.entries}
+                        reorderable={false}
+                        onRemove={proc.removeFile}
+                        onReorder={proc.reorder}
+                        onClearAll={proc.clearAll}
+                        onRetryFailed={() => { downloadedRef.current = false; void process(true); }}
+                        busy={phase === "processing"}
+                    />
+
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => process(false)} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {phase === "processing"
+                                ? <><Loader2 size={13} className="animate-spin" /> Converting… ({proc.doneCount}/{proc.entries.length})</>
+                                : <><Download size={13} /> Convert {proc.entries.length > 1 ? `${proc.entries.length} PDFs` : "to PowerPoint"}</>}
+                        </button>
+                        {canProcess && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
+                    </div>
+                </>
             )}
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
     );
 }

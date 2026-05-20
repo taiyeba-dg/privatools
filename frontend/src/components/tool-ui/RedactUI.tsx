@@ -1,82 +1,241 @@
-import { useState, useRef } from "react";
-import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+/**
+ * RedactUI — opaque-box redaction over specified rectangles.
+ * Workshop: row editor with X/Y/W/H + page diagram preview, color picker.
+ */
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, CheckCircle2, AlertCircle, EyeOff, Plus, Trash2, RotateCcw } from "lucide-react";
+import { cn, friendlyError } from "@/lib/utils";
+import { processAndDownload, buildOutputFilename } from "@/lib/api";
+import { FileUploadZone } from "./FileUploadZone";
+
+interface Box {
+    id: string;
+    page: number;
+    x: number; y: number;
+    width: number; height: number;
+}
+
+const makeId = () => Math.random().toString(36).slice(2, 8);
+const PAGE_W = 612;
+const PAGE_H = 792;
 
 export function RedactUI() {
-  const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
-  const [redactions, setRedactions] = useState("[]");
-  const [color, setColor] = useState("#000000");
-  const [state, setState] = useState<"idle" | "processing" | "done">("idle");
-  const [error, setError] = useState<string | null>(null);
-  const [drag, setDrag] = useState(false);
-  const ref = useRef<HTMLInputElement>(null);
+    const [file, setFile] = useState<File | null>(null);
+    const [boxes, setBoxes] = useState<Box[]>([
+        { id: makeId(), page: 1, x: 100, y: 700, width: 200, height: 20 },
+    ]);
+    const [color, setColor] = useState("#000000");
+    const [selected, setSelected] = useState(boxes[0]?.id || "");
+    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
+    const [error, setError] = useState<string | null>(null);
 
-  const pick = (fl: FileList) => { const f = fl[0]; setFile({ name: f.name, size: formatFileSize(f.size), raw: f }); setState("idle"); setError(null); };
+    const focusOnNextAddRef = useRef<string | null>(null);
+    const rowRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
-  const process = async () => {
-    if (!file) return;
-    setState("processing"); setError(null);
-    try {
-      await processAndDownload("/redact", file.raw, buildOutputFilename(file.name, "redacted", "pdf"), { redactions, color });
-      setState("done");
-    } catch (e: any) { setError(e.message || "Failed"); setState("idle"); }
-  };
+    const add = () => {
+        const b: Box = { id: makeId(), page: 1, x: 100, y: 600 + boxes.length * 30, width: 200, height: 20 };
+        setBoxes(prev => [...prev, b]);
+        setSelected(b.id);
+        focusOnNextAddRef.current = b.id;
+    };
+    const remove = (id: string) => setBoxes(prev => prev.filter(b => b.id !== id));
+    const update = (id: string, f: keyof Box, v: number) => setBoxes(prev => prev.map(b => b.id === id ? { ...b, [f]: v } : b));
 
-  if (state === "done") return (
-    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
-      <CheckCircle2 size={40} className="mx-auto mb-4 text-emerald-400" strokeWidth={1.5} />
-      <h2 className="text-lg font-bold text-foreground mb-1">Redacted!</h2>
-      <Button variant="outline" className="border-border text-muted-foreground mt-4" onClick={() => { setFile(null); setState("idle"); }}>Redact another</Button>
-    </div>
-  );
+    useEffect(() => {
+        if (!focusOnNextAddRef.current) return;
+        const el = rowRefs.current.get(focusOnNextAddRef.current);
+        if (el) { el.focus(); el.select(); focusOnNextAddRef.current = null; }
+    }, [boxes.length]);
 
-  return (
-    <div className="space-y-4">
-      {!file ? (
-        <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-          onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) pick(e.dataTransfer.files); }}
-          onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-          className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-            drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}>
-          <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files && pick(e.target.files); e.target.value = ""; }} />
-          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}><Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} /></div>
-          <p className="text-sm font-semibold text-foreground">Select a PDF to redact</p><p className="text-xs text-muted-foreground">Drag & drop or click to browse</p>
+    const process = useCallback(async () => {
+        if (!file || boxes.length === 0) return;
+        setState("processing"); setError(null);
+        try {
+            const payload = boxes.map(({ id, ...rest }) => rest);
+            await processAndDownload("/redact", file, buildOutputFilename(file.name, "redacted", "pdf"),
+                { redactions: JSON.stringify(payload), color });
+            setState("done");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Could not redact PDF";
+            setError(friendlyError(msg, "Couldn't redact that PDF."));
+            setState("idle");
+        }
+    }, [file, boxes, color]);
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+            if ((tag === "input" || tag === "textarea" || tag === "select") && !((e.metaKey || e.ctrlKey) && e.key === "Enter")) return;
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && file && state !== "processing" && boxes.length > 0) {
+                e.preventDefault();
+                process();
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [file, state, boxes.length, process]);
+
+    if (state === "done") return (
+        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="relative p-7 sm:p-9 animate-corner-extend">
+                <CornerMarks />
+                <div className="flex items-start gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="section-mark mb-2">Redacted</p>
+                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                            <span className="italic text-accent">{boxes.length}</span> region{boxes.length !== 1 && "s"} sealed
+                        </h2>
+                        <button
+                            onClick={() => { setFile(null); setState("idle"); }}
+                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                        >
+                            <RotateCcw size={12} /> Redact another
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      ) : (
+    );
+
+    return (
+        <div className="space-y-4">
+            <FileUploadZone
+                file={file}
+                onFileSelect={setFile}
+                onClear={() => setFile(null)}
+                accept=".pdf"
+                label="Drop PDF to redact"
+                hint="Opaque-box redaction — permanently removes content"
+            />
+
+            {file && (
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <span><span className="text-accent">§</span> Redaction boxes ({boxes.length})</span>
+                        <div className="flex items-center gap-2">
+                            <span>Fill</span>
+                            <input
+                                type="color" value={color} onChange={e => setColor(e.target.value)}
+                                className="h-5 w-7 rounded border border-border cursor-pointer"
+                            />
+                            <button onClick={add} className="inline-flex items-center gap-1 text-accent hover:opacity-80 transition-opacity">
+                                <Plus size={11} /> Add
+                            </button>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 p-4 items-start">
+                        <div className="space-y-2">
+                            {boxes.map((b, idx) => {
+                                const isSel = selected === b.id;
+                                return (
+                                    <div
+                                        key={b.id}
+                                        onClick={() => setSelected(b.id)}
+                                        className={cn(
+                                            "rounded-lg border p-3 cursor-pointer transition-colors",
+                                            isSel ? "border-accent bg-accent/[0.06]" : "border-border bg-card hover:border-border-strong"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className={cn("font-mono text-[10px] tracking-[0.10em] uppercase", isSel ? "text-accent" : "text-muted-foreground")}>
+                                                §{String(idx + 1).padStart(2, "0")}
+                                            </span>
+                                            <span className="font-display text-[12.5px] font-medium text-foreground">Box {idx + 1}</span>
+                                            <button onClick={(e) => { e.stopPropagation(); remove(b.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                                            {([
+                                                { f: "page", label: "Pg", min: 1 },
+                                                { f: "x", label: "X", min: 0 },
+                                                { f: "y", label: "Y", min: 0 },
+                                                { f: "width", label: "W", min: 1 },
+                                                { f: "height", label: "H", min: 1 },
+                                            ] as const).map((c, ci) => (
+                                                <div key={c.f}>
+                                                    <label className="font-mono text-[9px] tracking-[0.10em] uppercase text-muted-foreground">{c.label}</label>
+                                                    <input
+                                                        ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(b.id, el); else rowRefs.current.delete(b.id); } : undefined}
+                                                        type="number" inputMode="numeric" min={c.min}
+                                                        value={b[c.f]}
+                                                        onClick={e => e.stopPropagation()}
+                                                        onChange={e => update(b.id, c.f, +e.target.value)}
+                                                        className="mt-0.5 w-full rounded border border-border bg-paper-2/40 px-1.5 py-1 font-mono text-[12px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 text-center"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Page preview */}
+                        <div>
+                            <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[200px] overflow-hidden">
+                                {boxes.map(b => {
+                                    const isSel = selected === b.id;
+                                    return (
+                                        <div
+                                            key={b.id}
+                                            className={cn(
+                                                "absolute transition-colors",
+                                                isSel ? "ring-1 ring-accent" : ""
+                                            )}
+                                            style={{
+                                                left: `${(b.x / PAGE_W) * 100}%`,
+                                                top: `${(b.y / PAGE_H) * 100}%`,
+                                                width: `${(b.width / PAGE_W) * 100}%`,
+                                                height: `${(b.height / PAGE_H) * 100}%`,
+                                                minWidth: 2, minHeight: 2,
+                                                background: color,
+                                                opacity: 0.85,
+                                            }}
+                                        />
+                                    );
+                                })}
+                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground/40">page</span>
+                            </div>
+                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-2 text-center">
+                                <span className="text-accent">§</span> Permanent · not reversible
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {error && (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    <AlertCircle size={13} className="shrink-0" />{error}
+                </div>
+            )}
+
+            {file && (
+                <div className="flex items-center gap-3">
+                    <button onClick={process} disabled={state === "processing" || boxes.length === 0} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                        {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Redacting…</> : <><EyeOff size={13} /> Redact {boxes.length} region{boxes.length !== 1 && "s"}</>}
+                    </button>
+                    {state !== "processing" && boxes.length > 0 && (
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
         <>
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary"><FileText size={14} className="text-muted-foreground" /></div>
-            <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">{file.name}</p><p className="text-xs text-muted-foreground">{file.size}</p></div>
-            <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-            <div>
-              <label className="text-sm font-semibold text-foreground">Redaction areas (JSON)</label>
-              <p className="text-xs text-muted-foreground mt-1 mb-2">Array of {`{page, x, y, width, height}`} objects</p>
-              <textarea value={redactions} onChange={e => setRedactions(e.target.value)} rows={4}
-                className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-sm text-foreground font-mono outline-none focus:border-accent/50"
-                placeholder='[{"page": 1, "x": 100, "y": 700, "width": 200, "height": 20}]' />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Redaction color</label>
-              <div className="flex items-center gap-2 mt-1">
-                <input type="color" value={color} onChange={e => setColor(e.target.value)} className="h-8 w-8 rounded cursor-pointer" />
-                <span className="text-xs text-muted-foreground">{color}</span>
-              </div>
-            </div>
-          </div>
-          {error && <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><AlertCircle size={15} className="shrink-0" />{error}</div>}
-          <Button onClick={process} disabled={state === "processing"} className="glow-primary">
-            {state === "processing" ? <><Loader2 size={15} className="animate-spin" />Redacting…</> : "Redact PDF"}
-          </Button>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
         </>
-      )}
-    </div>
-  );
+    );
 }

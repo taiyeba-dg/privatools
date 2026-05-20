@@ -1,141 +1,204 @@
-import { useState, useRef } from "react";
-import { Upload, Download, Loader2, AlertCircle, Shield } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+/**
+ * PermissionsUI — set owner-password + per-action permission flags.
+ * Workshop: owner password input + 4 permission cards with check/cross icons.
+ */
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Download, Loader2, AlertCircle, Shield, Eye, EyeOff, CheckCircle2, RotateCcw, Lock } from "lucide-react";
+import { cn, friendlyError } from "@/lib/utils";
+import { uploadFile, downloadBlob } from "@/lib/api";
+import { FileUploadZone } from "./FileUploadZone";
 
 const PERMS = [
-    { key: "allow_print", label: "Allow Printing", desc: "Users can print the document" },
-    { key: "allow_copy", label: "Allow Copying Text", desc: "Users can select and copy text content" },
-    { key: "allow_modify", label: "Allow Modifications", desc: "Users can edit the document content" },
-    { key: "allow_annotate", label: "Allow Annotations", desc: "Users can add comments and highlights" },
-];
+    { key: "allow_print",    label: "Printing",       desc: "Users can print the document" },
+    { key: "allow_copy",     label: "Copy text",      desc: "Allow text selection & copy" },
+    { key: "allow_modify",   label: "Modify",         desc: "Allow content edits" },
+    { key: "allow_annotate", label: "Annotate",       desc: "Add notes & highlights" },
+] as const;
 
 export function PermissionsUI() {
     const [file, setFile] = useState<File | null>(null);
     const [ownerPassword, setOwnerPassword] = useState("");
+    const [showPw, setShowPw] = useState(false);
     const [permissions, setPermissions] = useState({
         allow_print: true, allow_copy: true, allow_modify: false, allow_annotate: true,
     });
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-    const [drag, setDrag] = useState(false);
-    const ref = useRef<HTMLInputElement>(null);
+
+    const pwRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (file) pwRef.current?.focus();
+    }, [file]);
 
     const toggle = (key: string) => setPermissions(p => ({ ...p, [key]: !p[key as keyof typeof p] }));
 
-    const process = async () => {
+    const process = useCallback(async () => {
         if (!file) return;
-        setStatus("processing");
-        setError(null);
+        setStatus("processing"); setError(null);
         try {
-            const res = await uploadFile("/set-permissions", file, {
-                owner_password: ownerPassword || "",
-                ...permissions,
-            });
+            const res = await uploadFile("/set-permissions", file, { owner_password: ownerPassword || "", ...permissions });
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");
-        } catch (e: any) {
-            setError(e.message || "Failed");
+            downloadBlob(blob, file.name.replace(/\.pdf$/i, "_permissions.pdf"));
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Could not set permissions";
+            setError(friendlyError(msg, "Couldn't update permissions on that PDF."));
             setStatus("idle");
         }
-    };
+    }, [file, ownerPassword, permissions]);
 
-    const handleDownload = () => {
-        if (resultBlob) {
-            const name = file ? file.name.replace(/\.pdf$/i, "_permissions.pdf") : "permissions.pdf";
-            downloadBlob(resultBlob, name);
-        }
-    };
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && file && status !== "processing") {
+                e.preventDefault();
+                process();
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [file, status, process]);
 
-    if (status === "done") {
-        return (
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center">
-                <Shield size={32} className="mx-auto mb-3 text-emerald-400" />
-                <h2 className="text-lg font-bold text-foreground mb-1">Permissions Set!</h2>
-                <p className="text-sm text-muted-foreground mb-6">Your PDF has been secured with the specified permissions</p>
-                <div className="flex justify-center gap-3 flex-wrap">
-                    <Button className="glow-primary" onClick={handleDownload}><Download size={15} /> Download</Button>
-                    <Button variant="outline" className="border-border text-muted-foreground" onClick={() => { setFile(null); setStatus("idle"); setResultBlob(null); }}>Process another</Button>
+    if (status === "done") return (
+        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="relative p-7 sm:p-9 animate-corner-extend">
+                <CornerMarks />
+                <div className="flex items-start gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="section-mark mb-2">Permissions set</p>
+                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                            <span className="italic text-accent">Document policy</span> applied
+                        </h2>
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            <button onClick={() => resultBlob && file && downloadBlob(resultBlob, file.name.replace(/\.pdf$/i, "_permissions.pdf"))} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
+                                <Download size={13} /> Download again
+                            </button>
+                            <button
+                                onClick={() => { setFile(null); setStatus("idle"); setResultBlob(null); }}
+                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                            >
+                                <RotateCcw size={12} /> Set another
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        );
-    }
+        </div>
+    );
 
     return (
-        <div className="space-y-5">
-            {/* File drop */}
-            <div
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); }}
-                onClick={() => ref.current?.click()}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-          role="button"
-          tabIndex={0}
-          aria-label="Upload file"
-                className={cn("flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-10 px-6 text-center",
-                    drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20")}
-            >
-                <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={e => { e.target.files?.[0] && setFile(e.target.files[0]); e.target.value = ""; }} />
-                <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} />
-                <p className="text-sm font-semibold text-foreground">{file ? file.name : "Drop PDF here"}</p>
-                {file && <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>}
-            </div>
+        <div className="space-y-4">
+            <FileUploadZone
+                file={file}
+                onFileSelect={setFile}
+                onClear={() => setFile(null)}
+                accept=".pdf"
+                label="Drop PDF to set permissions"
+                hint="Owner password + action gates"
+            />
 
             {file && (
                 <>
                     {/* Owner password */}
-                    <div className="space-y-1">
-                        <label className="text-sm font-semibold text-foreground">Owner Password</label>
-                        <input type="password" value={ownerPassword} onChange={e => setOwnerPassword(e.target.value)}
-                            placeholder="Set owner password (required to change permissions later)"
-                            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/80 focus:border-accent/50 focus:outline-none" />
-                        <p className="text-[10px] text-muted-foreground/80">Leave blank for a default owner password</p>
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span className="text-accent">§</span> Owner password
+                        </div>
+                        <div className="p-4 space-y-2">
+                            <div className="relative">
+                                <input
+                                    ref={pwRef}
+                                    type={showPw ? "text" : "password"}
+                                    value={ownerPassword} onChange={e => setOwnerPassword(e.target.value)}
+                                    placeholder="Required to change permissions later"
+                                    autoComplete="new-password"
+                                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 pr-10 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPw(!showPw)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                    aria-label={showPw ? "Hide password" : "Show password"}
+                                    aria-pressed={showPw}
+                                >
+                                    {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
+                                </button>
+                            </div>
+                            <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85">
+                                <span className="text-accent">§</span> Blank = default owner password
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Permission toggles */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-foreground">Document Permissions</label>
-                        <div className="space-y-1">
-                            {PERMS.map(p => (
-                                <div key={p.key} onClick={() => toggle(p.key)}
-                                    className={cn("flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all",
-                                        permissions[p.key as keyof typeof permissions]
-                                            ? "border-emerald-500/30 bg-emerald-500/5"
-                                            : "border-border bg-card hover:bg-secondary/30")}>
-                                    <div className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all",
-                                        permissions[p.key as keyof typeof permissions]
-                                            ? "border-emerald-500 bg-emerald-500"
-                                            : "border-muted-foreground/85")}>
-                                        {permissions[p.key as keyof typeof permissions] && (
-                                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">{p.label}</p>
-                                        <p className="text-[10px] text-muted-foreground">{p.desc}</p>
-                                    </div>
-                                </div>
-                            ))}
+                    {/* Permissions */}
+                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span className="text-accent">§</span> Allowed actions
                         </div>
+                        <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2" role="group" aria-label="PDF permissions">
+                            {PERMS.map(p => {
+                                const active = permissions[p.key as keyof typeof permissions];
+                                return (
+                                    <button
+                                        key={p.key}
+                                        type="button"
+                                        onClick={() => toggle(p.key)}
+                                        aria-pressed={active}
+                                        aria-label={`${p.label}: ${p.desc}`}
+                                        className={cn(
+                                            "rounded-lg border p-3 text-left transition-colors",
+                                            active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{p.label}</p>
+                                            <span className={cn(
+                                                "h-5 w-5 rounded border flex items-center justify-center shrink-0 transition-colors",
+                                                active ? "bg-accent border-accent text-background" : "border-border bg-card"
+                                            )}>
+                                                {active && <Shield size={10} strokeWidth={2.75} />}
+                                            </span>
+                                        </div>
+                                        <p className="font-mono text-[10px] tracking-[0.04em] uppercase text-muted-foreground/85 mt-1">{p.desc}</p>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                            <AlertCircle size={13} className="shrink-0" />{error}
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                        <button onClick={process} disabled={status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Applying…</> : <><Lock size={13} /> Set permissions</>}
+                        </button>
+                        {status !== "processing" && (
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground/80 bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>
+                        )}
                     </div>
                 </>
             )}
-
-            {error && (
-                <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                    <AlertCircle size={15} className="shrink-0" />{error}
-                </div>
-            )}
-
-            {file && (
-                <Button onClick={process} disabled={status === "processing"} className="w-full glow-primary">
-                    {status === "processing" ? <><Loader2 size={15} className="animate-spin" /> Applying…</> : "Set Permissions"}
-                </Button>
-            )}
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
     );
 }

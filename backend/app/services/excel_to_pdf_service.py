@@ -1,15 +1,13 @@
-import uuid
 from openpyxl import load_workbook
 from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.filenames import temp_output
 
 
 def excel_to_pdf(input_path: str) -> str:
     """Convert .xlsx file to PDF using openpyxl + reportlab."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"excel_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("excel", "pdf")
 
     wb = load_workbook(input_path, data_only=True)
     c = canvas.Canvas(str(output_path), pagesize=landscape(A4))

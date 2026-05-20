@@ -1,10 +1,18 @@
 import asyncio
-import uuid
 import logging
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+import uuid
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
-from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+
+from ..utils.cleanup import (
+    ensure_temp_dir,
+    get_temp_path,
+    remove_files,
+    validate_pdf_content,
+)
+from ..utils.route_helpers import safe_stem
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -30,7 +38,6 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
         # Render at low DPI for blank detection
         pix = page.get_pixmap(dpi=72)
         samples = pix.samples
-        total_pixels = pix.width * pix.height
         n = pix.n  # channels per pixel
 
         # Fast sampling: check every 8th pixel instead of every pixel
@@ -76,21 +83,30 @@ async def remove_blank_pages(
     file: UploadFile = File(...),
     sensitivity: int = Form(85),
 ):
-    if not file.filename.lower().endswith(".pdf"):
+    if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
+
+    if sensitivity < 0 or sensitivity > 100:
+        raise HTTPException(
+            status_code=400,
+            detail="sensitivity must be between 0 and 100",
+        )
 
     ensure_temp_dir()
 
     content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
     out_path = None
     try:
         validate_pdf_content(content)
         out_path = str(get_temp_path(f"cleaned_{uuid.uuid4().hex}.pdf"))
         await asyncio.to_thread(_process_blank_pages, content, sensitivity, out_path)
+        stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, out_path)
         return FileResponse(
             path=out_path,
-            filename="cleaned.pdf",
+            filename=f"{stem}_blanks_removed.pdf",
             media_type="application/pdf",
             background=cleanup,
         )
@@ -98,8 +114,19 @@ async def remove_blank_pages(
         if out_path:
             remove_files(out_path)
         raise
-    except Exception as e:
+    except Exception as exc:
         if out_path:
             remove_files(out_path)
-        logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
+        logger.exception("Unexpected error in /remove-blank-pages")
+        msg = str(exc).lower()
+        if "password" in msg or "encrypted" in msg:
+            raise HTTPException(
+                status_code=400,
+                detail="PDF is password-protected — unlock it first",
+            ) from exc
+        if "corrupt" in msg or "damaged" in msg or "format error" in msg:
+            raise HTTPException(
+                status_code=400,
+                detail="PDF appears corrupt or unreadable",
+            ) from exc
+        raise HTTPException(status_code=500, detail=f"Processing failed: {exc}") from exc

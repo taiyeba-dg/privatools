@@ -1,9 +1,11 @@
 import uuid
 import logging
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, Request, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
+from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
+from ..utils.exceptions import ToolError
 from ..services import pdf_to_excel_service
 
 router = APIRouter()
@@ -11,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/pdf-to-excel")
-async def pdf_to_excel(file: UploadFile = File(...)):
+@limiter.limit(EXPENSIVE_RATE_LIMIT)
+async def pdf_to_excel(request: Request, file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
 
@@ -37,6 +40,15 @@ async def pdf_to_excel(file: UploadFile = File(...)):
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise
+    except ToolError:
+        # Propagate ToolTimeoutError (504) etc. to the global handler.
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
+        raise
+    except ValueError as e:
+        to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
+        remove_files(*to_remove)
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)

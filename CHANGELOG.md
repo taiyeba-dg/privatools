@@ -2,6 +2,62 @@
 
 All notable changes to PrivaTools will be documented in this file.
 
+## [1.5.2] — 2026-05-20 — Workshop UI overhaul + production hardening
+
+### Frontend
+
+- Workshop UI overhaul completed: ~180 files now use signal-green § / Fraunces / corner-marks aesthetic
+- `friendlyError` + Cmd+Enter + `<kbd>⌘↵</kbd>` hint backfilled across all 68 stateful tool-UIs (was 39)
+- Sticky reading-progress + TOC on blog/legal pages with hand-rolled rAF smooth-scroll
+- Inline synonyms on all 179 tools (powers Cmd+K fuzzy search)
+- PDF.js + Hugging Face Transformers now truly lazy-loaded
+- Removed dead `@tanstack/react-query` and `EditorialMasthead`/`EditorialFooter` imports
+- Multi-file support on 12 tools via shared `useMultiFileProcessor` + queue + pure-JS STORE-mode zip writer (`lib/zip.ts`)
+- **ErrorBoundary** (class component, 208 LOC) wrapping app root AND each tool — one tool's render crash no longer white-screens the shell. Workshop-styled fallback + Reload/Go-home buttons + dev-only stack trace.
+- **ToolSkeleton** suspense fallback replaces the blank-screen lazy-chunk load
+- **useFocusTrap** hook + applied to NameDialog (PipelinePage); ShortcutsHelp/OnboardingTour/CommandPalette already had complete focus traps from earlier rounds
+- Memory-leak audit: 6 fixes (object-URL revokes via `downloadBlob` helper in MarkdownHtmlUI + CsvJsonUI; stale-closure unmount cleanup in MergeImagesUI + ImageCompressorUI; AbortController unmount aborts on PipelinePage + BatchPage). Full inventory: 100 `addEventListener`, 8 rAF, 25 setTimeout, 22 object URLs — all paired with cleanup.
+- Persistence: useFormPersist (400ms debounced localStorage envelope), useOnline, useGlobalErrorHandler, BatchResumeBanner for crash recovery
+- Service worker: SWR app shell + last-10-tool-routes cache + `/api/*` bypass; CACHE_VERSION = "v1.5.0"
+- First-run welcome card + sample files (`public/samples/`) + first-success toast
+- 12 new keyframe animations (copy-flash, dragging, queue-row-enter, processing-pulse, dropzone-landed, button-press-ring, underline-reveal, toc-rail-marker) — all respect `prefers-reduced-motion`
+
+### Backend
+
+- 12 typed exceptions matching frontend `friendlyError` patterns (PdfEncryptedError, PageRangeError, FileTooLargeError, ToolTimeoutError, ExternalToolError, …)
+- N-up orientation parameter (side / stack)
+- QR code FG/BG colors + logo embed
+- Create-ZIP compression level (0–9)
+- Round 1 security: XXE (defusedxml), zip-slip, SSRF, command-injection, path-traversal
+- **Round 2 security**: CRLF/header injection in 21 routes via centralized `safe_stem`/`safe_header_filename` helpers; MIME magic-byte validation (PNG/JPEG/GIF/BMP/TIFF/WEBP/HEIC + ZIP); tempfile race fixed (atomic `mkstemp` w/ 0600 perms); SSRF expanded to CGNAT, TEST-NET, IPv6 link-local, IPv4-mapped, IPv6-translation ranges; cache-control `no-store` on every `/api/*` dynamic output; ReDoS fix in phase7 timestamp regex; `TrustedHostMiddleware` with env-driven allowlist
+- **Resource caps**: `Image.MAX_IMAGE_PIXELS = 150M` (decompression-bomb guard) + `DecompressionBombError` → 413 handler; tesseract timeout 90s; ffmpeg/LibreOffice/Ghostscript subprocess timeouts verified; per-IP rate limiting via slowapi (`@limiter.limit("5/minute")`) on `/api/ocr`, `/api/smart-redact`, `/api/pdf-to-word`, `/api/pdf-to-excel`, `/api/url-to-pdf`, `/api/extract-audio`; `UploadSizeLimitMiddleware` enforces `MAX_UPLOAD_MB` (default 500 MB) both at Content-Length pre-check and during streaming
+- **Observability**: JSON structured logger (`utils/logging.py`) + `contextvars` propagation so every log line auto-tags `request_id`; `AccessLogMiddleware` logs one INFO per request with `duration_ms`, WARNING for `>5s`; `RequestTimeoutMiddleware` returns 504 with friendly message after 120s; all `print()` removed from `app/`
+- **Health endpoints**: `/healthz` (liveness, always 200) + `/readyz` (readiness — checks pikepdf/fitz/PIL importability + tessdata path + temp-dir writable)
+- **`X-Request-ID`** on every response
+- **Shared utils**: `route_helpers.py` (safe_stem, read_upload, unique_arcname), `cleanup.py` (temp-file cleanup, MIME validation, content sniffing), `health.py`, `logging.py`, `caching.py` (ETag/304/Vary + 7d cache on OG images + 1h on sitemap), `filenames.py` (`temp_output` consolidating 113 call sites), `images.py` (`open_image_safe` context manager), `page_range.py`, `colors.py`, `exceptions.py`
+- `/api/<unknown>` returns JSON 404 (not SPA HTML shell)
+- Test count: 197 passed, 40 skipped (integration-gated), 0 failed (was 118 at round-3 start; +79 in this release)
+
+### SEO + meta
+
+- Tool title length: 174 over-60 → 0; tool descriptions: 113 over-160 → 0
+- Sitemap: 202 → 213 URLs (added 11 `/compare/<competitor>` pages, real blog `publishedAt` dates, per-tool priority bumping)
+- Static `public/sitemap.xml` written at build time + matching backend `/sitemap.xml` route (parity verified)
+- All 179 tool pages have `SoftwareApplication` JSON-LD with inline `creator`. `aggregateRating` deliberately omitted (would violate Google's structured-data guidelines without a real review corpus).
+- Per-competitor `reviewRating` on `/compare/*` pages with `ratingExplanation`
+- `TOOL_LAST_REVIEWED` per-tool dict (44 entries) drives sitemap lastmod
+- NotFound page: `noindex,nofollow` via React `useNoIndexMeta()` hook AND backend SSR for unknown paths
+- FAQ depth (6–8 Q&A) on top 20 tools
+- llms-full.txt (66 KB) verbose per-tool reference
+
+### Deploy
+
+- `deploy/nginx.conf` — TLS 1.2/1.3, HSTS preload-ready (2yr), strict CSP, security headers, gzip + brotli (commented), `/assets` 1yr immutable, `/sw.js` no-store, API proxy with 120s timeouts and 110MB body limit
+- `deploy/privatool-backend.service` — systemd unit with hardening (`NoNewPrivileges`, `PrivateTmp`, `ProtectSystem=strict`, `MemoryMax=4G`, `CPUQuota=300%`, `TimeoutStopSec=60` for graceful shutdown)
+- `deploy/deploy.sh` — minimal-blast-radius: git fetch + reset + frontend build + systemd restart + nginx reload + `/healthz` smoke check
+- `deploy/README.md` — one-time setup + day-2 ops + rollback + troubleshooting
+- `.env.example` — every tunable (APP_VERSION, MAX_UPLOAD_BYTES, TESSDATA_PREFIX, TRUSTED_HOSTS, ALLOWED_ORIGINS, LOG_LEVEL, EXPENSIVE_RATE_LIMIT)
+
 ## [1.5.1] — 2026-05-16 — UX polish + a11y + AEO/GEO push
 
 ### 🆕 New tools (2) — total now 179

@@ -1,3 +1,15 @@
+"""Companion security tools: PDF/A validator, signature verifier, sanitizer.
+
+NOTE — the `/set-permissions` endpoint (consumed by `PermissionsUI`) is
+defined in `phase4_tools.py`, not here. The frontend posts to
+`POST /api/set-permissions`; that handler already validates the upload,
+applies an owner password and per-action permission flags, and cleans up
+temp files via BackgroundTasks. This file intentionally stays narrow and
+just covers the "verify / sanitize" surface.
+"""
+
+import logging
+import os
 import tempfile
 
 import fitz
@@ -8,7 +20,7 @@ from starlette.background import BackgroundTask
 from ..utils.cleanup import remove_files, validate_pdf_content
 
 router = APIRouter()
-
+logger = logging.getLogger(__name__)
 
 
 async def _read_pdf(upload: UploadFile, label: str = "PDF") -> bytes:
@@ -21,6 +33,8 @@ async def _read_pdf(upload: UploadFile, label: str = "PDF") -> bytes:
 
 @router.post("/pdfa-validator")
 async def pdfa_validator(file: UploadFile = File(...)):
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
     data = await _read_pdf(file)
 
     doc = None
@@ -49,10 +63,13 @@ async def pdfa_validator(file: UploadFile = File(...)):
         if doc.is_encrypted:
             errors.append("Encrypted PDFs cannot be PDF/A compliant")
 
-        return JSONResponse({"valid": is_pdfa and len(errors) == 0, "standard": standard, "errors": errors})
+        return JSONResponse(
+            {"valid": is_pdfa and len(errors) == 0, "standard": standard, "errors": errors}
+        )
     except fitz.FileDataError as exc:
         raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
     except Exception as exc:
+        logger.exception("PDF/A validator error")
         raise HTTPException(status_code=500, detail="Failed to validate PDF/A") from exc
     finally:
         if doc is not None:
@@ -61,6 +78,8 @@ async def pdfa_validator(file: UploadFile = File(...)):
 
 @router.post("/verify-signature")
 async def verify_signature(file: UploadFile = File(...)):
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
     data = await _read_pdf(file)
 
     doc = None
@@ -78,14 +97,21 @@ async def verify_signature(file: UploadFile = File(...)):
                     )
 
         has_signatures = len(signatures) > 0
-        return JSONResponse({
-            "has_signatures": has_signatures,
-            "signatures": signatures,
-            "note": "Signatures detected but cryptographic verification is not yet supported. Use a dedicated PDF reader (e.g. Adobe Acrobat) for full validation."
-        })
+        return JSONResponse(
+            {
+                "has_signatures": has_signatures,
+                "signatures": signatures,
+                "note": (
+                    "Signatures detected but cryptographic verification is not yet "
+                    "supported. Use a dedicated PDF reader (e.g. Adobe Acrobat) for "
+                    "full validation."
+                ),
+            }
+        )
     except fitz.FileDataError as exc:
         raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
     except Exception as exc:
+        logger.exception("Verify signature error")
         raise HTTPException(status_code=500, detail="Failed to verify signatures") from exc
     finally:
         if doc is not None:
@@ -94,10 +120,12 @@ async def verify_signature(file: UploadFile = File(...)):
 
 @router.post("/sanitize")
 async def sanitize_pdf(file: UploadFile = File(...)):
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
     data = await _read_pdf(file)
 
     doc = None
-    tmp = None
+    tmp_path: str | None = None
     try:
         doc = fitz.open(stream=data, filetype="pdf")
         doc.set_metadata({})
@@ -106,22 +134,34 @@ async def sanitize_pdf(file: UploadFile = File(...)):
             annot = page.first_annot
             while annot is not None:
                 next_annot = annot.next
-                # Screen and widget annotations may contain actions/scripts.
+                # Screen (19) and widget (20) annotations may contain JS actions.
+                # Note: subtype 20 (widget) is what AcroForm fields are; this
+                # endpoint is for full sanitisation, so we accept that signed
+                # forms become un-fillable here. Use /delete-annotations when
+                # the goal is just to remove comments.
                 if annot.type[0] in (19, 20):
                     page.delete_annot(annot)
                 annot = next_annot
 
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        tmp.close()
-        doc.save(tmp.name, clean=True, garbage=4, deflate=True)
+        # mkstemp atomically creates the file with 0600 perms so the
+        # subsequent doc.save() can't race with another process on /tmp.
+        fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
+        os.close(fd)
+        doc.save(tmp_path, clean=True, garbage=4, deflate=True)
 
-        cleanup = BackgroundTask(remove_files, tmp.name)
-        return FileResponse(tmp.name, media_type="application/pdf", filename="sanitized.pdf", background=cleanup)
+        cleanup = BackgroundTask(remove_files, tmp_path)
+        return FileResponse(
+            tmp_path,
+            media_type="application/pdf",
+            filename="sanitized.pdf",
+            background=cleanup,
+        )
     except fitz.FileDataError as exc:
         raise HTTPException(status_code=400, detail="Invalid or corrupted PDF") from exc
     except Exception as exc:
-        if tmp is not None:
-            remove_files(tmp.name)
+        if tmp_path is not None:
+            remove_files(tmp_path)
+        logger.exception("Sanitize PDF error")
         raise HTTPException(status_code=500, detail="Failed to sanitize PDF") from exc
     finally:
         if doc is not None:

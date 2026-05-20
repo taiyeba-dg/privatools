@@ -7,13 +7,12 @@ a fully-editable / removable annotation in any PDF reader.
 
 from __future__ import annotations
 
-import re
-import uuid
 from typing import Iterable, Tuple
 
 import fitz  # PyMuPDF
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.colors import parse_hex_color
+from ..utils.filenames import temp_output
 
 # Friendly named colors → RGB tuples (0-1 floats expected by PyMuPDF).
 NAMED_COLORS: dict[str, Tuple[float, float, float]] = {
@@ -26,26 +25,20 @@ NAMED_COLORS: dict[str, Tuple[float, float, float]] = {
     "purple": (0.78, 0.65, 1.0),
 }
 
-_HEX_RE = re.compile(r"^#?([0-9a-fA-F]{6})$")
-
 
 def _parse_color(color: str) -> Tuple[float, float, float]:
+    """Accept either a friendly name ('yellow') or a hex string ('#ffea00')."""
     color = (color or "").strip().lower()
     if color in NAMED_COLORS:
         return NAMED_COLORS[color]
-    m = _HEX_RE.match(color)
-    if m:
-        h = m.group(1)
-        return (
-            int(h[0:2], 16) / 255.0,
-            int(h[2:4], 16) / 255.0,
-            int(h[4:6], 16) / 255.0,
-        )
-    raise ValueError(
-        f"Unknown color '{color}'. Use one of: "
-        + ", ".join(sorted(NAMED_COLORS.keys()))
-        + " or a hex string like #ffea00."
-    )
+    try:
+        return parse_hex_color(color)
+    except ValueError as exc:
+        raise ValueError(
+            f"Unknown color '{color}'. Use one of: "
+            + ", ".join(sorted(NAMED_COLORS.keys()))
+            + " or a hex string like #ffea00."
+        ) from exc
 
 
 def highlight_text(
@@ -59,8 +52,7 @@ def highlight_text(
         raise ValueError("Search query is required")
 
     rgb = _parse_color(color)
-    ensure_temp_dir()
-    output_path = get_temp_path(f"highlighted_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("highlighted", "pdf")
 
     flags = 0 if case_sensitive else fitz.TEXT_DEHYPHENATE
     total_hits = 0

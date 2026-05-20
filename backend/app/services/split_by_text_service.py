@@ -8,38 +8,38 @@ part1.pdf, part2.pdf, …
 from __future__ import annotations
 
 import re
-import uuid
 import zipfile
 
 import fitz  # PyMuPDF
 import pikepdf
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 
 def split_by_text(input_path: str, search: str, case_sensitive: bool = False) -> str:
     if not search or not search.strip():
-        raise ValueError("search text cannot be empty")
+        raise ValidationError("search text cannot be empty")
 
-    ensure_temp_dir()
     flags = 0 if case_sensitive else re.IGNORECASE
     pattern = re.compile(re.escape(search.strip()), flags)
 
     src = fitz.open(input_path)
-    n = len(src)
-    if n == 0:
-        src.close()
-        raise ValueError("PDF has no pages")
+    try:
+        n = len(src)
+        if n == 0:
+            raise ValidationError("PDF has no pages")
 
-    # Find all page indices where the term appears.
-    match_indices: list[int] = []
-    for i in range(n):
-        if pattern.search(src[i].get_text()):
-            match_indices.append(i)
-    src.close()
+        # Find all page indices where the term appears.
+        match_indices: list[int] = []
+        for i in range(n):
+            if pattern.search(src[i].get_text()):
+                match_indices.append(i)
+    finally:
+        src.close()
 
     if not match_indices:
-        raise ValueError(f"Search term '{search}' not found in any page")
+        raise ValidationError(f"Search term '{search}' not found in any page")
 
     # Build chunks: each chunk starts at a match (or page 0 for the first
     # chunk if the first match is not on page 0) and ends just before the
@@ -60,16 +60,16 @@ def split_by_text(input_path: str, search: str, case_sensitive: bool = False) ->
     chunk_paths: list = []
     try:
         for idx, (start, end) in enumerate(boundaries, start=1):
-            chunk = pikepdf.Pdf.new()
-            for p in range(start, end):
-                chunk.pages.append(pdf.pages[p])
-            chunk_out = get_temp_path(f"split_text_{uuid.uuid4().hex}_part{idx}.pdf")
-            chunk.save(str(chunk_out))
+            with pikepdf.Pdf.new() as chunk:
+                for p in range(start, end):
+                    chunk.pages.append(pdf.pages[p])
+                chunk_out = temp_output(f"split_text_part{idx}", "pdf")
+                chunk.save(str(chunk_out))
             chunk_paths.append(chunk_out)
     finally:
         pdf.close()
 
-    zip_path = get_temp_path(f"split_text_{uuid.uuid4().hex}.zip")
+    zip_path = temp_output("split_text", "zip")
     with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as z:
         for i, p in enumerate(chunk_paths, start=1):
             z.write(str(p), arcname=f"part{i}.pdf")
@@ -78,7 +78,7 @@ def split_by_text(input_path: str, search: str, case_sensitive: bool = False) ->
     for p in chunk_paths:
         try:
             p.unlink()
-        except Exception:
+        except OSError:
             pass
 
     return str(zip_path)

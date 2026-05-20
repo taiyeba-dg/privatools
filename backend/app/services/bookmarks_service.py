@@ -1,16 +1,21 @@
-import pikepdf
-import uuid
 import json
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+import pikepdf
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 
 def add_bookmarks(input_path: str, bookmarks_json: str) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"bookmarked_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("bookmarked", "pdf")
 
-    bookmarks_data = json.loads(bookmarks_json)
+    try:
+        bookmarks_data = json.loads(bookmarks_json)
+    except json.JSONDecodeError as exc:
+        raise ValidationError(f"Invalid bookmarks JSON: {exc.msg}") from exc
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         total_pages = len(pdf.pages)
 
         with pdf.open_outline() as outline:

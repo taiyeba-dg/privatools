@@ -1,10 +1,12 @@
 import base64
 import io
-import uuid
+
 import pikepdf
-from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+from reportlab.pdfgen import canvas
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 
 def sign_pdf(
@@ -16,10 +18,9 @@ def sign_pdf(
     width: float = 200,
     height: float = 80,
 ) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"signed_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("signed", "pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         page_count = len(pdf.pages)
         page_idx = max(0, min(page - 1, page_count - 1))
         target_page = pdf.pages[page_idx]
@@ -45,12 +46,11 @@ def sign_pdf(
 
 def decode_base64_signature(data_url: str) -> str:
     """Decode a base64 data URL and save as a temporary PNG file."""
-    ensure_temp_dir()
     if data_url.startswith("data:"):
-        header, encoded = data_url.split(",", 1)
+        _header, encoded = data_url.split(",", 1)
     else:
         encoded = data_url
     image_bytes = base64.b64decode(encoded)
-    sig_path = get_temp_path(f"sig_{uuid.uuid4().hex}.png")
+    sig_path = temp_output("sig", "png")
     sig_path.write_bytes(image_bytes)
     return str(sig_path)

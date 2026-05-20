@@ -1,17 +1,16 @@
 """
 Tests for the SPA catch-all fallback route and sitemap slug consistency.
+
+The `client` fixture is supplied by conftest.py — it falls back to an
+httpx-ASGI sync wrapper when starlette's stock TestClient can't initialise
+under the locally-installed httpx version.
 """
 import re
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
-
-from backend.app.main import app
 
 ROOT = Path(__file__).resolve().parents[2]
-
-client = TestClient(app)
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +32,7 @@ class TestSPAFallback:
         "/batch",
         "/pipeline",
     ])
-    def test_frontend_routes_return_200_html(self, path):
+    def test_frontend_routes_return_200_html(self, client, path):
         """Frontend SPA routes must return 200 with HTML content."""
         resp = client.get(path)
         # If frontend/dist exists with index.html, we get 200
@@ -43,13 +42,13 @@ class TestSPAFallback:
         assert resp.status_code == 200
         assert "text/html" in resp.headers.get("content-type", "")
 
-    def test_api_routes_not_intercepted(self):
+    def test_api_routes_not_intercepted(self, client):
         """API routes must still return JSON, not index.html."""
         resp = client.get("/api/health")
         assert resp.status_code == 200
         assert resp.json() == {"status": "ok"}
 
-    def test_static_files_served_directly(self):
+    def test_static_files_served_directly(self, client):
         """Real static files (e.g. robots.txt) should be served as-is."""
         resp = client.get("/robots.txt")
         if resp.status_code == 404:
@@ -57,10 +56,48 @@ class TestSPAFallback:
         assert resp.status_code == 200
         assert "User-agent" in resp.text
 
-    def test_path_traversal_blocked(self):
+    def test_path_traversal_blocked(self, client):
         """Path traversal attempts must be rejected."""
         resp = client.get("/../../etc/passwd")
         assert resp.status_code in (400, 404)
+
+    def test_unknown_api_route_returns_json_404(self, client):
+        """A hit on /api/<nonsense> must return JSON 404, not the SPA HTML shell.
+
+        The catch-all in main.py early-outs for `/api/*` prefixes and returns
+        a proper `{"detail": "Not found", "path": ...}` JSON body so the
+        frontend fetch wrapper can distinguish "endpoint missing" from "tool
+        broken" without parse-erroring on an HTML response.
+        """
+        resp = client.get("/api/this-endpoint-does-not-exist")
+        assert resp.status_code == 404
+        ctype = resp.headers.get("content-type", "")
+        assert "application/json" in ctype or "json" in ctype, (
+            f"expected JSON 404, got content-type={ctype!r}"
+        )
+
+    def test_sitemap_is_not_spa_html(self, client):
+        """/sitemap.xml must be served as XML, not the SPA fallback HTML."""
+        resp = client.get("/sitemap.xml")
+        assert resp.status_code == 200
+        ctype = resp.headers.get("content-type", "").lower()
+        # FastAPI Response with media_type="application/xml" — accept variants.
+        assert "xml" in ctype, f"expected XML content-type, got {ctype!r}"
+        # And the body must actually look like XML, not <!doctype html>
+        body_lower = resp.text.lstrip().lower()
+        assert body_lower.startswith("<?xml") or body_lower.startswith("<urlset"), (
+            "sitemap body does not start with XML"
+        )
+
+    def test_blog_slug_path_falls_through_to_spa(self, client):
+        """/blog/<slug> is a frontend route — must serve index.html, not 404."""
+        resp = client.get("/blog/some-unknown-post")
+        if resp.status_code == 404 and "json" in resp.headers.get("content-type", "").lower():
+            # No dist + unknown blog slug — that's fine, SPA isn't built.
+            pytest.skip("frontend/dist not built — skipping SPA fallback test")
+        # 200 (known slug) or 404 (unknown slug) — both must be HTML.
+        assert resp.status_code in (200, 404)
+        assert "text/html" in resp.headers.get("content-type", "")
 
 
 # ---------------------------------------------------------------------------

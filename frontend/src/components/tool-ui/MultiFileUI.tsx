@@ -1,11 +1,13 @@
 /**
- * Generic multi-file uploader with reorder + remove. Used for batch-compress,
- * audio-merge, video-merge — anything that submits N files to one endpoint.
+ * MultiFileUI — multi-file uploader with reorder + remove.
+ * Workshop aesthetic: hairline dropzone, numbered rows, mono metadata.
  */
-import { useState, useRef, useCallback } from "react";
-import { FileText, Upload, X, Download, Loader2, CheckCircle2, GripVertical, Plus, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useState, useRef, useCallback, useEffect } from "react";
+import {
+    FileText, Upload, X, Download, Loader2, CheckCircle2, GripVertical,
+    AlertCircle, ChevronUp, ChevronDown,
+} from "lucide-react";
+import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 
 interface Item { id: string; name: string; size: string; file: File }
@@ -14,16 +16,10 @@ interface Props {
     endpoint: string;
     accepts: string;
     outputFilename: string;
-    /** Plural label, e.g. "PDFs", "audio files" */
     fileLabel: string;
-    /** Min files required before processing is allowed (default 2) */
     minFiles?: number;
-    /** Optional fixed params sent with the upload */
     params?: Record<string, string | number | boolean>;
-    /** Whether the order matters (shows reorder controls if true). */
     ordered?: boolean;
-    /** Verb on the action button — defaults to "Process" but pass "Compress",
-     *  "Merge", etc. for a more discoverable label. */
     actionVerb?: string;
 }
 
@@ -62,7 +58,9 @@ export function MultiFileUI({
         });
     };
 
-    const process = async () => {
+    const canProcess = files.length >= minFiles && state !== "processing";
+
+    const process = useCallback(async () => {
         if (files.length < minFiles) {
             setError(`Add at least ${minFiles} ${fileLabel}.`);
             return;
@@ -70,12 +68,9 @@ export function MultiFileUI({
         setState("processing");
         setError(null);
         try {
-            // Preserve the first input's stem so the user can identify the
-            // result. Prefer actionVerb when callers passed one (e.g.
-            // "Compress" → "MyReport_compressed.pdf"); otherwise extract the
-            // stem from outputFilename (e.g. "merged.mp4" → "MyClip_merged.mp4").
             const labelStem = outputFilename.replace(/\.[^.]+$/, "");
-            const ext = (outputFilename.match(/\.([^.]+)$/) || [, "zip"])[1];
+            const extMatch = outputFilename.match(/\.([^.]+)$/);
+            const ext = extMatch ? extMatch[1] : "zip";
             const GENERIC = /^(archive|output|result|file|compressed-pdfs?|merged-files?|combined-files?)$/i;
             let suffix: string;
             if (actionVerb && actionVerb.toLowerCase() !== "process") {
@@ -88,11 +83,22 @@ export function MultiFileUI({
             const outName = buildOutputFilename(files[0]?.file.name, suffix, ext);
             await processFilesAndDownload(endpoint, files.map(f => f.file), outName, params);
             setState("done");
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Processing failed");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "Processing failed";
+            setError(friendlyError(msg, "Couldn't process those files."));
             setState("idle");
         }
-    };
+    }, [files, minFiles, fileLabel, outputFilename, actionVerb, endpoint, params]);
+
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [canProcess, process]);
+
+    const totalSize = files.reduce((s, f) => s + f.file.size, 0);
 
     return (
         <div className="space-y-4">
@@ -104,15 +110,25 @@ export function MultiFileUI({
                 onDragLeave={() => setDrag(false)}
                 onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
                 className={cn(
-                    "w-full rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-colors",
-                    drag ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/40 bg-card/40"
+                    "relative w-full rounded-2xl border-2 border-dashed py-10 sm:py-12 px-6 text-center transition-colors group",
+                    drag
+                        ? "border-accent bg-accent/[0.06]"
+                        : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                 )}
             >
-                <Upload className="mx-auto mb-3 text-muted-foreground" size={28} strokeWidth={1.6} />
-                <p className="text-sm font-semibold text-foreground">
+                <CornerMarks />
+                <div className={cn(
+                    "mx-auto mb-3 h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
+                    drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
+                )}>
+                    <Upload size={20} className="text-accent" strokeWidth={1.75} />
+                </div>
+                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
                     {files.length === 0 ? `Add ${fileLabel}` : "Add more"}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">Drag & drop, or click to choose</p>
+                <p className="mt-1 font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
+                    Drag &amp; drop, or click — multi-select OK
+                </p>
                 <input
                     ref={ref}
                     type="file"
@@ -125,77 +141,127 @@ export function MultiFileUI({
 
             {/* File list */}
             {files.length > 0 && (
-                <ul className="space-y-2">
-                    {files.map((f, i) => (
-                        <li key={f.id} className="flex items-center gap-2 sm:gap-3 rounded-xl border border-border bg-card p-3">
-                            {ordered && (
-                                <span className="text-muted-foreground/80 hidden sm:inline">
-                                    <GripVertical size={14} />
+                <>
+                    <div className="flex items-center justify-between px-1">
+                        <span className="font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                            <span className="text-accent">§</span> {files.length} {fileLabel} · {formatFileSize(totalSize)} total
+                        </span>
+                        {ordered && (
+                            <span className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground/85">
+                                Order matters — drag or use ↑↓
+                            </span>
+                        )}
+                    </div>
+                    <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
+                        {files.map((f, i) => (
+                            <div key={f.id} className="group flex items-center gap-2 sm:gap-3 px-3 py-2.5 hover:bg-secondary/30 transition-colors">
+                                {ordered && (
+                                    <span className="text-muted-foreground/85 hidden sm:inline-flex items-center justify-center h-7 w-7 rounded">
+                                        <GripVertical size={14} />
+                                    </span>
+                                )}
+                                <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground/85 shrink-0 w-7 text-center">
+                                    {String(i + 1).padStart(2, "0")}
                                 </span>
-                            )}
-                            <FileText size={16} className="text-muted-foreground shrink-0" />
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-[13px] font-medium text-foreground">{f.name}</p>
-                                <p className="text-[11px] text-muted-foreground">{f.size}</p>
-                            </div>
-                            {ordered && (
-                                <div className="flex items-center gap-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => move(i, -1)}
-                                        disabled={i === 0}
-                                        aria-label="Move up"
-                                        className="rounded-md p-1 text-muted-foreground hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent"
-                                    >
-                                        <ChevronUp size={14} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => move(i, 1)}
-                                        disabled={i === files.length - 1}
-                                        aria-label="Move down"
-                                        className="rounded-md p-1 text-muted-foreground hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent"
-                                    >
-                                        <ChevronDown size={14} />
-                                    </button>
+                                <div className="h-8 w-8 rounded-md bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">
+                                    <FileText size={14} className="text-accent" />
                                 </div>
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => remove(f.id)}
-                                aria-label="Remove file"
-                                className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                            >
-                                <X size={14} />
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-[13px] font-medium text-foreground">{f.name}</p>
+                                    <p className="font-mono text-[10.5px] tracking-wide text-muted-foreground mt-0.5">{f.size}</p>
+                                </div>
+                                {ordered && (
+                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            type="button"
+                                            onClick={() => move(i, -1)}
+                                            disabled={i === 0}
+                                            aria-label="Move up"
+                                            className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                        >
+                                            <ChevronUp size={13} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => move(i, 1)}
+                                            disabled={i === files.length - 1}
+                                            aria-label="Move down"
+                                            className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                        >
+                                            <ChevronDown size={13} />
+                                        </button>
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => remove(f.id)}
+                                    aria-label="Remove file"
+                                    className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                >
+                                    <X size={13} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
 
             {/* Error */}
             {error && (
-                <div className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-[13px] text-rose-700 dark:text-rose-300">
-                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    <AlertCircle size={13} className="mt-0.5 shrink-0" />
                     <span>{error}</span>
                 </div>
             )}
 
             {/* Action */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">
                     {files.length === 0 ? "No files added" : `${files.length} file${files.length === 1 ? "" : "s"} ready`}
                 </p>
-                <Button
-                    onClick={process}
-                    disabled={files.length < minFiles || state === "processing"}
-                    className="gap-1.5"
-                >
-                    {state === "processing" ? <><Loader2 size={14} className="animate-spin" /> {actionVerb}ing…</> :
-                     state === "done" ? <><CheckCircle2 size={14} /> Done — re-{actionVerb.toLowerCase()}</> :
-                     <><Download size={14} /> {files.length ? `${actionVerb} ${files.length} ${fileLabel}` : `${actionVerb} ${fileLabel}`}</>}
-                </Button>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                        onClick={process}
+                        disabled={files.length < minFiles || state === "processing"}
+                        className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {state === "processing" ? (
+                            <><Loader2 size={13} className="animate-spin" /> {actionVerb}ing…</>
+                        ) : state === "done" ? (
+                            <><CheckCircle2 size={13} /> Done — re-{actionVerb.toLowerCase()}</>
+                        ) : (
+                            <><Download size={13} /> {files.length ? `${actionVerb} ${files.length} ${fileLabel}` : `${actionVerb} ${fileLabel}`}</>
+                        )}
+                    </button>
+                    {canProcess && (
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                    )}
+                </div>
             </div>
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}>
+                <span className="absolute top-0 left-0 h-px w-3 bg-accent/70" />
+                <span className="absolute top-0 left-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -top-1 -right-1`}>
+                <span className="absolute top-0 right-0 h-px w-3 bg-accent/70" />
+                <span className="absolute top-0 right-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -bottom-1 -left-1`}>
+                <span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" />
+                <span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -bottom-1 -right-1`}>
+                <span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" />
+                <span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" />
+            </span>
+        </>
     );
 }

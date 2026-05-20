@@ -1,13 +1,11 @@
-import pikepdf
-import uuid
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 
 def strip_metadata(input_path: str) -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"stripped_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("stripped", "pdf")
 
-    with pikepdf.open(input_path) as pdf:
+    with safe_open_pdf(input_path) as pdf:
         # Clear the document information dictionary
         with pdf.open_metadata() as meta:
             meta.clear()

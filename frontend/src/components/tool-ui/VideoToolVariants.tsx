@@ -3,11 +3,11 @@
  * params surfaced (frame count, target format, resolution preset, timestamp).
  * Add-subtitles needs a custom UI because it takes two file uploads.
  */
-import { useRef, useState } from "react";
-import { Upload, Loader2, AlertCircle, FileText, X, CheckCircle2, Play } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Upload, Loader2, AlertCircle, FileText, X, CheckCircle2, Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { cn, friendlyError } from "@/lib/utils";
+import { downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
 import { GenericUI } from "./GenericUI";
 
 // ─── 1. Video → PDF ─ frame count slider ─────────────────────────────
@@ -69,7 +69,7 @@ export function VideoConverterUI() {
                             aria-pressed={target === f.id}
                             className={cn(
                                 "rounded-lg border p-2.5 text-left transition-all",
-                                target === f.id ? "border-accent bg-accent/5" : "border-border hover:border-border/70 hover:bg-secondary/40"
+                                target === f.id ? "border-accent bg-accent/5" : "border-border hover:border-border/70 hover:bg-paper-2/30"
                             )}
                         >
                             <p className="text-[13px] font-semibold text-foreground">{f.label}</p>
@@ -106,7 +106,7 @@ export function VideoResizerUI() {
                             aria-pressed={preset === p}
                             className={cn(
                                 "rounded-lg border h-10 text-[13px] font-medium transition-all",
-                                preset === p ? "border-accent bg-accent/5 text-foreground" : "border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+                                preset === p ? "border-accent bg-accent/5 text-foreground" : "border-border text-muted-foreground hover:bg-paper-2/30 hover:text-foreground"
                             )}
                         >
                             {p}
@@ -181,7 +181,7 @@ export function AddSubtitlesUI() {
 
     const canProcess = !!video && !!srt && state !== "processing";
 
-    const process = async () => {
+    const process = useCallback(async () => {
         if (!video || !srt) return;
         setState("processing");
         setError(null);
@@ -198,20 +198,46 @@ export function AddSubtitlesUI() {
             downloadBlob(blob, buildOutputFilename(video?.name, "subtitled", "mp4"));
             setState("done");
         } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : "Failed");
+            const msg = e instanceof Error ? e.message : "Failed";
+            setError(friendlyError(msg, "Couldn't burn subtitles into that video."));
             setState("idle");
         }
-    };
+    }, [video, srt]);
+
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
+        };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
+    }, [canProcess, process]);
 
     if (state === "done") {
         return (
-            <div className="rounded-2xl border border-accent/25 bg-accent/[0.04] p-8 text-center">
-                <CheckCircle2 size={32} className="mx-auto mb-3 text-accent" strokeWidth={1.75} />
-                <h2 className="text-base font-bold text-foreground mb-1">Subtitled MP4 ready</h2>
-                <p className="text-[13px] text-muted-foreground mb-5">Downloaded as <span className="font-mono text-foreground">subtitled.mp4</span></p>
-                <Button size="sm" variant="outline" className="border-border rounded-full" onClick={() => { setVideo(null); setSrt(null); setState("idle"); }}>
-                    Subtitle another video
-                </Button>
+            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+                <div className="relative p-7 sm:p-9 animate-corner-extend">
+                    <CornerMarks />
+                    <div className="flex items-start gap-5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
+                            <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="section-mark mb-2">Subtitled</p>
+                            <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                                Subtitled <span className="italic text-accent">MP4</span> ready
+                            </h2>
+                            <p className="mt-2 font-mono text-[11px] tracking-[0.06em] uppercase text-muted-foreground">
+                                Downloaded as {buildOutputFilename(video?.name, "subtitled", "mp4")}
+                            </p>
+                            <button
+                                onClick={() => { setVideo(null); setSrt(null); setState("idle"); }}
+                                className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                            >
+                                <RotateCcw size={12} /> Subtitle another
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -233,7 +259,7 @@ export function AddSubtitlesUI() {
             aria-label={`Upload ${label}`}
             className={cn(
                 "flex items-center gap-4 rounded-xl border-2 border-dashed cursor-pointer transition-all px-5 py-4",
-                drag === slotKey ? "border-accent bg-accent/5" : file ? "border-accent/30 bg-card" : "border-border hover:border-accent/40 hover:bg-secondary/30 bg-secondary/10"
+                drag === slotKey ? "border-accent bg-accent/5" : file ? "border-accent/30 bg-card" : "border-border hover:border-accent/55 hover:bg-secondary/30 bg-secondary/10"
             )}
         >
             <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={e => { onPick(e.target.files?.[0] || null); e.target.value = ""; }} />
@@ -273,13 +299,28 @@ export function AddSubtitlesUI() {
                 </div>
             )}
 
-            <div className="flex gap-3 pt-1">
-                <Button onClick={process} disabled={!canProcess} className="glow-primary rounded-full h-10 px-5 bg-foreground text-background hover:bg-foreground/90">
+            <div className="flex items-center gap-3 pt-1 flex-wrap">
+                <Button onClick={process} disabled={!canProcess} className="rounded-full h-10 px-5 bg-foreground text-background hover:bg-foreground/90">
                     {state === "processing"
                         ? <><Loader2 size={14} className="animate-spin mr-1.5" />Burning subtitles…</>
                         : <><Play size={14} className="mr-1.5" />Burn subtitles into video</>}
                 </Button>
+                {canProcess && (
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/80 bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
+                )}
             </div>
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
+            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
+        </>
     );
 }

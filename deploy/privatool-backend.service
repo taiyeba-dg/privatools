@@ -1,0 +1,30 @@
+[Unit]
+Description=PrivaTools backend (FastAPI/uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=privatool
+Group=privatool
+WorkingDirectory=/opt/privatool/backend
+EnvironmentFile=-/opt/privatool/.env
+ExecStart=/opt/privatool/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 4 --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=60
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/privatool/tmp /tmp
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+MemoryMax=4G
+CPUQuota=300%
+
+[Install]
+WantedBy=multi-user.target

@@ -1,8 +1,11 @@
-import uuid
 import zipfile
-import pikepdf
 from pathlib import Path
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+import pikepdf
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 
 def _resolve_page_index(pdf: pikepdf.Pdf, destination) -> int:
@@ -17,17 +20,16 @@ def _resolve_page_index(pdf: pikepdf.Pdf, destination) -> int:
                     return i
         if isinstance(destination, pikepdf.Page):
             return pdf.pages.index(destination)
-    except Exception:
+    except (AttributeError, IndexError, TypeError):
         pass
     return 0
 
 
 def split_by_bookmarks(input_path: str) -> str:
-    ensure_temp_dir()
-    zip_path = get_temp_path(f"split_bookmarks_{uuid.uuid4().hex}.zip")
+    zip_path = temp_output("split_bookmarks", "zip")
     chunk_paths: list[Path] = []
     try:
-        with pikepdf.open(input_path) as pdf:
+        with safe_open_pdf(input_path) as pdf:
             total_pages = len(pdf.pages)
             bookmarks = []
 
@@ -39,13 +41,15 @@ def split_by_bookmarks(input_path: str) -> str:
                             page_idx = _resolve_page_index(pdf, dest)
                             title = item.title or f"Section_{len(bookmarks)+1}"
                             bookmarks.append((title, page_idx))
-                        except Exception:
+                        except (AttributeError, KeyError):
                             continue
-            except Exception:
+            except (AttributeError, pikepdf.PdfError):
                 pass
 
             if not bookmarks:
-                raise ValueError("PDF has no bookmarks to split on. Use the regular Split tool instead.")
+                raise ValidationError(
+                    "PDF has no bookmarks to split on. Use the regular Split tool instead."
+                )
 
             # Sort by page index
             bookmarks.sort(key=lambda x: x[1])
@@ -60,7 +64,7 @@ def split_by_bookmarks(input_path: str) -> str:
                 for idx, (title, start, end) in enumerate(ranges, start=1):
                     if start >= end:
                         continue
-                    chunk_path = get_temp_path(f"chunk_{uuid.uuid4().hex}.pdf")
+                    chunk_path = temp_output("chunk", "pdf")
                     chunk_paths.append(chunk_path)
                     safe_title = "".join(c if c.isalnum() or c in " _-" else "_" for c in title)[:50]
                     with pikepdf.Pdf.new() as out:

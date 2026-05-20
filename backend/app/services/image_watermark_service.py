@@ -1,18 +1,21 @@
-import uuid
 from PIL import Image, ImageDraw, ImageFont
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.filenames import temp_output
+from ..utils.images import open_image_safe
 
 
 def add_watermark(input_path: str, text: str = "WATERMARK",
                   opacity: int = 80, position: str = "center",
                   font_size: int = 40) -> str:
     """Add text watermark to an image."""
-    ensure_temp_dir()
-    output_path = get_temp_path(f"watermarked_{uuid.uuid4().hex}.png")
+    output_path = temp_output("watermarked", "png")
 
-    img = Image.open(input_path).convert("RGBA")
-    
-    # Create transparent overlay
+    # Load into memory and close the source file handle right away so a
+    # follow-up `img.save()` on the same path (rare but possible from the
+    # bulk watermark route) doesn't trip "file in use" on Windows.
+    with open_image_safe(input_path) as _src:
+        img = _src.convert("RGBA")
+
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 

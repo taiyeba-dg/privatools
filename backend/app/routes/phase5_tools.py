@@ -8,8 +8,9 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 
-from ..services import merge_images_service, qr_reader_service
+from ..services import merge_images_service
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
+from ..utils.exceptions import ToolError
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 
 router = APIRouter()
@@ -100,9 +101,27 @@ async def read_qr(file: UploadFile = File(...)):
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
         temp.write_bytes(content)
 
+        # Import lazily — pyzbar requires a native libzbar shared library that
+        # isn't guaranteed to be installed in every dev environment. Failing at
+        # request time (with a clear 503) is far better than crashing the whole
+        # app at startup when this single tool isn't reachable.
+        try:
+            from ..services import qr_reader_service
+        except ImportError as exc:
+            logger.warning("qr_reader_service unavailable: %s", exc)
+            raise HTTPException(
+                status_code=503,
+                detail="QR code reader is unavailable on this server (missing libzbar)",
+            )
+
         codes = qr_reader_service.read_qr(str(temp))
         return JSONResponse({"codes": codes})
     except HTTPException:
+        _cleanup_on_error(temp)
+        raise
+    except ToolError:
+        # DependencyError (missing libzbar) etc. carry their own status_code —
+        # propagate so the global handler returns 503/400 instead of a generic 500.
         _cleanup_on_error(temp)
         raise
     except Exception as e:

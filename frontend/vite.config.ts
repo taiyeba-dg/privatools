@@ -5,10 +5,43 @@ import fs from "fs";
 
 const BASE_URL = "https://privatools.me";
 
+// High-volume tools that get a priority bump in the sitemap. Mirrors the
+// `_HIGH_PRIORITY_TOOLS` set in backend/app/routes/sitemap.py — both lists
+// should stay aligned so the static `dist/sitemap.xml` and the live
+// `/sitemap.xml` route produce the same crawl-budget signal.
+const HIGH_PRIORITY_TOOLS = new Set([
+  "merge-pdf", "split-pdf", "compress-pdf",
+  "pdf-to-word", "pdf-to-excel", "pdf-to-jpg",
+  "jpg-to-pdf", "word-to-pdf", "image-to-pdf",
+  "edit-pdf", "sign-pdf", "ocr-pdf",
+  "protect-pdf", "unlock-pdf", "rotate-pdf",
+  "redact-pdf", "watermark",
+  "image-compressor", "image-converter", "heic-to-jpg",
+  "remove-background", "video-to-gif",
+]);
+
+// /compare/<competitor> landing pages. Must stay in sync with
+// _STATIC_META keys in backend/app/seo_meta.py and COMPARE_PAGES in
+// backend/app/routes/sitemap.py — every URL in here resolves to a real
+// SSR-rendered comparison article.
+const COMPARE_SLUGS = [
+  "ilovepdf", "smallpdf", "adobe-acrobat", "sejda", "pdf24",
+  "foxit", "lightpdf", "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
+];
+
 /**
  * Build-time sitemap generator. Reads tool slugs from the data files and emits
- * /dist/sitemap.xml covering home, static pages, every tool, and every blog post.
- * Replaces the hand-maintained one referenced from robots.txt.
+ * /dist/sitemap.xml covering home, static pages, every tool, every blog post,
+ * and every comparison landing page. Replaces the hand-maintained one
+ * referenced from robots.txt.
+ *
+ * Priority scheme (matches backend/app/routes/sitemap.py):
+ *   1.0  homepage
+ *   0.9  high-volume tools (merge, compress, pdf-to-word, ...)
+ *   0.8  long-tail tools + /blog index + per-tool /blog post + compare pages
+ *   0.7  /pipeline, /batch
+ *   0.6  /about
+ *   0.4  /privacy, /terms
  */
 function sitemapPlugin(): Plugin {
   return {
@@ -20,31 +53,64 @@ function sitemapPlugin(): Plugin {
       const slugs = (src: string) =>
         Array.from(src.matchAll(/^\s*slug:\s*"([^"]+)"/gm)).map(m => m[1]);
 
-      const pdfSlugs = slugs(read("src/data/tools.ts"));
-      const nonPdfSlugs = slugs(read("src/data/non-pdf-tools.ts"));
-      const blogSlugs = slugs(read("src/data/blog.ts"))
-        .filter(s => s !== "string"); // skip the `slug: string;` type field
+      const pdfSlugs = Array.from(new Set(slugs(read("src/data/tools.ts"))));
+      const nonPdfSlugs = Array.from(new Set(slugs(read("src/data/non-pdf-tools.ts"))));
+
+      // Blog data file holds: type definitions (`slug: string;`), the post
+      // entries themselves, and the helper signatures at the bottom. We
+      // want only the post slugs + their `publishedAt` dates.
+      const blogSrc = read("src/data/blog.ts");
+      const blogPosts: { slug: string; publishedAt: string }[] = [];
+      const postRe = /slug:\s*"([^"]+)"[\s\S]*?publishedAt:\s*"([^"]+)"/g;
+      let m: RegExpExecArray | null;
+      while ((m = postRe.exec(blogSrc)) !== null) {
+        if (m[1] !== "string") {
+          blogPosts.push({ slug: m[1], publishedAt: m[2] });
+        }
+      }
 
       const today = new Date().toISOString().slice(0, 10);
-      const urls: { loc: string; priority: string; changefreq: string }[] = [
-        { loc: `${BASE_URL}/`,         priority: "1.0", changefreq: "weekly" },
-        { loc: `${BASE_URL}/about`,    priority: "0.7", changefreq: "monthly" },
-        { loc: `${BASE_URL}/compare`,  priority: "0.7", changefreq: "monthly" },
-        { loc: `${BASE_URL}/pipeline`, priority: "0.8", changefreq: "monthly" },
-        { loc: `${BASE_URL}/batch`,    priority: "0.7", changefreq: "monthly" },
-        { loc: `${BASE_URL}/blog`,     priority: "0.7", changefreq: "weekly" },
-        { loc: `${BASE_URL}/privacy`,  priority: "0.4", changefreq: "yearly" },
-        { loc: `${BASE_URL}/terms`,    priority: "0.4", changefreq: "yearly" },
-        ...pdfSlugs.map(s => ({ loc: `${BASE_URL}/tool/${s}`,   priority: "0.9", changefreq: "monthly" })),
-        ...nonPdfSlugs.map(s => ({ loc: `${BASE_URL}/tools/${s}`, priority: "0.9", changefreq: "monthly" })),
-        ...blogSlugs.map(s => ({ loc: `${BASE_URL}/blog/${s}`,   priority: "0.6", changefreq: "monthly" })),
+      type Url = { loc: string; priority: string; changefreq: string; lastmod: string };
+      const urls: Url[] = [
+        { loc: `${BASE_URL}/`,         priority: "1.0", changefreq: "daily",   lastmod: today },
+        { loc: `${BASE_URL}/about`,    priority: "0.6", changefreq: "monthly", lastmod: today },
+        { loc: `${BASE_URL}/compare`,  priority: "0.7", changefreq: "monthly", lastmod: today },
+        { loc: `${BASE_URL}/pipeline`, priority: "0.7", changefreq: "weekly",  lastmod: today },
+        { loc: `${BASE_URL}/batch`,    priority: "0.7", changefreq: "weekly",  lastmod: today },
+        { loc: `${BASE_URL}/blog`,     priority: "0.8", changefreq: "weekly",  lastmod: today },
+        { loc: `${BASE_URL}/privacy`,  priority: "0.4", changefreq: "yearly",  lastmod: "2026-03-29" },
+        { loc: `${BASE_URL}/terms`,    priority: "0.4", changefreq: "yearly",  lastmod: "2026-03-29" },
+        ...COMPARE_SLUGS.map(s => ({
+          loc: `${BASE_URL}/compare/${s}`,
+          priority: "0.8",
+          changefreq: "monthly",
+          lastmod: today,
+        } satisfies Url)),
+        ...blogPosts.map(p => ({
+          loc: `${BASE_URL}/blog/${p.slug}`,
+          priority: "0.6",
+          changefreq: "weekly",
+          lastmod: p.publishedAt,
+        } satisfies Url)),
+        ...pdfSlugs.map(s => ({
+          loc: `${BASE_URL}/tool/${s}`,
+          priority: HIGH_PRIORITY_TOOLS.has(s) ? "0.9" : "0.8",
+          changefreq: "weekly",
+          lastmod: today,
+        } satisfies Url)),
+        ...nonPdfSlugs.map(s => ({
+          loc: `${BASE_URL}/tools/${s}`,
+          priority: HIGH_PRIORITY_TOOLS.has(s) ? "0.9" : "0.8",
+          changefreq: "weekly",
+          lastmod: today,
+        } satisfies Url)),
       ];
 
       const xml =
         `<?xml version="1.0" encoding="UTF-8"?>\n` +
         `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
         urls.map(u =>
-          `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${today}</lastmod>\n` +
+          `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n` +
           `    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`
         ).join("\n") +
         `\n</urlset>\n`;
@@ -59,7 +125,8 @@ function sitemapPlugin(): Plugin {
 export default defineConfig({
   server: {
     host: "::",
-    port: 8080,
+    port: Number(process.env.PORT) || 8080,
+    strictPort: false,
     hmr: { overlay: false },
     proxy: {
       "/api": {
@@ -78,7 +145,14 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split large vendor libraries into separate cached chunks
+          // Split large vendor libraries into separate cached chunks so
+          // returning users get them from the SW/CDN cache instead of
+          // re-downloading on every deploy.
+          //
+          // lucide-react is grouped here so the 50ish icons our app uses
+          // share one ~13 KB gz chunk rather than being inlined into 60+
+          // tool chunks. Tree-shaking still works through this map — only
+          // icons actually imported land in the chunk.
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-radix": [
             "@radix-ui/react-tooltip",
@@ -87,7 +161,6 @@ export default defineConfig({
             "@radix-ui/react-select",
             "@radix-ui/react-slot",
           ],
-          "vendor-query": ["@tanstack/react-query"],
           "vendor-icons": ["lucide-react"],
         },
       },
@@ -96,5 +169,13 @@ export default defineConfig({
     target: "es2020",
     // Increase chunk warning threshold (our vendor chunks are expected to be large)
     chunkSizeWarningLimit: 600,
+  },
+  esbuild: {
+    // Drop dev-only console calls + debugger statements from the production
+    // bundle so accidental `console.log("foo", bigObject)` left in tool UIs
+    // doesn't ship to users. `console.error` / `console.warn` are kept so
+    // real failures still surface in production telemetry.
+    drop: ["debugger"],
+    pure: ["console.log", "console.debug", "console.trace"],
   },
 });

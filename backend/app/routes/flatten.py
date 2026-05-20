@@ -1,19 +1,42 @@
-import uuid
 import logging
-from fastapi import APIRouter, File, UploadFile, HTTPException
+import uuid
+
+from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
+
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, validate_pdf_content, remove_files
 from ..services import flatten_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+VALID_SCOPES = {"all", "annotations", "forms"}
+
 
 @router.post("/flatten")
-async def flatten_pdf(file: UploadFile = File(...)):
-    if not file.filename.lower().endswith(".pdf"):
+async def flatten_pdf(
+    file: UploadFile = File(...),
+    scope: str = Form("all"),
+):
+    """Flatten annotations and/or form fields into static page content.
+
+    - ``scope=all`` (default): flatten annotations AND form fields.
+    - ``scope=annotations``: only annotations; form fields stay interactive.
+    - ``scope=forms``: only form widgets; comments/highlights stay editable.
+
+    The underlying service currently always flattens both, so for the partial
+    scopes we still need to call it — but accepting the parameter now means
+    the frontend can wire the UI today and the service can be tightened later
+    without another round of route changes.
+    """
+    if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
+    if scope not in VALID_SCOPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"scope must be one of: {', '.join(sorted(VALID_SCOPES))}",
+        )
 
     ensure_temp_dir()
     temp_path = None
@@ -22,6 +45,8 @@ async def flatten_pdf(file: UploadFile = File(...)):
     try:
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 

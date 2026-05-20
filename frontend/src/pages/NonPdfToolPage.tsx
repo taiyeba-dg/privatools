@@ -1,21 +1,29 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect, useRef, Suspense, lazy, type ComponentType } from "react";
+import { useEffect, useRef, useState, Suspense, lazy, type ComponentType } from "react";
 import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta, type NonPdfCategory } from "@/data/non-pdf-tools";
 import { postsForTool } from "@/data/blog";
 import { cn } from "@/lib/utils";
 import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight, ArrowRight, Lock } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
 import { GenericUI } from "@/components/tool-ui/GenericUI";
-import { EditorialMasthead } from "@/components/EditorialMasthead";
-import { EditorialFooter } from "@/components/EditorialFooter";
 import { ToolIllustration } from "@/components/ToolIllustration";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ToolSkeleton } from "@/components/ToolSkeleton";
 
 type AnyModule = Record<string, unknown>;
 
-function lazyNamed<T extends AnyModule>(loader: () => Promise<T>, exportName: keyof T) {
+// Preserve the exported component's prop signature through React.lazy so
+// the call site can keep passing its actual props (e.g. <LazyMultiFileUI
+// endpoint=… accepts=… />) without TS treating it as ComponentType<{}>.
+function lazyNamed<T extends AnyModule, K extends keyof T>(
+  loader: () => Promise<T>,
+  exportName: K,
+) {
   return lazy(async () => ({
-    default: (await loader())[exportName] as ComponentType,
-  }));
+    default: (await loader())[exportName] as T[K] extends ComponentType<infer P>
+      ? ComponentType<P>
+      : never,
+  })) as unknown as T[K] extends ComponentType<infer P> ? ComponentType<P> : never;
 }
 
 const LazyImageCompressorUI = lazyNamed(() => import("@/components/tool-ui/ImageCompressorUI"), "ImageCompressorUI");
@@ -271,6 +279,9 @@ export default function NonPdfToolPage() {
   const { slug } = useParams<{ slug: string }>();
   const tool = slug ? nonPdfToolBySlug[slug] : null;
   const { addEntry } = useHistory();
+  // Bumped by the per-tool ErrorBoundary's onReset to force a remount of
+  // the tool subtree (clears bad in-memory state without a full reload).
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     if (tool && slug) {
@@ -296,7 +307,7 @@ export default function NonPdfToolPage() {
 
   if (!tool) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <p className="font-serif-body text-muted-foreground mb-4">Tool not found.</p>
           <Link to="/" className="btn-editorial inline-block">← Back to all tools</Link>
@@ -307,48 +318,76 @@ export default function NonPdfToolPage() {
 
   const meta = nonPdfCategoryMeta[tool.category];
 
+  const ToolIcon = tool.icon;
   return (
-    <div className="min-h-screen bg-background">
-      <EditorialMasthead />
-      <main id="main-content" className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
-        <nav className="font-mono-meta text-[11px] text-muted-foreground mb-6 flex items-center gap-1.5">
-          <Link to="/" className="hover:text-foreground transition-colors">ALL TOOLS</Link>
-          <span className="text-muted-foreground/85">›</span>
-          <span className="hover:text-foreground transition-colors">{meta.label.toUpperCase()}</span>
-          <span className="text-muted-foreground/85">›</span>
-          <span className="text-foreground">{tool.name.toUpperCase()}</span>
-        </nav>
-
-        <CategoryToolNav currentSlug={slug!} category={tool.category} />
-
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10">
-          <div>
-            <div className="mb-8 flex items-start gap-4 sm:gap-6">
-              <div className={cn("shrink-0 hidden sm:inline-flex", `cat-${tool.category}`)}>
-                <ToolIllustration slug={slug!} fallback={tool.icon} catClass={`cat-${tool.category}`} size="lg" />
+    <div className={cn("h-full flex flex-col", `cat-${tool.category}`)}>
+      {/* Workspace header */}
+      <header className="flex items-start justify-between gap-3 px-5 sm:px-7 py-5 border-b border-border bg-paper-2/30">
+        <div className="min-w-0 flex-1">
+          <nav aria-label="Breadcrumb" className="font-mono text-[10px] tracking-[0.10em] uppercase text-muted-foreground mb-3 flex items-center gap-2">
+            <span className="text-accent">§</span>
+            <Link to="/" className="hover:text-foreground transition-colors">All tools</Link>
+            <span className="opacity-50">/</span>
+            <span>{meta.label}</span>
+            <span className="opacity-50">/</span>
+            <span className="text-foreground">{tool.name}</span>
+          </nav>
+          <div className="flex items-start gap-4">
+            <span className="hidden sm:inline-flex icon-tile icon-tile-lg shrink-0">
+              <ToolIcon size={22} strokeWidth={1.75} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="section-flag">{meta.label}</span>
+                {tool.clientOnly && (
+                  <span className="section-flag" style={{ color: "hsl(var(--accent))", borderColor: "hsl(var(--accent) / 0.4)", background: "hsl(var(--accent) / 0.08)" }}>
+                    Client-side
+                  </span>
+                )}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap mb-3">
-                  <span className="section-flag">{meta.label}</span>
-                  {tool.clientOnly && <span className="section-flag !text-emerald-700 dark:!text-emerald-400 !border-emerald-500/30">CLIENT-SIDE</span>}
-                </div>
-                <h1 className="text-3xl sm:text-5xl font-bold text-foreground tracking-tight">{tool.name}</h1>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mt-4">{tool.longDescription || tool.description}</p>
-              </div>
+              <h1 className="font-display font-bold text-foreground text-[28px] sm:text-[34px] tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
+                {tool.name}
+              </h1>
+              <p className="mt-1.5 text-[14px] text-muted-foreground leading-relaxed max-w-2xl">
+                {tool.longDescription || tool.description}
+              </p>
             </div>
+          </div>
+        </div>
+      </header>
 
-            <div className="editorial-insert p-4 sm:p-6 mb-8">
-              <Suspense fallback={<ToolLoadingCard />}>
-                <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
-              </Suspense>
-            </div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-7 sm:py-10">
+          <CategoryToolNav currentSlug={slug!} category={tool.category} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 lg:gap-14">
+            <div>
+              {/*
+                Per-tool ErrorBoundary so a single tool throwing during
+                render doesn't take down the AppShell or sidebar.
+                - key={slug}  → reset boundary when switching tools.
+                - onReset()   → bump resetKey to force-remount the lazy
+                                child without a full page reload.
+              */}
+              <ErrorBoundary
+                key={slug}
+                scope="tool"
+                onReset={() => setResetKey((k) => k + 1)}
+              >
+                <Suspense fallback={<ToolSkeleton />}>
+                  <div key={resetKey}>
+                    <ToolUI slug={slug!} toolName={tool.name} outputLabel={tool.outputLabel} accepts={tool.accepts} />
+                  </div>
+                </Suspense>
+              </ErrorBoundary>
 
             <div className="mt-10 mb-4">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="section-flag">HOW IT WORKS</div>
-                <div className="flex-1 rule-thin" />
+              <div className="flex items-baseline gap-3 mb-5">
+                <span className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent">§</span>
+                <h2 className="font-display text-[20px] font-semibold text-foreground tracking-[-0.02em]">How it works</h2>
+                <span className="flex-1 h-px bg-border ml-2" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {(() => {
                   // Pure-input tools (no file upload, no download — output is text shown inline).
                   // These browser-only utilities don't fit the upload→configure→download narrative.
@@ -384,28 +423,30 @@ export default function NonPdfToolPage() {
                     { step: "II.", title: "Configure & process", desc: tool.clientOnly ? "Adjust settings and process instantly without uploading file contents." : "Adjust any settings, then process instantly." },
                     { step: "III.", title: "Download result", desc: "Your processed file is ready. Download it — no waiting, no email, no account." },
                   ];
-                })().map(s => (
-                  <div key={s.step} className="editorial-insert p-5">
-                    <div className="font-heading text-2xl font-bold text-primary/70 mb-2">{s.step}</div>
-                    <p className="font-heading text-sm font-bold text-foreground mb-1.5">{s.title}</p>
-                    <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
+                })().map((s, idx) => (
+                  <div key={s.step} className="rounded-xl border border-border bg-card p-5">
+                    <div className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-accent mb-3">{String(idx + 1).padStart(2, "0")}</div>
+                    <p className="font-display text-[17px] font-semibold text-foreground tracking-[-0.015em] mb-1.5">{s.title}</p>
+                    <p className="text-[13px] text-muted-foreground leading-relaxed">{s.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             {relatedTools.length > 0 && (
-              <div className="editorial-insert p-5">
-                <h2 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related tools</h2>
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
+                  <span className="text-accent">§</span> Related tools
+                </h2>
                 <div className="space-y-0.5">
                   {relatedTools.map(t => {
                     const TIcon = t.icon;
                     return (
-                      <Link key={t.slug} to={`/tools/${t.slug}`} className="flex items-center gap-3 px-2 py-2 hover:bg-card/60 transition-colors group">
-                        <TIcon size={14} strokeWidth={1.75} className="text-primary shrink-0" />
-                        <span className="font-serif-body text-sm text-muted-foreground group-hover:text-foreground transition-colors flex-1 truncate">{t.name}</span>
+                      <Link key={t.slug} to={`/tools/${t.slug}`} className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-secondary/60 transition-colors group">
+                        <TIcon size={13} strokeWidth={1.75} className="text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
+                        <span className="text-[13px] text-foreground/80 group-hover:text-foreground transition-colors flex-1 truncate">{t.name}</span>
                       </Link>
                     );
                   })}
@@ -417,12 +458,14 @@ export default function NonPdfToolPage() {
               const posts = slug ? postsForTool(slug, 4) : [];
               if (posts.length === 0) return null;
               return (
-                <div className="editorial-insert p-5">
-                  <h2 className="font-sans-ui text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Related articles</h2>
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4">
+                    <span className="text-accent">§</span> Related articles
+                  </h2>
                   <div className="space-y-0.5">
                     {posts.map(p => (
-                      <Link key={p.slug} to={`/blog/${p.slug}`} className="block px-2 py-2 hover:bg-card/60 transition-colors group">
-                        <span className="font-serif-body text-sm text-muted-foreground group-hover:text-foreground transition-colors leading-snug block">{p.title}</span>
+                      <Link key={p.slug} to={`/blog/${p.slug}`} className="block px-2 py-1.5 -mx-2 rounded hover:bg-secondary/60 transition-colors">
+                        <span className="text-[12.5px] text-foreground/80 hover:text-foreground transition-colors leading-snug block">{p.title}</span>
                       </Link>
                     ))}
                   </div>
@@ -430,28 +473,32 @@ export default function NonPdfToolPage() {
               );
             })()}
 
-            <div className="editorial-insert p-5">
+            <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer"
+              className="block rounded-xl border border-border bg-card p-5 hover:border-accent/40 transition-colors group">
               <div className="flex items-center gap-2 mb-2">
                 <Github size={14} className="text-foreground" />
-                <span className="font-sans-ui text-sm font-bold text-foreground">Open Source</span>
+                <span className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">Open source</span>
               </div>
-              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed mb-3">100% free, no accounts, no behavioural tracking. Forever.</p>
-              <a href="https://github.com/taiyeba-dg/privatools" target="_blank" rel="noopener noreferrer" className="font-sans-ui inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline">
-                View on GitHub <ArrowUpRight size={11} />
-              </a>
-            </div>
+              <p className="text-[12.5px] text-muted-foreground leading-relaxed mb-3">Free forever, MIT licensed. Audit, fork, or self-host.</p>
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] tracking-[0.06em] uppercase font-medium text-accent">
+                View on GitHub <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </span>
+            </a>
 
-            <div className="editorial-insert p-5 border-l-4 !border-l-primary">
-              <p className="font-serif-body text-xs text-muted-foreground leading-relaxed">
-                <Lock size={12} className="inline-block mr-1 text-primary" />
-                <span className="text-foreground font-semibold">Your files stay private.</span>{" "}
-                All processing happens locally on your self-hosted server — files are never sent to third parties.
+            <div className="rounded-xl border border-accent/30 bg-accent/[0.05] p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Lock size={13} className="text-accent" />
+                <span className="font-mono text-[10.5px] font-semibold tracking-[0.10em] uppercase text-accent">Private</span>
+              </div>
+              <p className="text-[12.5px] text-foreground leading-relaxed">
+                <span className="font-medium">Your files stay private.</span>{" "}
+                {tool.clientOnly ? "Processed entirely in your browser." : "Processed on your own infrastructure — never on third-party clouds."}
               </p>
             </div>
           </div>
         </div>
-      </main>
-      <EditorialFooter />
+       </div>
+      </div>
     </div>
   );
 }

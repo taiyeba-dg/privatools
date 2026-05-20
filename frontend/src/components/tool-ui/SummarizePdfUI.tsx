@@ -14,7 +14,6 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, Download, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatFileSize, downloadBlob } from "@/lib/api";
 
@@ -220,14 +219,18 @@ export function SummarizePdfUI() {
 
     return (
         <div className="space-y-4">
-            {/* Privacy banner — this is the moat */}
-            <div className="rounded-xl border border-accent/20 bg-accent/[0.04] px-4 py-3 flex items-start gap-3">
-                <Sparkles size={16} className="text-primary mt-0.5 shrink-0" />
-                <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">100% browser-based AI</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                        Your PDF never leaves this tab. The summarization model runs locally via WebAssembly — no calls to OpenAI,
-                        Anthropic, or any other server. First load downloads the ~250 MB model and caches it for next time.
+            {/* Browser-AI banner — this is the moat */}
+            <div className="rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
+                    <Sparkles size={15} className="text-accent" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent font-medium">§ Browser AI</span>
+                        <span className="font-mono text-[10px] tracking-[0.06em] uppercase text-muted-foreground">distilbart-cnn-6-6 · ~250 MB · cached</span>
+                    </div>
+                    <p className="text-[12.5px] text-foreground leading-relaxed">
+                        <span className="font-medium">Your PDF never leaves this tab.</span> The model runs locally via WebAssembly — no calls to OpenAI, Anthropic, or any other server.
                     </p>
                 </div>
             </div>
@@ -243,27 +246,39 @@ export function SummarizePdfUI() {
                     tabIndex={0}
                     aria-label="Upload PDF to summarize"
                     className={cn(
-                        "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-all py-14 px-6 text-center",
-                        drag ? "border-accent bg-accent/5" : "border-border hover:border-accent/40 hover:bg-secondary/40 bg-secondary/20"
+                        "relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        drag
+                            ? "border-accent bg-accent/[0.06]"
+                            : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
+                    <CornerMarks />
                     <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={e => { onPick(e.target.files); e.target.value = ""; }} />
-                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", drag ? "bg-accent/20" : "bg-secondary")}>
-                        <Upload size={22} className={drag ? "text-primary" : "text-muted-foreground"} strokeWidth={1.5} />
+                    <div className={cn(
+                        "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
+                        drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
+                    )}>
+                        <Upload size={20} className="text-accent" strokeWidth={1.75} />
                     </div>
-                    <p className="text-sm font-semibold text-foreground">Pick a PDF to summarize</p>
-                    <p className="text-xs text-muted-foreground">PDF only · best on text-based PDFs (run OCR first if it's a scan)</p>
+                    <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">Pick a PDF to summarize</p>
+                    <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground">Best on text PDFs · OCR first if it's a scan</p>
                 </div>
             ) : (
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 px-4 py-3">
-                    <FileText size={18} className="text-primary shrink-0" />
+                <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
+                    <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
+                        <FileText size={16} className="text-accent" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                        <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
+                        <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">{formatFileSize(file.size)}</p>
                     </div>
                     {stage === "idle" && (
-                        <button onClick={() => { setFile(null); setSummary(""); }} aria-label="Remove file" className="text-muted-foreground hover:text-foreground">
-                            <X size={16} />
+                        <button
+                            onClick={() => { setFile(null); setSummary(""); }}
+                            aria-label="Remove file"
+                            className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                        >
+                            <X size={13} />
                         </button>
                     )}
                 </div>
@@ -271,22 +286,29 @@ export function SummarizePdfUI() {
 
             {/* Length selector */}
             {file && stage === "idle" && (
-                <div className="rounded-xl border border-border bg-card/40 p-5">
-                    <p className="text-sm font-semibold text-foreground mb-2">Summary length</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        {(Object.keys(LENGTH_PARAMS) as Length[]).map(l => (
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="px-4 py-2 border-b border-border bg-paper-2/40 font-mono text-[10.5px] tracking-[0.10em] uppercase text-muted-foreground">
+                        <span className="text-accent">§</span> Summary length
+                    </div>
+                    <div className="p-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {(Object.keys(LENGTH_PARAMS) as Length[]).map((l, idx) => (
                             <button
                                 key={l}
                                 type="button"
                                 onClick={() => setLength(l)}
                                 aria-pressed={length === l}
                                 className={cn(
-                                    "rounded-lg border p-2 text-left transition-all",
-                                    length === l ? "border-accent bg-accent/5" : "border-border hover:border-border/70 hover:bg-secondary/40"
+                                    "rounded-lg border p-3 text-left transition-colors",
+                                    length === l
+                                        ? "border-accent bg-accent/[0.06]"
+                                        : "border-border hover:border-border-strong hover:bg-paper-2/30"
                                 )}
                             >
-                                <p className="text-xs font-medium text-foreground">{LENGTH_PARAMS[l].label}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{LENGTH_PARAMS[l].desc}</p>
+                                <div className="flex items-baseline gap-2 mb-1">
+                                    <span className="font-mono text-[10px] tracking-[0.10em] uppercase text-accent">{String(idx + 1).padStart(2, "0")}</span>
+                                    <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{LENGTH_PARAMS[l].label}</p>
+                                </div>
+                                <p className="text-[11.5px] text-muted-foreground leading-snug">{LENGTH_PARAMS[l].desc}</p>
                             </button>
                         ))}
                     </div>
@@ -295,22 +317,31 @@ export function SummarizePdfUI() {
 
             {/* Progress */}
             {(stage === "extracting" || stage === "loading-model" || stage === "summarizing") && (
-                <div className="rounded-xl border border-accent/15 bg-accent/[0.03] px-5 py-4 space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <Loader2 size={14} className="animate-spin text-primary" />
-                        {stage === "extracting" && (
-                            <>Extracting text… page {progress.pages}{progress.totalPages ? ` of ${progress.totalPages}` : ""}</>
-                        )}
-                        {stage === "loading-model" && (
-                            <>Loading AI model… {progress.modelPercent}% (one-time download, cached for next time)</>
-                        )}
-                        {stage === "summarizing" && (
-                            <>Summarizing… chunk {progress.chunks} of {progress.totalChunks}</>
-                        )}
+                <div className="rounded-xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
+                    <div className="px-4 py-3 flex items-center gap-3">
+                        <Loader2 size={14} className="animate-spin text-accent shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="font-display text-[14px] font-medium text-foreground">
+                                {stage === "extracting" && <>Extracting text from PDF</>}
+                                {stage === "loading-model" && <>Loading AI model</>}
+                                {stage === "summarizing" && <>Summarizing chunks</>}
+                            </p>
+                            <p className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground mt-0.5">
+                                {stage === "extracting" && <>Page {progress.pages}{progress.totalPages ? ` of ${progress.totalPages}` : ""}</>}
+                                {stage === "loading-model" && <>{progress.modelPercent}% · one-time download, cached</>}
+                                {stage === "summarizing" && <>Chunk {progress.chunks} of {progress.totalChunks}</>}
+                            </p>
+                        </div>
+                        <button
+                            onClick={cancel}
+                            className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Cancel
+                        </button>
                     </div>
-                    <div className="h-1.5 w-full bg-secondary/60 rounded-full overflow-hidden">
+                    <div className="h-1 bg-paper-2 relative">
                         <div
-                            className="h-full bg-accent/60 transition-all"
+                            className="h-full bg-accent transition-all"
                             style={{
                                 width: stage === "extracting"
                                     ? progress.totalPages ? `${(progress.pages / progress.totalPages) * 100}%` : "10%"
@@ -320,58 +351,95 @@ export function SummarizePdfUI() {
                             }}
                         />
                     </div>
-                    <button onClick={cancel} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
                 </div>
             )}
 
             {error && (
-                <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                    <AlertCircle size={15} className="shrink-0" />{error}
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                    <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
             )}
 
             {/* Action */}
             {file && stage === "idle" && (
-                <div className="flex gap-3 pt-1">
-                    <Button onClick={run} className="glow-primary">
-                        <Sparkles size={15} className="mr-1.5" />Summarize this PDF
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { setFile(null); setSummary(""); setError(null); }}>
+                <div className="flex items-center gap-3 pt-1 flex-wrap">
+                    <button onClick={run} className="btn-accent">
+                        <Sparkles size={13} /> Summarize this PDF
+                    </button>
+                    <button
+                        onClick={() => { setFile(null); setSummary(""); setError(null); }}
+                        className="font-mono text-[11px] tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                    >
                         Clear
-                    </Button>
+                    </button>
                 </div>
             )}
 
             {/* Result */}
             {stage === "done" && summary && (
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 size={18} className="text-emerald-400" />
-                            <p className="text-sm font-semibold text-foreground">Summary ready</p>
+                <div className="rounded-2xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
+                    <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-paper-2/40">
+                        <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.10em] uppercase text-accent">
+                            <CheckCircle2 size={12} />
+                            Summary ready
                         </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="border-border" onClick={copy}>
-                                <Copy size={13} className="mr-1.5" />Copy
-                            </Button>
-                            <Button variant="outline" size="sm" className="border-border" onClick={download}>
-                                <Download size={13} className="mr-1.5" />Download .txt
-                            </Button>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={copy}
+                                className="inline-flex items-center gap-1 h-7 px-2 rounded border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <Copy size={10} /> Copy
+                            </button>
+                            <button
+                                onClick={download}
+                                className="inline-flex items-center gap-1 h-7 px-2 rounded border border-border bg-card font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <Download size={10} /> .txt
+                            </button>
                         </div>
                     </div>
-                    <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-background/40 rounded-lg p-4 border border-border/40 max-h-[60vh] overflow-y-auto font-serif-body">
-                        {summary}
-                    </pre>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-border text-muted-foreground"
-                        onClick={() => { setFile(null); setSummary(""); setStage("idle"); }}
-                    >
-                        Summarize another PDF
-                    </Button>
+                    <div className="px-5 py-5">
+                        <pre
+                            className="font-display text-[15px] text-foreground whitespace-pre-wrap leading-[1.65] max-h-[60vh] overflow-y-auto"
+                            style={{ fontVariationSettings: '"opsz" 14' }}
+                        >
+                            {summary}
+                        </pre>
+                    </div>
+                    <div className="px-4 py-2 border-t border-border bg-paper-2/30 flex">
+                        <button
+                            onClick={() => { setFile(null); setSummary(""); setStage("idle"); }}
+                            className="font-mono text-[10.5px] tracking-[0.06em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Summarize another PDF
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
+    );
+}
+
+function CornerMarks() {
+    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
+    return (
+        <>
+            <span className={`${cls} -top-1 -left-1`}>
+                <span className="absolute top-0 left-0 h-px w-3 bg-accent/70" />
+                <span className="absolute top-0 left-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -top-1 -right-1`}>
+                <span className="absolute top-0 right-0 h-px w-3 bg-accent/70" />
+                <span className="absolute top-0 right-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -bottom-1 -left-1`}>
+                <span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" />
+                <span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" />
+            </span>
+            <span className={`${cls} -bottom-1 -right-1`}>
+                <span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" />
+                <span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" />
+            </span>
+        </>
     );
 }

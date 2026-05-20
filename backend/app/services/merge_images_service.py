@@ -1,6 +1,7 @@
-import uuid
 from PIL import Image
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 
 def merge_images(image_paths: list, direction: str = "horizontal") -> str:
@@ -13,13 +14,17 @@ def merge_images(image_paths: list, direction: str = "horizontal") -> str:
     Returns:
         Path to the merged PNG file.
     """
-    ensure_temp_dir()
-    output_path = get_temp_path(f"merged_{uuid.uuid4().hex}.png")
+    output_path = temp_output("merged", "png")
 
     if not image_paths:
-        raise ValueError("No images provided")
+        raise ValidationError("No images provided")
 
-    images = [Image.open(p).convert("RGBA") for p in image_paths]
+    # Load + convert each image, closing the source handle right after so
+    # we don't hold N file descriptors open while resizing.
+    images: list[Image.Image] = []
+    for p in image_paths:
+        with Image.open(p) as src:
+            images.append(src.convert("RGBA"))
 
     if direction == "horizontal":
         # Match heights to the tallest image; scale widths proportionally

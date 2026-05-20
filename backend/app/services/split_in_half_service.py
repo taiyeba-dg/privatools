@@ -15,23 +15,21 @@ source page — fitz lets us insert + then mutate the MediaBox per page.
 
 from __future__ import annotations
 
-import uuid
-
 import fitz  # PyMuPDF
 
-from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from ..utils.exceptions import ValidationError
+from ..utils.filenames import temp_output
 
 VALID_DIRECTIONS = {"vertical", "horizontal"}
 
 
 def split_in_half(input_path: str, direction: str = "vertical") -> str:
     if direction not in VALID_DIRECTIONS:
-        raise ValueError(
+        raise ValidationError(
             f"direction must be one of: {', '.join(sorted(VALID_DIRECTIONS))}"
         )
 
-    ensure_temp_dir()
-    output_path = get_temp_path(f"split_half_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("split_half", "pdf")
 
     src = fitz.open(input_path)
     out = fitz.open()

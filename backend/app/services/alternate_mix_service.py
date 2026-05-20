@@ -1,13 +1,13 @@
-import uuid
 import pikepdf
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+
+from ..utils.cleanup import safe_open_pdf
+from ..utils.filenames import temp_output
 
 
 def alternate_mix(path1: str, path2: str, mode: str = "alternate") -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"alternate_mix_{uuid.uuid4().hex}.pdf")
+    output_path = temp_output("alternate_mix", "pdf")
 
-    with pikepdf.open(path1) as pdf1, pikepdf.open(path2) as pdf2:
+    with safe_open_pdf(path1) as pdf1, safe_open_pdf(path2) as pdf2:
         pages2 = list(pdf2.pages)
         if mode == "reverse-alternate":
             pages2 = list(reversed(pages2))

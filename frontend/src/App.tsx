@@ -1,15 +1,33 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import CommandPalette from "./components/CommandPalette";
 import { DynamicHead } from "./components/DynamicHead";
 import { OnboardingTour } from "./components/OnboardingTour";
-import { MobileNav } from "./components/MobileNav";
 import { BackendStatusBanner } from "./components/BackendStatusBanner";
+import { BatchResumeBanner } from "./components/BatchResumeBanner";
 import { ShortcutsHelp } from "./components/ShortcutsHelp";
+import { AppShell } from "./components/AppShell";
+import { FirstSuccessListener } from "./components/FirstSuccessListener";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { useGlobalErrorHandler } from "./hooks/useGlobalErrorHandler";
+import {
+  prefetchRoute,
+  loadToolPage,
+  loadCompressUI,
+  loadMergeUI,
+  loadSplitUI,
+} from "./lib/prefetch";
+
+// @tanstack/react-query is in package.json but no component in the app uses
+// useQuery / useMutation. The QueryClientProvider wrapper here used to be
+// scaffolding from the project template. Removing the provider drops the
+// 25 KB / 7.8 KB gz vendor-query chunk from every first-paint without
+// changing behavior. If you later add server-state caching, re-add the
+// provider locally inside the route that needs it (don't promote it back
+// to the App root unless many components share queries).
 
 const Index = lazy(() => import("./pages/Index"));
 const ToolPage = lazy(() => import("./pages/ToolPage"));
@@ -24,8 +42,6 @@ const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
-
-const queryClient = new QueryClient();
 
 const RouteLoader = () => (
   <div className="min-h-[40vh] animate-pulse px-4 py-10 sm:px-6">
@@ -44,36 +60,83 @@ const withRouteFallback = (element: JSX.Element) => (
   <Suspense fallback={<RouteLoader />}>{element}</Suspense>
 );
 
+/**
+ * Warm the next-likely route chunks once the user lands on the home page.
+ * Top-3 by traffic: Compress, Merge, Split. Runs only on `/` and only when
+ * the browser is idle so it doesn't compete with first-paint resources.
+ *
+ * The actual `import()` calls are deduped inside prefetch.ts (WeakSet), so
+ * subsequent hover/focus events on these tools resolve from the chunk
+ * cache instead of issuing a new request.
+ */
+function RoutePrefetcher() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    if (pathname !== "/") return;
+    const idle: typeof window.requestIdleCallback | undefined =
+      typeof window !== "undefined" ? window.requestIdleCallback : undefined;
+    const run = () => {
+      // ToolPage shell first — needed before any /tool/* chunk renders.
+      prefetchRoute(loadToolPage);
+      prefetchRoute(loadCompressUI);
+      prefetchRoute(loadMergeUI);
+      prefetchRoute(loadSplitUI);
+    };
+    if (idle) {
+      const id = idle(run, { timeout: 3000 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    // Browsers without rIC — fire after a short delay.
+    const t = window.setTimeout(run, 1500);
+    return () => window.clearTimeout(t);
+  }, [pathname]);
+
+  return null;
+}
+
+/** Wire global JS error handler into the root once. Lives inside the
+ *  router so it can use hooks, but renders nothing. */
+function GlobalErrorWire() {
+  useGlobalErrorHandler();
+  return null;
+}
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <ErrorBoundary scope="app">
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <BackendStatusBanner />
+        <GlobalErrorWire />
         <DynamicHead />
         <CommandPalette />
         <ShortcutsHelp />
         <OnboardingTour />
-        <Routes>
-          <Route path="/" element={withRouteFallback(<Index />)} />
-          <Route path="/about" element={withRouteFallback(<AboutPage />)} />
-          <Route path="/compare" element={withRouteFallback(<ComparePage />)} />
-          <Route path="/compare/:competitor" element={withRouteFallback(<ComparePage />)} />
-          <Route path="/tool/:slug" element={withRouteFallback(<ToolPage />)} />
-          <Route path="/tools/:slug" element={withRouteFallback(<NonPdfToolPage />)} />
-          <Route path="/batch" element={withRouteFallback(<BatchPage />)} />
-          <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
-          <Route path="/blog" element={withRouteFallback(<BlogPage />)} />
-          <Route path="/blog/:slug" element={withRouteFallback(<BlogPostPage />)} />
-          <Route path="/privacy" element={withRouteFallback(<PrivacyPage />)} />
-          <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
-          <Route path="*" element={withRouteFallback(<NotFound />)} />
-        </Routes>
-        <MobileNav />
+        <FirstSuccessListener />
+        <RoutePrefetcher />
+        <AppShell>
+          <BackendStatusBanner />
+          <BatchResumeBanner />
+          <Routes>
+            <Route path="/" element={withRouteFallback(<Index />)} />
+            <Route path="/about" element={withRouteFallback(<AboutPage />)} />
+            <Route path="/compare" element={withRouteFallback(<ComparePage />)} />
+            <Route path="/compare/:competitor" element={withRouteFallback(<ComparePage />)} />
+            <Route path="/tool/:slug" element={withRouteFallback(<ToolPage />)} />
+            <Route path="/tools/:slug" element={withRouteFallback(<NonPdfToolPage />)} />
+            <Route path="/batch" element={withRouteFallback(<BatchPage />)} />
+            <Route path="/pipeline" element={withRouteFallback(<PipelinePage />)} />
+            <Route path="/blog" element={withRouteFallback(<BlogPage />)} />
+            <Route path="/blog/:slug" element={withRouteFallback(<BlogPostPage />)} />
+            <Route path="/privacy" element={withRouteFallback(<PrivacyPage />)} />
+            <Route path="/terms" element={withRouteFallback(<TermsPage />)} />
+            <Route path="*" element={withRouteFallback(<NotFound />)} />
+          </Routes>
+        </AppShell>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
