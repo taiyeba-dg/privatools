@@ -365,19 +365,35 @@ if "*" in _origins:
 
 # Trusted Host allow-list — rejects requests whose Host header doesn't
 # match. Prevents host-header injection / cache-poisoning attacks behind
-# a misconfigured proxy. Dev defaults cover localhost + 127.0.0.1 so the
-# test client and local nginx still work. Production must set
-# TRUSTED_HOSTS=privatools.com,www.privatools.com in /opt/privatool/.env.
-# Dev defaults cover localhost, 127.0.0.1, and the `testserver` host that
-# starlette's TestClient / httpx ASGITransport use by default. Production
-# must set TRUSTED_HOSTS=privatools.com,www.privatools.com in
-# /opt/privatool/.env to override this.
-_default_hosts = "127.0.0.1,localhost,testserver"
-_trusted_hosts = [
-    h.strip()
-    for h in os.environ.get("TRUSTED_HOSTS", _default_hosts).split(",")
-    if h.strip()
-]
+# a misconfigured proxy.
+#
+# Resolution order:
+#   1. TRUSTED_HOSTS env var (explicit, comma-separated, highest priority)
+#   2. Hostnames derived from ALLOWED_ORIGINS env (so a deployment that
+#      already configures CORS gets a sane Host allowlist for free)
+#   3. Hard-coded dev defaults (localhost, 127.0.0.1, testserver)
+#
+# Why #2 exists: an earlier rev only used #1 + #3, which fail-closed
+# rejected every public request on a deployment that set ALLOWED_ORIGINS
+# but not TRUSTED_HOSTS. Deriving from CORS origins keeps prod working
+# without needing two near-duplicate env vars.
+_explicit_trusted = os.environ.get("TRUSTED_HOSTS", "").strip()
+_default_hosts = ["127.0.0.1", "localhost", "testserver"]
+if _explicit_trusted:
+    _trusted_hosts = [h.strip() for h in _explicit_trusted.split(",") if h.strip()]
+else:
+    _derived: list[str] = []
+    for o in os.environ.get("ALLOWED_ORIGINS", "").split(","):
+        o = o.strip()
+        if not o:
+            continue
+        # Strip scheme + path + port to get the bare hostname.
+        host = o.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]
+        if host:
+            _derived.append(host)
+    # Dedupe while preserving order. Always merge dev defaults so tests
+    # and local nginx still work in any deployment shape.
+    _trusted_hosts = list(dict.fromkeys(_derived + _default_hosts))
 
 from starlette.middleware.gzip import GZipMiddleware
 # Order is bottom-up: the LAST add_middleware call is the OUTERMOST

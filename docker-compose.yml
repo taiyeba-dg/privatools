@@ -11,6 +11,8 @@ services:
       - PORT=8000
       - ENVIRONMENT=production
       - REQUEST_TIMEOUT_SECONDS=300
+      - TRUSTED_HOSTS=privatools.me,www.privatools.me,127.0.0.1,localhost
+      - ALLOWED_ORIGINS=https://privatools.me,https://www.privatools.me
     restart: unless-stopped
     deploy:
       resources:
