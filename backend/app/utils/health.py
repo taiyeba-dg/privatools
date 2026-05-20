@@ -89,12 +89,15 @@ def _check_binary(name: str) -> bool:
 # ---------------------------------------------------------------------------
 # Lazy list of (name, check) — we register them as functions so the
 # module imports cheaply and checks only fire when /readyz is hit.
+# Required checks — any False = /readyz returns 503.
+# Ghostscript is intentionally NOT here: the production image ships with
+# qpdf + pikepdf which cover the compress / unlock paths without `gs`,
+# so failing readyz on its absence would create false alarms.
 _CHECKS: list[tuple[str, Callable[[], bool]]] = [
     ("pikepdf", lambda: _check_module("pikepdf")),
     ("fitz", lambda: _check_module("fitz")),
     ("PIL", lambda: _check_module("PIL")),
     ("tessdata", _check_tessdata),
-    ("ghostscript", lambda: _check_binary("gs")),
 ]
 
 
